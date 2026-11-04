@@ -31,6 +31,9 @@ func openURL(u string) error {
 
 // appURL descobre em que endereço o servidor de desenvolvimento do projeto escuta.
 func appURL(p string) string {
+	if m, ok := readManifest(p); ok {
+		return m.URL
+	}
 	switch detectType(p) {
 	case "react/vite":
 		return "http://localhost:5173"

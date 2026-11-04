@@ -241,6 +241,9 @@ type Project struct {
 }
 
 func detectType(p string) string {
+	if m, ok := readManifest(p); ok {
+		return m.Stack + "/" + m.Template
+	}
 	if b, err := os.ReadFile(filepath.Join(p, "package.json")); err == nil {
 		s := string(b)
 		switch {
@@ -284,10 +287,23 @@ func printProjects() {
 		return
 	}
 	fmt.Println(sTitle.Render("Projetos em " + projDir))
-	fmt.Println(sGray.Render(fmt.Sprintf("  %-28s %-12s %s", "NOME", "TIPO", "MODIFICADO")))
+	fmt.Println(sGray.Render(fmt.Sprintf("  %-28s %-24s %s", "NOME", "TIPO", "MODIFICADO")))
 	for _, p := range ps {
-		fmt.Printf("  %-28s %-12s %s\n", p.Name, p.Type, p.Mod.Format("02/01/2006 15:04"))
+		fmt.Printf("  %-28s %-24s %s\n", p.Name, p.Type, p.Mod.Format("02/01/2006 15:04"))
 	}
+}
+
+func projectsJSON() []map[string]any {
+	out := []map[string]any{}
+	for _, p := range listProjects() {
+		item := map[string]any{"name": p.Name, "path": p.Path, "type": p.Type,
+			"modified": p.Mod.Format(time.RFC3339), "url": appURL(p.Path)}
+		if m, ok := readManifest(p.Path); ok {
+			item["manifest"] = m
+		}
+		out = append(out, item)
+	}
+	return out
 }
 
 func projectPath(name string) (string, error) {
@@ -321,7 +337,15 @@ func runProject(name string, open bool) error {
 		return err
 	}
 	var cmd []string
+	manifest, hasManifest := readManifest(p)
 	switch t := detectType(p); {
+	case hasManifest:
+		cmd = strings.Fields(manifest.Run)
+		for _, key := range manifest.Services {
+			if s := findService(key); s != nil && !s.Running() {
+				warnf("%s não está rodando e o projeto depende dele: romanctl start %s", s.Name, s.Key)
+			}
+		}
 	case t == "dotnet":
 		cmd = []string{"dotnet", "run"}
 	case t == "go":

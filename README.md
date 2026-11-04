@@ -26,6 +26,8 @@ romanctl install <serviço>
 romanctl new [tipo] [nome]      # node, express, react, react-ts, next,
                                 # dotnet-webapi, dotnet-console, dotnet-mvc,
                                 # dotnet-blazor, go
+romanctl new <nome> --stack <s> --arch <a,b> [--with <serviços>] [--dry-run]
+romanctl catalog                # templates e combinações válidas
 romanctl list
 romanctl run <nome> [--open]
 romanctl rm <nome> [-y]
@@ -38,6 +40,22 @@ romanctl doctor
 
 Os projetos ficam em `~/projetos` (mude com `ROMANCTL_PROJETOS`).
 Dados e logs dos serviços ficam em `~/.local/share/romanctl`.
+
+## Templates de arquitetura
+
+```bash
+romanctl new pedidos --stack dotnet --arch clean,ddd,cqrs --with postgres
+```
+
+Cada template é uma pasta com um `template.yaml`: os embutidos ficam em `templates/`, e uma pasta em
+`~/.config/romanctl/templates/<stack>/<id>/` tem prioridade sobre eles. Todo arquivo é processado
+com `text/template`, e `__Name__` nos caminhos vira o nome do projeto em PascalCase. Cada projeto
+gerado ganha um `romanctl.yaml`, que o `run` e o `open` usam.
+
+## Automação
+
+`--json` funciona em `status`, `list`, `catalog` e `new`. Códigos de saída: 0 sucesso, 1 falha ao
+executar, 2 uso incorreto. Sem terminal, os comandos nunca abrem menu: informe tudo por argumentos.
 
 ## Serviços
 

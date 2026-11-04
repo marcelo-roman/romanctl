@@ -1,0 +1,13 @@
+id: clean-ddd-cqrs
+stack: dotnet
+arch: [clean, ddd, cqrs]
+description: API .NET com Clean Architecture, DDD e CQRS, com despachante próprio
+services: [postgres]
+run: dotnet run --project src/{{.Name}}.Api
+test: dotnet test
+url: http://localhost:5080
+conditional:
+  - path: src/__Name__.Infrastructure/Persistence/EfCore
+    when: postgres
+  - path: src/__Name__.Infrastructure/Persistence/InMemory
+    when: "!postgres"

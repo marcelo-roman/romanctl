@@ -249,6 +249,21 @@ func prepNuget() error {
 			return fmt.Errorf("dotnet new %s: %w", tpl, err)
 		}
 	}
+	for _, t := range loadTemplates() {
+		if t.Stack != "dotnet" {
+			continue
+		}
+		for i, services := range [][]string{nil, t.Services} {
+			infof("Restaurando o template %s (variação %d)...", t.Key(), i+1)
+			dest := filepath.Join(tmp, fmt.Sprintf("arq-%s-%d", t.ID, i))
+			if _, err := writeScaffold(t, "arquitetura", dest, services); err != nil {
+				return fmt.Errorf("template %s: %w", t.Key(), err)
+			}
+			if err := quiet(dest, env, "dotnet", "restore"); err != nil {
+				return fmt.Errorf("restore de %s: %w", t.Key(), err)
+			}
+		}
+	}
 	infof("Baixando %d pacotes...", len(offlineNuget))
 	for _, pkg := range offlineNuget {
 		if err := quiet(filepath.Join(tmp, "webapi"), env, "dotnet", "add", "package", pkg); err != nil {
@@ -345,6 +360,7 @@ func offlineStatus() {
 
 type offlineCheck struct {
 	typ    string
+	args   []string // argumentos de "new" quando o tipo vem de um template de arquitetura
 	checks [][]string
 }
 
@@ -368,32 +384,38 @@ func offlineTest() error {
 	dotnetBuild := []string{"dotnet", "build", "-nodeReuse:false", "-p:UseSharedCompilation=false"}
 
 	cases := []offlineCheck{
-		{"node", [][]string{{"node", "index.js"}}},
-		{"express", [][]string{{"node", "-e", "require('express')"}}},
-		{"react", [][]string{{"npm", "run", "build"}, {"npm", "install", "zustand", "--offline"}}},
-		{"react-ts", [][]string{{"npm", "run", "build"}}},
-		{"next", [][]string{{"npx", "--no-install", "next", "build"}}},
-		{"go", [][]string{{"go", "build", "./..."}, {"go", "get", "github.com/go-chi/chi/v5"}}},
-		{"dotnet-console", [][]string{dotnetBuild}},
-		{"dotnet-webapi", [][]string{dotnetBuild, {"dotnet", "add", "package", "StackExchange.Redis"}}},
-		{"dotnet-mvc", [][]string{dotnetBuild}},
-		{"dotnet-blazor", [][]string{dotnetBuild}},
+		{typ: "node", checks: [][]string{{"node", "index.js"}}},
+		{typ: "express", checks: [][]string{{"node", "-e", "require('express')"}}},
+		{typ: "react", checks: [][]string{{"npm", "run", "build"}, {"npm", "install", "zustand", "--offline"}}},
+		{typ: "react-ts", checks: [][]string{{"npm", "run", "build"}}},
+		{typ: "next", checks: [][]string{{"npx", "--no-install", "next", "build"}}},
+		{typ: "go", checks: [][]string{{"go", "build", "./..."}, {"go", "get", "github.com/go-chi/chi/v5"}}},
+		{typ: "dotnet-console", checks: [][]string{dotnetBuild}},
+		{typ: "dotnet-webapi", checks: [][]string{dotnetBuild, {"dotnet", "add", "package", "StackExchange.Redis"}}},
+		{typ: "dotnet-mvc", checks: [][]string{dotnetBuild}},
+		{typ: "dotnet-blazor", checks: [][]string{dotnetBuild}},
+		{typ: "clean-ddd-cqrs", args: []string{"--stack", "dotnet", "--arch", "clean,ddd,cqrs"}, checks: [][]string{dotnetBuild, {"dotnet", "test"}}},
+		{typ: "clean-ddd-cqrs+pg", args: []string{"--stack", "dotnet", "--arch", "clean,ddd,cqrs", "--with", "postgres"}, checks: [][]string{dotnetBuild, {"dotnet", "test"}}},
 	}
 	fmt.Println(sTitle.Render("Criando e compilando cada tipo com a rede bloqueada"))
 	failures := 0
 	for _, c := range cases {
 		start := time.Now()
-		name := "t-" + c.typ
-		err := testStep(tmp, env, []string{self, "new", c.typ, name, "--sem-git", "--offline"})
+		name := "t-" + strings.ReplaceAll(c.typ, "+", "-")
+		command := []string{self, "new", c.typ, name, "--sem-git", "--offline"}
+		if c.args != nil {
+			command = append([]string{self, "new", name, "--sem-git"}, c.args...)
+		}
+		err := testStep(tmp, env, command)
 		for i := 0; err == nil && i < len(c.checks); i++ {
 			err = testStep(filepath.Join(tmp, name), env, c.checks[i])
 		}
 		if err != nil {
 			failures++
-			failf("%-16s %v", c.typ, err)
+			failf("%-18s %v", c.typ, err)
 			continue
 		}
-		okf("%-16s %s", c.typ, sGray.Render(time.Since(start).Round(time.Second).String()))
+		okf("%-18s %s", c.typ, sGray.Render(time.Since(start).Round(time.Second).String()))
 		os.RemoveAll(filepath.Join(tmp, name))
 	}
 	fmt.Println()

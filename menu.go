@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"golang.org/x/term"
 )
 
 // Navegação nos prompts:
@@ -28,6 +31,9 @@ const navHint = "Esc/← volta · Ctrl+C cancela"
 // ask roda um prompt de um campo. list=true habilita "←" para voltar
 // (só em listas; em campos de texto a seta precisa mover o cursor).
 func ask(list bool, field huh.Field) error {
+	if !term.IsTerminal(int(os.Stdin.Fd())) {
+		return usagef("este comando precisa de um terminal; informe tudo por argumentos (veja: romanctl help)")
+	}
 	keys := []string{"ctrl+c", "esc"}
 	if list {
 		keys = append(keys, "left")
@@ -202,11 +208,17 @@ func menuServices(action string) error {
 	return nil
 }
 
+const templatePrefix = "template:"
+
 func menuNewProject(typ, name string) error {
 	git := true
 	var steps []func() error
+	var chosen []string
 	if findType(typ) == nil {
 		var opts []huh.Option[string]
+		for _, t := range loadTemplates() {
+			opts = append(opts, huh.NewOption(t.Description, templatePrefix+t.Key()))
+		}
 		for _, t := range projectTypes {
 			opts = append(opts, huh.NewOption(t.Label, t.Key))
 		}
@@ -222,13 +234,41 @@ func menuNewProject(typ, name string) error {
 		})
 	}
 	steps = append(steps, func() error {
+		t := templateByKey(strings.TrimPrefix(typ, templatePrefix))
+		if !strings.HasPrefix(typ, templatePrefix) || t == nil || len(t.Services) == 0 {
+			return nil
+		}
+		var opts []huh.Option[string]
+		for _, key := range t.Services {
+			opts = append(opts, huh.NewOption(key, key))
+		}
+		return ask(true, huh.NewMultiSelect[string]().Title("Quais serviços o projeto usa?").
+			Description("Espaço marca · Enter confirma · "+navHint).Options(opts...).Value(&chosen))
+	}, func() error {
 		return ask(false, huh.NewConfirm().Title("Iniciar repositório git?").
 			Description("←/→ alterna · Esc volta").Affirmative("Sim").Negative("Não").Value(&git))
 	})
 	if err := wizard(steps...); err != nil {
 		return err
 	}
+	if key, ok := strings.CutPrefix(typ, templatePrefix); ok {
+		t := templateByKey(key)
+		if t == nil {
+			return fmt.Errorf("template %s não encontrado", key)
+		}
+		sort.Strings(chosen)
+		return scaffoldProject(t, name, chosen, git, false)
+	}
 	return newProject(typ, name, git, false)
+}
+
+func templateByKey(key string) *Template {
+	for _, t := range loadTemplates() {
+		if t.Key() == key {
+			return t
+		}
+	}
+	return nil
 }
 
 func pickProject(title string, name *string) error {

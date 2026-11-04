@@ -27,7 +27,10 @@ Serviços (code, postgres, mongo, redis, all):
   install <serviço>        instala (precisa de internet)
 
 Projetos (em ` + projDir + `):
-  new [tipo] [nome]        cria projeto (sem argumentos: interativo)
+  new [tipo] [nome]        cria projeto simples (sem argumentos: interativo)
+  new <nome> --stack <s> --arch <a,b> [--with <serviços>] [--dry-run]
+                           cria projeto a partir de um template de arquitetura
+  catalog                  lista templates e combinações válidas
   list                     lista projetos
   run <nome> [--open]      roda o projeto (npm run dev / dotnet run / go run)
                            --open abre o navegador quando o app subir
@@ -46,6 +49,9 @@ Offline (para ficar sem internet, como num voo):
   offline prep [--force]   baixa templates, caches e extensões (precisa de internet)
   offline test             cria e compila cada tipo com a rede bloqueada
 
+Para automação: --json em status, list, catalog e new.
+Códigos de saída: 0 sucesso, 1 falha ao executar, 2 uso incorreto.
+
 Opções de new: --sem-git (não cria repositório git)
                --offline (usa só templates e cache; sem internet já é automático)
 `)
@@ -53,8 +59,11 @@ Opções de new: --sem-git (não cria repositório git)
 
 func main() {
 	args, flags := splitFlags(os.Args[1:])
+	jsonOutput = flags["json"]
 	var err error
-	if len(args) == 0 {
+	if flagError != nil {
+		err = flagError
+	} else if len(args) == 0 {
 		err = menu()
 	} else {
 		err = dispatch(args, flags)
@@ -64,18 +73,48 @@ func main() {
 		return
 	}
 	if err != nil {
-		failf("%v", err)
+		if jsonOutput {
+			printJSON(map[string]any{"ok": false, "error": err.Error(), "usage": isUsage(err)})
+		} else {
+			failf("%v", err)
+		}
+		if isUsage(err) {
+			os.Exit(2)
+		}
 		os.Exit(1)
 	}
 }
 
+// Opções que recebem valor: --stack dotnet ou --stack=dotnet.
+var (
+	valueFlags = map[string]bool{"stack": true, "arch": true, "with": true}
+	flagVals   = map[string]string{}
+	boolFlags  = map[string]bool{"json": true, "y": true, "yes": true, "force": true, "app": true,
+		"open": true, "sem-git": true, "offline": true, "dry-run": true, "h": true, "help": true}
+	flagError error
+)
+
 func splitFlags(in []string) (args []string, flags map[string]bool) {
 	flags = map[string]bool{}
-	for _, a := range in {
-		if strings.HasPrefix(a, "-") {
-			flags[strings.TrimLeft(a, "-")] = true
-		} else {
+	for i := 0; i < len(in); i++ {
+		a := in[i]
+		if !strings.HasPrefix(a, "-") {
 			args = append(args, a)
+			continue
+		}
+		name, value, hasValue := strings.Cut(strings.TrimLeft(a, "-"), "=")
+		switch {
+		case !valueFlags[name] && !boolFlags[name]:
+			flagError = usagef("opção desconhecida: %s", a)
+		case !valueFlags[name]:
+			flags[name] = true
+		case hasValue:
+			flagVals[name] = value
+		case i+1 < len(in):
+			i++
+			flagVals[name] = in[i]
+		default:
+			flagError = usagef("a opção --%s precisa de um valor", name)
 		}
 	}
 	return
@@ -99,7 +138,12 @@ func dispatch(args []string, flags map[string]bool) error {
 	case "version", "versao":
 		fmt.Println("romanctl", version)
 	case "status", "st":
+		if jsonOutput {
+			return printJSON(statusJSON())
+		}
 		printStatus()
+	case "catalog", "catalogo":
+		return catalog()
 	case "start", "iniciar", "up":
 		return eachService(arg(args, 1), (*Service).Start)
 	case "stop", "parar", "down":
@@ -122,11 +166,20 @@ func dispatch(args []string, flags map[string]bool) error {
 		}
 		return tailLog(s)
 	case "new", "novo", "create":
+		if flagVals["stack"] != "" || flagVals["arch"] != "" {
+			if arg(args, 1) == "" {
+				return usagef("informe o nome: romanctl new <nome> --stack <stack> --arch <arquiteturas>")
+			}
+			return newFromTemplate(args[1], flagVals["stack"], flagVals["arch"], flagVals["with"], !flags["sem-git"], flags["dry-run"])
+		}
 		if arg(args, 1) == "" || arg(args, 2) == "" {
 			return menuNewProject(arg(args, 1), arg(args, 2))
 		}
 		return newProject(args[1], args[2], !flags["sem-git"], flags["offline"])
 	case "list", "ls", "projetos":
+		if jsonOutput {
+			return printJSON(projectsJSON())
+		}
 		printProjects()
 	case "types", "tipos":
 		for _, t := range projectTypes {
@@ -161,15 +214,14 @@ func dispatch(args []string, flags map[string]bool) error {
 	case "doctor", "info":
 		doctor()
 	default:
-		usage()
-		return fmt.Errorf("comando desconhecido: %s", args[0])
+		return usagef("comando desconhecido: %s (veja: romanctl help)", args[0])
 	}
 	return nil
 }
 
 func eachService(name string, f func(*Service) error) error {
 	if name == "" {
-		return fmt.Errorf("informe o serviço: code, postgres, mongo, redis ou all")
+		return usagef("informe o serviço: code, postgres, mongo, redis ou all")
 	}
 	if name == "all" || name == "tudo" {
 		var failed bool
@@ -189,9 +241,19 @@ func eachService(name string, f func(*Service) error) error {
 	}
 	s := findService(name)
 	if s == nil {
-		return fmt.Errorf("serviço desconhecido %q (use code, postgres, mongo, redis ou all)", name)
+		return usagef("serviço desconhecido %q (use code, postgres, mongo, redis ou all)", name)
 	}
 	return f(s)
+}
+
+func statusJSON() []map[string]any {
+	out := []map[string]any{}
+	for _, s := range services {
+		installed := s.Installed()
+		out = append(out, map[string]any{"key": s.Key, "name": s.Name, "installed": installed,
+			"running": installed && s.Running(), "wanted": wantsRunning(s.Key), "url": s.URL()})
+	}
+	return out
 }
 
 func printStatus() {
