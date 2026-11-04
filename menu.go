@@ -12,9 +12,10 @@ import (
 )
 
 // Navegação nos prompts:
-//   Esc        volta um passo (no primeiro passo, cancela)
-//   ←          volta um passo em listas (em texto/Sim-Não a seta move o cursor)
-//   Ctrl+C     cancela tudo e volta ao menu (ou sai)
+//
+//	Esc        volta um passo (no primeiro passo, cancela)
+//	←          volta um passo em listas (em texto/Sim-Não a seta move o cursor)
+//	Ctrl+C     cancela tudo e volta ao menu (ou sai)
 var (
 	errBack   = errors.New("voltar")
 	errCancel = errors.New("cancelado")
@@ -96,6 +97,7 @@ func menu() error {
 				huh.NewOption("▶  Iniciar serviços", "start"),
 				huh.NewOption("■  Parar serviços", "stop"),
 				huh.NewOption("↻  Reiniciar serviços", "restart"),
+				huh.NewOption("⟲  Restaurar o que estava ligado", "restore"),
 				huh.NewOption("✚  Criar projeto", "new"),
 				huh.NewOption("⚡ Rodar projeto", "run"),
 				huh.NewOption("📝 Abrir projeto no code-server", "code"),
@@ -104,6 +106,7 @@ func menu() error {
 				huh.NewOption("✖  Remover projeto", "rm"),
 				huh.NewOption("📜 Ver logs de um serviço", "logs"),
 				huh.NewOption("⬇  Instalar serviço", "install"),
+				huh.NewOption("✈  Modo offline", "offline"),
 				huh.NewOption("🩺 Ferramentas instaladas", "doctor"),
 				huh.NewOption("⏻  Sair", "quit"),
 			).Value(&choice))
@@ -119,6 +122,8 @@ func menu() error {
 		switch choice {
 		case "start", "stop", "restart", "install":
 			err = menuServices(choice)
+		case "restore":
+			err = restoreRun()
 		case "new":
 			err = menuNewProject("", "")
 		case "run":
@@ -136,6 +141,8 @@ func menu() error {
 			err = menuRemoveProject()
 		case "logs":
 			err = menuLogs()
+		case "offline":
+			err = menuOffline()
 		case "doctor":
 			doctor()
 		}
@@ -221,7 +228,7 @@ func menuNewProject(typ, name string) error {
 	if err := wizard(steps...); err != nil {
 		return err
 	}
-	return newProject(typ, name, git)
+	return newProject(typ, name, git, false)
 }
 
 func pickProject(title string, name *string) error {

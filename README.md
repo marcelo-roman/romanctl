@@ -19,6 +19,7 @@ Esc volta um passo, ← volta em listas e Ctrl+C cancela.
 ```
 romanctl status
 romanctl start|stop|restart <code|postgres|mongo|redis|all>
+romanctl restore [status|save|clear]  # sobe de novo o que estava ligado
 romanctl logs <serviço>
 romanctl install <serviço>
 
@@ -31,6 +32,7 @@ romanctl rm <nome> [-y]
 
 romanctl code [projeto|pasta]   # abre no code-server
 romanctl open [alvo] [--app]    # abre no navegador: code, projeto ou URL
+romanctl offline [status|prep|test]
 romanctl doctor
 ```
 
@@ -45,6 +47,30 @@ Dados e logs dos serviços ficam em `~/.local/share/romanctl`.
 | PostgreSQL  | `postgres://postgres:postgres@127.0.0.1:5432/postgres` |
 | MongoDB     | `mongodb://127.0.0.1:27017`                           |
 | Redis       | `redis://127.0.0.1:6379`                              |
+
+## Depois de uma queda
+
+Cada `start` registra o serviço em `~/.local/share/romanctl/estado.json` e cada `stop` tira.
+Quando o Android mata o Termux ou o tablet reinicia, `romanctl restore` sobe de novo só o que
+estava ligado. Projetos em `romanctl run` não voltam sozinhos, porque precisam de um terminal
+próprio: o `restore` mostra o comando de cada um.
+
+## Sem internet
+
+`romanctl offline prep` baixa, com internet, templates de React e Next com `node_modules`,
+caches de npm, Go e NuGet e extensões do code-server. Também configura o `GOPROXY` para cair no
+cache local quando a rede falhar.
+
+Sem internet, `romanctl new` usa os templates e os caches sozinho. Para adicionar pacotes:
+
+```bash
+npm install <pacote> --offline
+go get <módulo>
+dotnet add package <pacote>
+```
+
+`romanctl offline test` cria e compila cada tipo de projeto com a rede bloqueada por um proxy
+morto. Esse teste não substitui o modo avião.
 
 ## Limitações do proot
 

@@ -14,7 +14,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -55,6 +54,7 @@ func (s *Service) Start() error {
 	if !s.Installed() {
 		return fmt.Errorf("%s não está instalado — rode: romanctl install %s", s.Name, s.Key)
 	}
+	markService(s.Key, true) // mesmo se falhar: o restore tenta de novo
 	if s.Running() {
 		okf("%s já está rodando → %s", s.Name, s.URL())
 		return nil
@@ -71,6 +71,7 @@ func (s *Service) Start() error {
 }
 
 func (s *Service) Stop() error {
+	markService(s.Key, false)
 	if !s.Running() {
 		infof("%s não estava rodando", s.Name)
 		return nil
@@ -188,10 +189,14 @@ func postgres() *Service {
 			return false
 		}
 		pid, _ := strconv.Atoi(strings.SplitN(string(b), "\n", 2)[0])
-		return pid > 0 && syscall.Kill(pid, 0) == nil
+		return processIs(pid, "postgres")
 	}
 	s.start = func() error {
 		bin := pgBin()
+		// Sobrou de uma queda: se o PID foi reaproveitado, o postgres se recusaria a subir.
+		os.Remove(filepath.Join(data, "postmaster.pid"))
+		os.Remove(filepath.Join(pgSock, ".s.PGSQL.5432"))
+		os.Remove(filepath.Join(pgSock, ".s.PGSQL.5432.lock"))
 		os.MkdirAll(pgSock, 0o777)
 		os.MkdirAll(logDir, 0o777)
 		os.Chmod(logDir, 0o777)

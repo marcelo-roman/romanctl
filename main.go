@@ -22,6 +22,7 @@ Serviços (code, postgres, mongo, redis, all):
   start   <serviço|all>    inicia
   stop    <serviço|all>    para
   restart <serviço|all>    reinicia
+  restore [status|save|clear]  sobe de novo o que estava ligado (depois de uma queda)
   logs    <serviço>        acompanha o log (Ctrl+C para sair)
   install <serviço>        instala (precisa de internet)
 
@@ -40,7 +41,13 @@ Outros:
   doctor                   versões das ferramentas instaladas
   help                     esta ajuda
 
+Offline (para ficar sem internet, como num voo):
+  offline                  mostra o estado da preparação
+  offline prep [--force]   baixa templates, caches e extensões (precisa de internet)
+  offline test             cria e compila cada tipo com a rede bloqueada
+
 Opções de new: --sem-git (não cria repositório git)
+               --offline (usa só templates e cache; sem internet já é automático)
 `)
 }
 
@@ -106,6 +113,8 @@ func dispatch(args []string, flags map[string]bool) error {
 		})
 	case "install", "instalar":
 		return eachService(arg(args, 1), (*Service).Install)
+	case "restore", "restaurar":
+		return restoreCommand(arg(args, 1))
 	case "logs", "log":
 		s := findService(arg(args, 1))
 		if s == nil {
@@ -116,7 +125,7 @@ func dispatch(args []string, flags map[string]bool) error {
 		if arg(args, 1) == "" || arg(args, 2) == "" {
 			return menuNewProject(arg(args, 1), arg(args, 2))
 		}
-		return newProject(args[1], args[2], !flags["sem-git"])
+		return newProject(args[1], args[2], !flags["sem-git"], flags["offline"])
 	case "list", "ls", "projetos":
 		printProjects()
 	case "types", "tipos":
@@ -147,6 +156,8 @@ func dispatch(args []string, flags map[string]bool) error {
 			return menuOpen()
 		}
 		return openTarget(args[1], flags["app"])
+	case "offline":
+		return offlineCommand(arg(args, 1), flags)
 	case "doctor", "info":
 		doctor()
 	default:
@@ -192,6 +203,8 @@ func printStatus() {
 			state = sGray.Render("○ não instalado") + sGray.Render("  (romanctl install "+s.Key+")")
 		case s.Running():
 			state = sGreen.Render("● rodando") + "  " + s.URL()
+		case wantsRunning(s.Key):
+			state = sRed.Render("○ caiu") + sGray.Render("  (romanctl restore)")
 		default:
 			state = sRed.Render("○ parado")
 		}
