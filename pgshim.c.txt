@@ -1,0 +1,82 @@
+// Shim para rodar PostgreSQL dentro do proot (Termux/Android).
+// No proot todos os arquivos aparecem como do root (uid 0), e o postgres
+// exige que o diretório de dados pertença ao usuário que o executa.
+// Aqui, quando um stat devolve uid 0, reportamos o uid efetivo do processo.
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+static void fix(struct stat *st) {
+    if (st && st->st_uid == 0) { st->st_uid = geteuid(); st->st_gid = getegid(); }
+}
+#define WRAP(name, params, args, statarg)                         \
+    int name params {                                             \
+        static int (*real) params;                                \
+        if (!real) real = dlsym(RTLD_NEXT, #name);                \
+        int r = real args;                                        \
+        if (r == 0) fix((struct stat *)(statarg));                \
+        return r;                                                 \
+    }
+WRAP(stat,      (const char *p, struct stat *s),                 (p, s), s)
+WRAP(lstat,     (const char *p, struct stat *s),                 (p, s), s)
+WRAP(fstat,     (int fd, struct stat *s),                        (fd, s), s)
+WRAP(fstatat,   (int d, const char *p, struct stat *s, int f),   (d, p, s, f), s)
+WRAP(stat64,    (const char *p, struct stat64 *s),               (p, s), s)
+WRAP(lstat64,   (const char *p, struct stat64 *s),               (p, s), s)
+WRAP(fstat64,   (int fd, struct stat64 *s),                      (fd, s), s)
+WRAP(fstatat64, (int d, const char *p, struct stat64 *s, int f), (d, p, s, f), s)
+
+// ---- Emulação mínima de SysV shared memory (shmget/shmat/shmdt/shmctl) ----
+// O postgres só usa um segmento pequeno de "interlock" via SysV; a memória
+// principal vem de mmap. Os processos filhos herdam o mapeamento via fork().
+#include <errno.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/shm.h>
+
+#define MAXSEG 64
+static struct { int used; key_t key; size_t size; void *addr; } seg[MAXSEG];
+
+int shmget(key_t key, size_t size, int flg) {
+    for (int i = 0; i < MAXSEG; i++)
+        if (seg[i].used && key != IPC_PRIVATE && seg[i].key == key) {
+            if ((flg & IPC_CREAT) && (flg & IPC_EXCL)) { errno = EEXIST; return -1; }
+            return i + 1;
+        }
+    if (!(flg & IPC_CREAT)) { errno = ENOENT; return -1; }
+    for (int i = 0; i < MAXSEG; i++)
+        if (!seg[i].used) {
+            seg[i].used = 1; seg[i].key = key; seg[i].size = size; seg[i].addr = NULL;
+            return i + 1;
+        }
+    errno = ENOSPC; return -1;
+}
+
+void *shmat(int id, const void *addr, int flg) {
+    (void)addr; (void)flg;
+    if (id < 1 || id > MAXSEG || !seg[id-1].used) { errno = EINVAL; return (void *)-1; }
+    if (!seg[id-1].addr) {
+        void *p = mmap(NULL, seg[id-1].size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);
+        if (p == MAP_FAILED) return (void *)-1;
+        seg[id-1].addr = p;
+    }
+    return seg[id-1].addr;
+}
+
+int shmdt(const void *addr) { (void)addr; return 0; }
+
+int shmctl(int id, int cmd, struct shmid_ds *buf) {
+    if (id < 1 || id > MAXSEG || !seg[id-1].used) { errno = EINVAL; return -1; }
+    if (cmd == IPC_STAT && buf) {
+        memset(buf, 0, sizeof *buf);
+        buf->shm_segsz = seg[id-1].size;
+        buf->shm_nattch = 1;
+        buf->shm_perm.uid = geteuid();
+        buf->shm_perm.cuid = geteuid();
+        return 0;
+    }
+    if (cmd == IPC_RMID) { seg[id-1].used = 0; return 0; }
+    return 0;
+}
