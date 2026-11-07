@@ -1,0 +1,11 @@
+description: Controller de API com rotas de exemplo
+aliases: [api]
+patches:
+  - file: Program.cs
+    before: var app = builder.Build();
+    skipIf: AddControllers
+    text: builder.Services.AddControllers();
+  - file: Program.cs
+    before: app.Run();
+    skipIf: MapController
+    text: app.MapControllers();

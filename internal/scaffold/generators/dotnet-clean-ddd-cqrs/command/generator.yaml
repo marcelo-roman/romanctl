@@ -1,0 +1,6 @@
+description: Comando CQRS em um agregado existente (use --in)
+needsIn: true
+aliases: [comando]
+requires:
+  - path: src/__Name__.Domain/__InPlural__/I__In__Repository.cs
+    hint: romanctl add domain {{.In}}

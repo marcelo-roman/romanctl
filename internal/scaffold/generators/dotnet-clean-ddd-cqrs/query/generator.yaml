@@ -1,0 +1,6 @@
+description: Consulta CQRS em um agregado existente (use --in)
+needsIn: true
+aliases: [consulta]
+requires:
+  - path: src/__Name__.Application/__InPlural__/I__In__ReadStore.cs
+    hint: romanctl add application {{.In}}

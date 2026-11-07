@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      sweep:
+        description: Instalar e remover todas as ferramentas (demorado)
+        type: boolean
+        default: false
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test ./...
+      - run: go build -o romanctl ./cmd/romanctl
+      - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: ./romanctl platform
+      - name: Instala e remove ferramentas de cada tipo
+        run: |
+          ./romanctl tools install jq kubectl terraform
+          kubectl version --client
+          terraform version
+          ./romanctl tools uninstall jq kubectl terraform --yes
+      - run: ./romanctl new loja --stack dotnet --arch clean,ddd,cqrs --with postgres --dry-run --json
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: CGO_ENABLED=0 go build -o romanctl ./cmd/romanctl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: romanctl-linux-amd64
+          path: romanctl
+
+  distros:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["debian:stable", "fedora:latest", "archlinux:latest", "opensuse/tumbleweed:latest", "alpine:latest"]
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: romanctl-linux-amd64
+      - run: chmod +x romanctl && ./romanctl platform
+      - name: Pacote da distribuição
+        run: |
+          ./romanctl tools install jq curl
+          jq --version
+          ./romanctl tools uninstall jq --yes
+      - name: Binário oficial
+        run: |
+          ./romanctl tools install kubectl
+          kubectl version --client
+
+  services:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go build -o romanctl ./cmd/romanctl
+      - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Sobe cada serviço em container
+        run: |
+          for service in postgres mongo redis mysql mariadb sqlserver rabbitmq kafka minio; do
+            ./romanctl start "$service"
+          done
+          ./romanctl status
+          ./romanctl stop all
+      - name: Template .NET contra um PostgreSQL de verdade
+        run: |
+          ./romanctl tools install dotnet
+          ./romanctl start postgres
+          ./romanctl new loja --stack dotnet --arch clean,ddd,cqrs --with postgres --sem-git
+          cd ~/projetos/loja
+          dotnet test
+
+  sweep:
+    if: github.event_name == 'workflow_dispatch' && inputs.sweep
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go build -o romanctl ./cmd/romanctl
+      - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: python3 scripts/toolsweep.py ./romanctl

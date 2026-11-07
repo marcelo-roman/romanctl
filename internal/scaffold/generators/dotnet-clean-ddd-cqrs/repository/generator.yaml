@@ -1,0 +1,25 @@
+description: Persistência do agregado - EF Core com Postgres, ou em memória
+aliases: [repo, persistence, repositorio]
+requires:
+  - path: src/__Name__.Domain/__EntityPlural__/I__Entity__Repository.cs
+    hint: romanctl add domain {{.Entity}}
+  - path: src/__Name__.Application/__EntityPlural__/I__Entity__ReadStore.cs
+    hint: romanctl add application {{.Entity}}
+conditional:
+  - path: src/__Name__.Infrastructure/Persistence/EfCore
+    when: postgres
+  - path: src/__Name__.Infrastructure/Persistence/InMemory
+    when: "!postgres"
+patches:
+  - file: src/{{.Name}}.Infrastructure/DependencyInjection.cs
+    before: "// romanctl:repositories"
+    text: |
+      {{- if .Postgres}}
+      services.AddScoped<{{.Name}}.Domain.{{.EntityPlural}}.I{{.Entity}}Repository, {{.Name}}.Infrastructure.Persistence.EfCore.{{.Entity}}Repository>();
+      services.AddScoped<{{.Name}}.Application.{{.EntityPlural}}.I{{.Entity}}ReadStore, {{.Name}}.Infrastructure.Persistence.EfCore.{{.Entity}}ReadStore>();
+      {{- else}}
+      services.AddSingleton<{{.Name}}.Infrastructure.Persistence.InMemory.InMemory{{.Entity}}Store>();
+      services.AddScoped<{{.Name}}.Domain.{{.EntityPlural}}.I{{.Entity}}Repository, {{.Name}}.Infrastructure.Persistence.InMemory.InMemory{{.Entity}}Repository>();
+      services.AddScoped<{{.Name}}.Application.{{.EntityPlural}}.I{{.Entity}}ReadStore, {{.Name}}.Infrastructure.Persistence.InMemory.InMemory{{.Entity}}ReadStore>();
+      {{- end}}
+next: "{{if .Postgres}}O EnsureCreated não altera um banco que já existe: em desenvolvimento, apague o banco {{.DbName}} para criar a tabela nova, ou adote migrações.{{end}}"

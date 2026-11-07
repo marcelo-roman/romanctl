@@ -1,0 +1,80 @@
+package services
+
+import (
+	"fmt"
+	"os"
+	"os/signal"
+	"romanctl/internal/i18n"
+	"romanctl/internal/state"
+	"romanctl/internal/sys"
+	"romanctl/internal/ui"
+	"sync"
+)
+
+func StatusJSON() []map[string]any {
+	out := []map[string]any{}
+	for _, s := range All {
+		installed := s.Installed()
+		out = append(out, map[string]any{"key": s.Key, "name": s.Name, "installed": installed,
+			"running": installed && s.Running(), "wanted": state.WantsRunning(s.Key), "url": s.URL(), "unsupported": s.Unsupported})
+	}
+	return out
+}
+
+// PrintStatus consulta em paralelo: cada serviço em container custa uma chamada ao Docker.
+func PrintStatus() {
+	labels := make([]string, len(All))
+	ui.Spin(i18n.T("Verificando serviços..."), func(func(string)) {
+		var wg sync.WaitGroup
+		for i, s := range All {
+			if s.Unsupported != "" {
+				continue
+			}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				labels[i] = statusLabel(s)
+			}()
+		}
+		wg.Wait()
+	})
+	fmt.Println(ui.STitle.Render(i18n.T("Serviços")))
+	for i, s := range All {
+		// Serviço que não roda nesta máquina só polui a tela; continua no --json.
+		if s.Unsupported == "" {
+			fmt.Printf("  %-12s %s\n", s.Name, labels[i])
+		}
+	}
+}
+
+func statusLabel(s *Service) string {
+	switch {
+	case !s.Installed():
+		return ui.SGray.Render(i18n.T("○ não instalado")) + ui.SGray.Render("  (romanctl install "+s.Key+")")
+	case s.Running():
+		return ui.SGreen.Render(i18n.T("● rodando")) + "  " + s.URL()
+	case state.WantsRunning(s.Key):
+		return ui.SRed.Render(i18n.T("○ caiu")) + ui.SGray.Render("  (romanctl restore)")
+	}
+	return ui.SRed.Render(i18n.T("○ parado"))
+}
+
+func TailLog(s *Service) error {
+	if s.LogCmd != nil {
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, os.Interrupt)
+		defer signal.Stop(sig)
+		command := s.LogCmd()
+		sys.Run("", nil, command[0], command[1:]...)
+		return nil
+	}
+	if !sys.Exists(s.LogFile) {
+		return i18n.Errorf("ainda não há log em %s", s.LogFile)
+	}
+	ui.Infof("%s  (Ctrl+C para sair)", s.LogFile)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt)
+	defer signal.Stop(sig)
+	sys.Run("", nil, "tail", "-n", "50", "-f", s.LogFile)
+	return nil
+}

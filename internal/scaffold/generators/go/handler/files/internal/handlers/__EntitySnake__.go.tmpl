@@ -1,0 +1,13 @@
+// Package handlers contém os handlers HTTP.
+package handlers
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+// List{{.EntityPlural}} responde com a lista de {{.EntityPluralKebab}}.
+func List{{.EntityPlural}}(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode([]string{})
+}
