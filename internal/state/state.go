@@ -15,9 +15,57 @@ import (
 // O estado guarda o que o usuário quer ligado. Ele só muda por start/stop, então
 // sobrevive quando o Android mata o Termux ou o tablet reinicia.
 type RunState struct {
-	Services []string       `json:"services"`
-	Projects map[string]int `json:"projects"` // projeto em "run" → PID do romanctl
-	Updated  string         `json:"updated"`
+	Services []string           `json:"services"`
+	Projects map[string]int     `json:"projects"` // projeto em "run" → PID do romanctl
+	Updated  string             `json:"updated"`
+	Ups      map[string]UpEntry `json:"ups,omitempty"`
+}
+
+// UpEntry é um projeto levantado com romanctl up.
+type UpEntry struct {
+	Path    string   `json:"path"`
+	URL     string   `json:"url,omitempty"`
+	Log     string   `json:"log,omitempty"`
+	PID     int      `json:"pid,omitempty"` // zero: só os serviços estão no ar
+	Uses    []string `json:"uses,omitempty"`
+	Started []string `json:"started,omitempty"` // serviços que o up ligou, e o down pode desligar
+}
+
+// Alive diz se o app segue rodando.
+func (e UpEntry) Alive() bool { return e.PID > 0 && syscall.Kill(-e.PID, 0) == nil }
+
+// SetUp registra um projeto no ar.
+func SetUp(name string, e UpEntry) {
+	err := UpdateState(func(st *RunState) {
+		if st.Ups == nil {
+			st.Ups = map[string]UpEntry{}
+		}
+		st.Ups[name] = e
+	})
+	if err != nil {
+		ui.Warnf("Não consegui salvar o estado: %v", err)
+	}
+}
+
+// TransferStarted tira o projeto do estado e passa os serviços dele para outro que os usa.
+func TransferStarted(name string, services []string) {
+	err := UpdateState(func(st *RunState) {
+		delete(st.Ups, name)
+		for _, key := range services {
+			for other, e := range st.Ups {
+				if slices.Contains(e.Uses, key) {
+					if !slices.Contains(e.Started, key) {
+						e.Started = append(e.Started, key)
+						st.Ups[other] = e
+					}
+					break
+				}
+			}
+		}
+	})
+	if err != nil {
+		ui.Warnf("Não consegui salvar o estado: %v", err)
+	}
 }
 
 var statePath = filepath.Join(config.DataDir, "estado.json")

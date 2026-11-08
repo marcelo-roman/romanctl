@@ -66,8 +66,16 @@ func Warnf(f string, a ...any) { emit(SYellow.Render("! ") + i18n.Sprintf(f, a..
 
 // emit escreve uma mensagem sem misturá-la com a animação do Spin.
 func emit(line string) {
+	if silent {
+		return
+	}
 	spinMu.Lock()
 	defer spinMu.Unlock()
 	clearSpinnerLine()
 	fmt.Fprintln(messages(), line)
 }
+
+var silent bool
+
+// SetSilent descarta as mensagens: um painel de tela cheia não pode ter a tela riscada.
+func SetSilent(on bool) { silent = on }

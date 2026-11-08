@@ -61,9 +61,9 @@ func openTarget(target string, app bool) error {
 func menuOpen() error {
 	opts := []ui.Option{ui.Opt("code-server", "code|")}
 	for _, p := range projects.ListProjects() {
-		opts = append(opts, ui.Opt("📁 "+p.Name+ui.SGray.Render(i18n.T("  no code-server")), p.Name+"|"))
+		opts = append(opts, ui.Opt(p.Name+ui.SGray.Render(i18n.T("  no code-server")), p.Name+"|"))
 		if u := projects.AppURL(p.Path); u != "" && sys.HttpUp(u) {
-			opts = append(opts, ui.Opt("🌐 "+p.Name+ui.SGreen.Render(i18n.T("  app rodando em ")+u), p.Name+"|app"))
+			opts = append(opts, ui.Opt(p.Name+ui.SGreen.Render(i18n.T("  app rodando em ")+u), p.Name+"|app"))
 		}
 	}
 	sel, err := ui.PickOne(i18n.T("Abrir no navegador"), opts)

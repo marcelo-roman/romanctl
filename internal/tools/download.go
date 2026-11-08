@@ -38,6 +38,10 @@ func httpGet(url string) (*http.Response, error) {
 		req.Header.Set("User-Agent", "romanctl")
 		resp, err := httpClient.Do(req)
 		if err != nil {
+			if strings.Contains(err.Error(), "x509") {
+				// Certificado não melhora repetindo. Comum em imagens mínimas de container.
+				return nil, i18n.Errorf("%v; instale os certificados raiz, como o pacote ca-certificates", err)
+			}
 			lastErr = err
 			continue
 		}

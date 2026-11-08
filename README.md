@@ -31,6 +31,25 @@ gerados pelos templates continuam em português.
 
 As mensagens em português são as chaves de `internal/i18n/en.go`, e um teste falha se alguma ficar sem tradução.
 
+## Painel
+
+`romanctl` sem argumentos abre um painel de tela cheia, nos moldes do k9s, com telas de projetos, serviços, ferramentas
+e sistema, que se atualizam sozinhas.
+
+| Tecla | O que faz |
+|---|---|
+| `Tab`, `1` a `4` | Troca de tela |
+| `:` | Vai direto: `:tools`, `:svc`, `:prj`, `:sys`, ou uma categoria como `:db` e `:k8s` |
+| `/` | Filtra a lista |
+| `Enter` | Mostra as ações do item |
+| `d`, `l` | Detalhes e logs do item |
+| `<` `>` | Troca de categoria, em Ferramentas |
+| `?` | Mostra todas as teclas da tela atual |
+| `Esc`, `q` | Volta e sai |
+
+O rodapé mostra só as teclas que valem para o item selecionado. Ações longas rodam em segundo plano, com o andamento na
+própria linha, e remover sempre pede confirmação. `romanctl menu` abre a versão em lista, mais simples.
+
 ## Instalação
 
 ```bash
@@ -104,6 +123,23 @@ ou `--filter <texto>`; com pipe, `--json` ou sem terminal, elas imprimem sozinha
 
 O que demora mostra uma animação com progresso, só em terminal. As versões das ferramentas ficam em cache até o
 binário mudar, e o tamanho dos caches do `offline` fica guardado por uma hora.
+
+## Subir o ambiente
+
+```bash
+romanctl up                  # serviços, banco, .env e o app, em primeiro plano
+romanctl up loja -d          # em segundo plano; espera o app responder
+romanctl up --no-run         # só prepara o ambiente
+romanctl logs loja
+romanctl down loja           # ou --all, ou --keep-services
+```
+
+O `up` lê os serviços do `romanctl.yaml`, cria o banco do projeto e acrescenta ao `.env` só o que falta, sem mudar
+o que você editou. O `.env` entra no `.gitignore`, e as variáveis valem para o app, salvo as que já estiverem no
+ambiente. Se a porta estiver ocupada, o comando para e diz por qual projeto, quando for o caso.
+
+O `down` desliga só os serviços que o `up` ligou e que nenhum outro projeto no ar usa. O que já estava ligado antes
+continua ligado. Projetos sem `romanctl.yaml` não têm serviços: o `up` só roda o app.
 
 ## Adicionar ao projeto
 

@@ -62,6 +62,9 @@ jobs:
         with:
           name: romanctl-linux-amd64
       - run: chmod +x romanctl && ./romanctl platform
+      - name: Certificados raiz, que a imagem do Debian não traz
+        if: matrix.image == 'debian:stable'
+        run: apt-get update -qq && apt-get install -y -qq ca-certificates
       - name: Pacote da distribuição
         run: |
           ./romanctl tools install jq curl

@@ -61,3 +61,48 @@ func StartDetached(logFile, dir, name string, args ...string) error {
 	}
 	return cmd.Process.Release()
 }
+
+// StartDetachedEnv é como StartDetached, com variáveis extras, e devolve o PID. O processo lidera
+// o próprio grupo, para que parar o grupo pegue também os filhos, como o app do dotnet run.
+func StartDetachedEnv(logFile, dir string, env []string, name string, args ...string) (int, error) {
+	if err := os.MkdirAll(filepath.Dir(logFile), 0o755); err != nil {
+		return 0, err
+	}
+	lf, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+	if err != nil {
+		return 0, err
+	}
+	defer lf.Close()
+	devnull, _ := os.Open(os.DevNull)
+	defer devnull.Close()
+	cmd := exec.Command(name, args...)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), env...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = devnull, lf, lf
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if err := cmd.Start(); err != nil {
+		return 0, err
+	}
+	pid := cmd.Process.Pid
+	// Colhe o processo quando ele terminar: sem isso, ele ficaria zumbi e pareceria vivo.
+	go cmd.Wait()
+	return pid, nil
+}
+
+// GroupAlive diz se ainda há algum processo no grupo.
+func GroupAlive(pgid int) bool {
+	return pgid > 0 && syscall.Kill(-pgid, 0) == nil
+}
+
+// StopGroup pede para o grupo terminar e força depois do prazo.
+func StopGroup(pgid int, grace time.Duration) {
+	if !GroupAlive(pgid) {
+		return
+	}
+	syscall.Kill(-pgid, syscall.SIGTERM)
+	if WaitUntil(grace, func() bool { return !GroupAlive(pgid) }) {
+		return
+	}
+	syscall.Kill(-pgid, syscall.SIGKILL)
+	WaitUntil(2*time.Second, func() bool { return !GroupAlive(pgid) })
+}

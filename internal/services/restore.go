@@ -25,7 +25,14 @@ func crashedProjects(st state.RunState) []string {
 func RestoreRun() error {
 	st := state.ReadState()
 	crashed := crashedProjects(st)
-	if len(st.Services) == 0 && len(crashed) == 0 {
+	var downed []string
+	for name, e := range st.Ups {
+		if e.PID != 0 && !e.Alive() {
+			downed = append(downed, name)
+		}
+	}
+	sort.Strings(downed)
+	if len(st.Services) == 0 && len(crashed) == 0 && len(downed) == 0 {
 		ui.Infof("Nada para restaurar: nenhum serviço estava ligado.")
 		return nil
 	}
@@ -49,6 +56,13 @@ func RestoreRun() error {
 			state.MarkProject(name, false)
 		}
 	}
+	if len(downed) > 0 {
+		fmt.Println()
+		ui.Warnf("Estes projetos estavam no ar; para subir de novo:")
+		for _, name := range downed {
+			fmt.Printf("    romanctl up -d %s\n", name)
+		}
+	}
 	if len(failed) > 0 {
 		return i18n.Errorf("não subiram: %s", strings.Join(failed, ", "))
 	}
@@ -69,14 +83,14 @@ func restoreStatus() {
 		if s == nil {
 			continue
 		}
-		state := ui.SRed.Render(i18n.T("○ caiu"))
+		state := ui.SRed.Render(i18n.T("caiu"))
 		if s.Running() {
-			state = ui.SGreen.Render(i18n.T("● rodando"))
+			state = ui.SGreen.Render(i18n.T("rodando"))
 		}
 		i18n.Printf("  %-14s %s\n", s.Name, state)
 	}
 	for _, name := range crashedProjects(st) {
-		i18n.Printf("  %-14s %s\n", name, ui.SRed.Render(i18n.T("○ projeto caiu")))
+		i18n.Printf("  %-14s %s\n", name, ui.SRed.Render(i18n.T("projeto caiu")))
 	}
 }
 

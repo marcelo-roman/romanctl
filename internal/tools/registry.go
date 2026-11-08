@@ -426,6 +426,15 @@ func InstallOne(t *Tool, force bool) Result {
 	return Result{Key: t.Key, Action: "installed", Version: version}
 }
 
+// isExternal diz se o binário que sobrou não é nosso: o do Termux e os que vêm com o macOS,
+// como o jq em /usr/bin, que nem o Homebrew nem o romanctl podem tirar.
+func isExternal(path, goos string) bool {
+	if strings.HasPrefix(path, termuxPrefix) {
+		return true
+	}
+	return goos == "darwin" && (strings.HasPrefix(path, "/usr/bin/") || strings.HasPrefix(path, "/bin/"))
+}
+
 // UninstallOne remove o que a declaração da ferramenta indica e confere o resultado.
 func UninstallOne(t *Tool) Result {
 	if _, ok := t.Detected(); !ok && !hasLeftovers(t) {
@@ -445,8 +454,8 @@ func UninstallOne(t *Tool) Result {
 				where = p
 			}
 		}
-		if strings.HasPrefix(where, termuxPrefix) {
-			ui.Warnf("%s continua disponível pelo Termux, fora do Ubuntu: %s", t.Name, where)
+		if isExternal(where, platform.Current.OS) {
+			ui.Warnf("%s continua disponível pelo sistema, fora do romanctl: %s", t.Name, where)
 			return Result{Key: t.Key, Action: "external", Version: where}
 		}
 		err := i18n.Sprintf("%s continua instalado em %s", t.Name, where)

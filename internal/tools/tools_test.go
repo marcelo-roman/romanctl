@@ -232,6 +232,8 @@ func TestGrupoTrazSoOQueRoda(t *testing.T) {
 	if err != nil || keys(named) != "docker" {
 		t.Fatalf("%s %v", keys(named), err)
 	}
+	// Sem o binário no PATH: a máquina que roda o teste pode ter Docker de verdade.
+	t.Setenv("PATH", t.TempDir())
 	if r := InstallOne(named[0], false); r.Action != "unavailable" || !strings.Contains(r.Error, "proot") {
 		t.Fatalf("%+v", r)
 	}
@@ -354,6 +356,21 @@ func TestNomesDeCategoria(t *testing.T) {
 	}
 	if GroupTitle(GroupDB) == GroupDB {
 		t.Error("sem título")
+	}
+}
+
+func TestBinarioQueNaoENosso(t *testing.T) {
+	cases := []struct {
+		path, goos string
+		want       bool
+	}{
+		{"/usr/bin/jq", "darwin", true}, {"/usr/bin/jq", "linux", false}, {"/opt/homebrew/bin/jq", "darwin", false},
+		{termuxPrefix + "/bin/jq", "linux", true}, {"/usr/local/bin/jq", "linux", false},
+	}
+	for _, c := range cases {
+		if got := isExternal(c.path, c.goos); got != c.want {
+			t.Errorf("%s em %s: %v", c.path, c.goos, got)
+		}
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"romanctl/internal/state"
 	"romanctl/internal/sys"
 	"romanctl/internal/ui"
+	"sort"
 	"sync"
 )
 
@@ -45,18 +46,44 @@ func PrintStatus() {
 			fmt.Printf("  %-12s %s\n", s.Name, labels[i])
 		}
 	}
+	printUps()
+}
+
+// printUps mostra os projetos levantados com romanctl up.
+func printUps() {
+	ups := state.ReadState().Ups
+	if len(ups) == 0 {
+		return
+	}
+	names := make([]string, 0, len(ups))
+	for name := range ups {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	fmt.Println("\n" + ui.STitle.Render(i18n.T("Projetos no ar")))
+	for _, name := range names {
+		e := ups[name]
+		label := ui.SGray.Render(i18n.T("só os serviços"))
+		switch {
+		case e.Alive():
+			label = ui.SGreen.Render(i18n.T("rodando")) + "  " + e.URL
+		case e.PID != 0:
+			label = ui.SRed.Render(i18n.T("caiu")) + ui.SGray.Render("  (romanctl up -d "+name+")")
+		}
+		fmt.Printf("  %-12s %s\n", name, label)
+	}
 }
 
 func statusLabel(s *Service) string {
 	switch {
 	case !s.Installed():
-		return ui.SGray.Render(i18n.T("○ não instalado")) + ui.SGray.Render("  (romanctl install "+s.Key+")")
+		return ui.SGray.Render(i18n.T("não instalado")) + ui.SGray.Render("  (romanctl install "+s.Key+")")
 	case s.Running():
-		return ui.SGreen.Render(i18n.T("● rodando")) + "  " + s.URL()
+		return ui.SGreen.Render(i18n.T("rodando")) + "  " + s.URL()
 	case state.WantsRunning(s.Key):
-		return ui.SRed.Render(i18n.T("○ caiu")) + ui.SGray.Render("  (romanctl restore)")
+		return ui.SRed.Render(i18n.T("caiu")) + ui.SGray.Render("  (romanctl restore)")
 	}
-	return ui.SRed.Render(i18n.T("○ parado"))
+	return ui.SRed.Render(i18n.T("parado"))
 }
 
 func TailLog(s *Service) error {
@@ -76,5 +103,18 @@ func TailLog(s *Service) error {
 	signal.Notify(sig, os.Interrupt)
 	defer signal.Stop(sig)
 	sys.Run("", nil, "tail", "-n", "50", "-f", s.LogFile)
+	return nil
+}
+
+// TailFile acompanha um arquivo de log; Ctrl+C sai.
+func TailFile(path string) error {
+	if !sys.Exists(path) {
+		return i18n.Errorf("ainda não há log em %s", path)
+	}
+	ui.Infof("%s  (Ctrl+C para sair)", path)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt)
+	defer signal.Stop(sig)
+	sys.Run("", nil, "tail", "-n", "50", "-f", path)
 	return nil
 }

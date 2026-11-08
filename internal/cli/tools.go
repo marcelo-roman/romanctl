@@ -83,13 +83,7 @@ func toolsList(showAll, plain bool) error {
 		}
 		i18n.Printf("%s %s\n", ui.STitle.Render(g.Title), ui.SGray.Render("("+g.Key+")"))
 		for _, s := range rows {
-			state := ui.SGray.Render("○ " + s.Description)
-			switch {
-			case s.Installed:
-				state = ui.SGreen.Render("● ") + s.Version
-			case s.Unavailable != "":
-				state = ui.SGray.Render("✕ " + s.Unavailable)
-			}
+			state := toolState(s)
 			i18n.Printf("  %-15s %s\n", s.Key, state)
 		}
 		fmt.Println()
@@ -174,6 +168,17 @@ func toolsCategories() error {
 		i18n.Printf("  %-14s %-36s disponíveis: %d, instaladas: %d\n", r.Key, r.Title, r.Available, r.Installed)
 	}
 	return nil
+}
+
+// toolState descreve a ferramenta em texto, como o [installed] do apt list.
+func toolState(s tools.Status) string {
+	switch {
+	case s.Installed:
+		return ui.SGreen.Render(i18n.T("[instalado]")) + " " + s.Version
+	case s.Unavailable != "":
+		return ui.SGray.Render(i18n.T("[não roda aqui] ") + s.Unavailable)
+	}
+	return ui.SGray.Render(s.Description)
 }
 
 func toolsInstall(names []string, opts installOptions) error {

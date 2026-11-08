@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 	"golang.org/x/term"
 
@@ -18,6 +19,7 @@ type Option struct {
 	Value    string
 	Category string // chave da categoria, para listas com categorias
 	Search   string // texto a mais para o filtro, que não aparece na tela
+	Section  string // título do grupo, como nas seções do "git help"
 }
 
 // Category é uma aba de uma lista.
@@ -267,7 +269,8 @@ func (m *pickModel) submit() (tea.Model, tea.Cmd) {
 }
 
 func (m *pickModel) pageSize() int {
-	return max(3, min(m.height-8, 18))
+	// Seções e rodapé também ocupam linhas: desconta para a tela nunca rolar.
+	return max(3, min(m.height-10, 18))
 }
 
 func (m *pickModel) keepCursorVisible() {
@@ -280,80 +283,96 @@ func (m *pickModel) keepCursorVisible() {
 	}
 }
 
+// View segue convenções do terminal: prompt e contagem do fzf, seções do "git help", linha
+// em vídeo reverso e barra de teclas do htop. Só texto, sem ícones.
 func (m *pickModel) View() string {
 	if m.finished {
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString(STitle.Render(m.cfg.Title) + "\n")
+	b.WriteString(SBoldTxt.Render(m.cfg.Title) + "\n")
 	if m.cfg.Subtitle != "" {
 		b.WriteString(SGray.Render(m.cfg.Subtitle) + "\n")
 	}
 	if len(m.cfg.Categories) > 0 {
-		b.WriteString(i18n.T("Categoria: ") + SBlue.Render("◀ "+m.categoryLabel()+" ▶") + SGray.Render(fmt.Sprintf(" (%d/%d)", m.category, len(m.cfg.Categories))) + "\n")
+		b.WriteString(SGray.Render(i18n.T("Categoria: ")) + "< " + SBoldTxt.Render(m.categoryLabel()) + " >\n")
 	}
-	total, shown := len(m.cfg.Options), len(m.visibleOptions())
-	count := SGray.Render(fmt.Sprintf(" (%d/%d)", shown, total))
-	if m.filter == "" {
-		b.WriteString(SGray.Render(i18n.T("Filtro: digite para buscar")) + count + "\n")
-	} else {
-		b.WriteString(i18n.T("Filtro: ") + SBlue.Render(m.filter) + SBlue.Render("▏") + count + "\n")
-	}
+	shown, total := len(m.visibleOptions()), len(m.cfg.Options)
+	b.WriteString(SBlue.Render(i18n.T("Filtro> ")) + m.filter + cursorBlock.Render(" ") + SGray.Render(fmt.Sprintf("  %d/%d", shown, total)) + "\n")
+
 	page := m.pageSize()
 	end := min(m.offset+page, len(m.visible))
 	if len(m.visible) == 0 {
-		b.WriteString("  " + SYellow.Render(i18n.T("Nada encontrado; Esc limpa o filtro")) + "\n")
+		b.WriteString(SYellow.Render(i18n.T("  Nada encontrado; Esc limpa o filtro")) + "\n")
 	}
+	section := ""
 	for i := m.offset; i < end; i++ {
 		row := m.visible[i]
-		cursor := "  "
-		if i == m.cursor {
-			cursor = SBlue.Render("> ")
-		}
 		label, check := "", ""
 		if row == allRow {
 			label = i18n.Sprintf("Todos (%d)", shown)
 			check = m.checkbox(m.allMarked())
 		} else {
-			label = m.cfg.Options[row].Label
+			o := m.cfg.Options[row]
+			label = o.Label
 			if m.cfg.Multi {
-				check = m.checkbox(m.marked[m.cfg.Options[row].Value])
+				check = m.checkbox(m.marked[o.Value])
+			}
+			if o.Section != "" && o.Section != section {
+				section = o.Section
+				b.WriteString(SBoldTxt.Render(section) + "\n")
 			}
 		}
 		line := check + label
 		if m.width > 4 {
-			line = ansi.Truncate(line, m.width-3, "…")
+			line = ansi.Truncate(line, m.width-3, "...")
 		}
 		if i == m.cursor {
-			line = sBoldLine(line)
+			// Sem as cores do rótulo, para o vídeo reverso cobrir a linha inteira.
+			b.WriteString(selectedRow.Render("  "+ansi.Strip(line)) + "\n")
+		} else {
+			b.WriteString("  " + line + "\n")
 		}
-		b.WriteString(cursor + line + "\n")
 	}
 	if len(m.visible) > page {
-		b.WriteString(SGray.Render(fmt.Sprintf("  %d-%d/%d", m.offset+1, end, len(m.visible))) + "\n")
+		b.WriteString(SGray.Render(fmt.Sprintf("  -- %d-%d de %d --", m.offset+1, end, len(m.visible))) + "\n")
 	}
 	if m.warn != "" {
 		b.WriteString(SYellow.Render(m.warn) + "\n")
 	}
-	if len(m.cfg.Categories) > 0 {
-		b.WriteString(SGray.Render(i18n.T("←/→ categoria · ")))
-	}
-	if m.cfg.Multi {
-		b.WriteString(SGray.Render(i18n.T("↑/↓ move · Espaço marca · Ctrl+A marca os visíveis · Enter confirma · Esc volta")))
-	} else {
-		b.WriteString(SGray.Render(i18n.T("↑/↓ move · Enter escolhe · Esc volta")))
-	}
+	b.WriteString(m.keyBar())
 	return b.String()
+}
+
+var (
+	selectedRow = lipgloss.NewStyle().Reverse(true)
+	cursorBlock = lipgloss.NewStyle().Reverse(true)
+)
+
+// keyBar é a barra de teclas do rodapé, como a do htop e a do nano.
+func (m *pickModel) keyBar() string {
+	type key struct{ name, action string }
+	keys := []key{{"Enter", i18n.T("escolher")}}
+	if m.cfg.Multi {
+		keys = []key{{i18n.T("Espaço"), i18n.T("marcar")}, {"^A", i18n.T("marcar visíveis")}, {"Enter", i18n.T("confirmar")}}
+	}
+	if len(m.cfg.Categories) > 0 {
+		keys = append(keys, key{"</>", i18n.T("categoria")})
+	}
+	keys = append(keys, key{"Esc", i18n.T("voltar")})
+	parts := make([]string, len(keys))
+	for i, k := range keys {
+		parts[i] = SBoldTxt.Render(k.name) + " " + SGray.Render(k.action)
+	}
+	return strings.Join(parts, "  ")
 }
 
 func (m *pickModel) checkbox(on bool) string {
 	if on {
-		return SGreen.Render("[x] ")
+		return "[x] "
 	}
 	return "[ ] "
 }
-
-func sBoldLine(s string) string { return SBoldTxt.Render(s) }
 
 // Pick mostra a lista e devolve o que foi escolhido.
 func Pick(cfg PickConfig) ([]string, error) {

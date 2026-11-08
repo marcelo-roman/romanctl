@@ -25,13 +25,7 @@ func toolsBrowse(showAll bool, categories []string) error {
 			if len(categories) > 0 && !slices.Contains(categories, s.Group) {
 				continue
 			}
-			state := ui.SGray.Render("○ " + s.Description)
-			switch {
-			case s.Installed:
-				state = ui.SGreen.Render("● ") + s.Version
-			case s.Unavailable != "":
-				state = ui.SGray.Render("✕ " + s.Unavailable)
-			}
+			state := toolState(s)
 			opts = append(opts, toolOption(fmt.Sprintf("%-15s %s %s", s.Key, ui.SGray.Render(fmt.Sprintf("%-13s", s.Group)), state), s))
 		}
 		got, err := ui.Pick(ui.PickConfig{Title: i18n.T("Ferramentas"), Subtitle: platform.Current.Describe(), Options: opts, Initial: cursor, NoLeft: true, Categories: toolCategories(opts)})
@@ -144,7 +138,8 @@ func projectActions(name string) error {
 	if err != nil {
 		return err
 	}
-	opts := []ui.Option{ui.Opt(i18n.T("Rodar"), "run"), ui.Opt(i18n.T("Abrir no code-server"), "code")}
+	opts := []ui.Option{ui.Opt(i18n.T("Subir tudo em segundo plano (up -d)"), "up"), ui.Opt(i18n.T("Derrubar (down)"), "down"),
+		ui.Opt(i18n.T("Rodar"), "run"), ui.Opt(i18n.T("Abrir no code-server"), "code")}
 	target := scaffold.TargetOf(path)
 	if target != "" {
 		opts = append(opts, ui.Opt(i18n.T("Adicionar código"), "add"))
@@ -155,6 +150,10 @@ func projectActions(name string) error {
 		return err
 	}
 	switch action {
+	case "up":
+		err = upCommand([]string{name}, map[string]bool{"d": true})
+	case "down":
+		err = downCommand([]string{name}, map[string]bool{})
 	case "run":
 		err = projects.RunProject(name, true)
 	case "code":

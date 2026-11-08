@@ -12,6 +12,8 @@ import (
 	"romanctl/internal/projects"
 	"romanctl/internal/scaffold"
 	"romanctl/internal/services"
+	"romanctl/internal/state"
+	"romanctl/internal/tui"
 	"romanctl/internal/ui"
 	"slices"
 	"strings"
@@ -50,7 +52,12 @@ func Main() {
 	if flagError != nil {
 		err = flagError
 	} else if len(args) == 0 {
-		err = menu()
+		// Sem terminal não há painel: mostra a ajuda, em vez de falhar.
+		if ui.Interactive() {
+			err = tui.Run()
+		} else {
+			usage()
+		}
 	} else {
 		err = dispatch(args, flags)
 	}
@@ -79,7 +86,7 @@ var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "sec
 var flagVals = map[string]string{}
 
 var boolFlags = map[string]bool{"json": true, "y": true, "yes": true, "force": true, "app": true,
-	"open": true, "all": true, "public": true, "no-ci": true, "list": true, "plain": true, "sem-git": true, "offline": true, "dry-run": true, "h": true, "help": true}
+	"open": true, "all": true, "public": true, "no-ci": true, "list": true, "plain": true, "d": true, "detach": true, "no-run": true, "keep-services": true, "sem-git": true, "offline": true, "dry-run": true, "h": true, "help": true}
 
 var flagError error
 
@@ -129,9 +136,9 @@ func dispatch(args []string, flags map[string]bool) error {
 		services.PrintStatus()
 	case "catalog", "catalogo":
 		return scaffold.Catalog()
-	case "start", "iniciar", "up":
+	case "start", "iniciar":
 		return serviceCommand("start", arg(args, 1), (*services.Service).Start)
-	case "stop", "parar", "down":
+	case "stop", "parar":
 		return serviceCommand("stop", arg(args, 1), (*services.Service).Stop)
 	case "restart", "reiniciar":
 		return serviceCommand("restart", arg(args, 1), func(s *services.Service) error {
@@ -153,6 +160,10 @@ func dispatch(args []string, flags map[string]bool) error {
 		}
 		s := services.FindService(arg(args, 1))
 		if s == nil {
+			// Também acompanha o log de um projeto levantado com up -d.
+			if e, ok := state.ReadState().Ups[arg(args, 1)]; ok && e.Log != "" {
+				return services.TailFile(e.Log)
+			}
 			return ui.Usagef("informe o serviço (veja: romanctl status)")
 		}
 		return services.TailLog(s)
@@ -199,6 +210,17 @@ func dispatch(args []string, flags map[string]bool) error {
 		return toolsCommand(args[1:], flags)
 	case "system", "sistema", "sys":
 		return systemCommand(args[1:])
+	case "up", "subir":
+		return upCommand(args[1:], flags)
+	case "down", "derrubar":
+		return downCommand(args[1:], flags)
+	case "ui", "painel", "tui":
+		if !ui.Interactive() {
+			return ui.Usagef("o painel precisa de um terminal")
+		}
+		return tui.Run()
+	case "menu":
+		return menu()
 	case "config":
 		return configCommand(args[1:])
 	case "add", "adicionar", "generate", "g":

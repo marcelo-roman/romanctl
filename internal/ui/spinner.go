@@ -19,7 +19,7 @@ var spinFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧"
 
 // Só anima em um terminal: um pipe ou --json nunca recebem esses caracteres.
 func spinnerEnabled() bool {
-	return !JSONOutput && term.IsTerminal(int(os.Stderr.Fd()))
+	return !silent && !JSONOutput && term.IsTerminal(int(os.Stderr.Fd()))
 }
 
 // Spin mostra uma animação enquanto fn roda. O aviso só aparece se a espera passar de um

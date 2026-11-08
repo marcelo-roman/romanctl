@@ -25,32 +25,11 @@ func menu() error {
 	choice := "start"
 	for {
 		fmt.Print("\033[H\033[2J")
-		fmt.Println(ui.STitle.Render("romanctl") + ui.SGray.Render(" v"+version+i18n.T(" — utilitário de desenvolvimento\n")))
+		fmt.Println(ui.SBoldTxt.Render("romanctl "+version) + "\n")
 		services.PrintStatus()
 		fmt.Println()
 
-		picked, err := ui.Pick(ui.PickConfig{Title: i18n.T("O que você quer fazer?"), Initial: choice, NoLeft: true, Options: []ui.Option{
-			ui.Opt(i18n.T("▶  Iniciar serviços"), "start"),
-			ui.Opt(i18n.T("■  Parar serviços"), "stop"),
-			ui.Opt(i18n.T("↻  Reiniciar serviços"), "restart"),
-			ui.Opt(i18n.T("⟲  Restaurar o que estava ligado"), "restore"),
-			ui.Opt(i18n.T("✚  Criar projeto"), "new"),
-			ui.Opt(i18n.T("⚡ Rodar projeto"), "run"),
-			ui.Opt(i18n.T("📝 Abrir projeto no code-server"), "code"),
-			ui.Opt(i18n.T("🌐 Abrir no navegador"), "open"),
-			ui.Opt(i18n.T("➕ Adicionar ao projeto"), "add"),
-			ui.Opt(i18n.T("🚀 Publicar no GitHub"), "publish"),
-			ui.Opt(i18n.T("☰  Listar projetos"), "list"),
-			ui.Opt(i18n.T("✖  Remover projeto"), "rm"),
-			ui.Opt(i18n.T("📜 Ver logs de um serviço"), "logs"),
-			ui.Opt(i18n.T("⬇  Instalar serviço"), "install"),
-			ui.Opt(i18n.T("✈  Modo offline"), "offline"),
-			ui.Opt(i18n.T("🧰 Instalar ferramentas"), "tools"),
-			ui.Opt(i18n.T("🗑  Remover ferramentas"), "tools-rm"),
-			ui.Opt(i18n.T("🔋 CPU, memória e bateria"), "system"),
-			ui.Opt(i18n.T("🩺 Ferramentas instaladas"), "doctor"),
-			ui.Opt(i18n.T("⏻  Sair"), "quit"),
-		}})
+		picked, err := ui.Pick(ui.PickConfig{Title: i18n.T("O que você quer fazer?"), Initial: choice, NoLeft: true, Options: mainMenu()})
 		if len(picked) > 0 {
 			choice = picked[0]
 		}
@@ -79,6 +58,10 @@ func menu() error {
 			}
 		case "open":
 			err = menuOpen()
+		case "up":
+			err = upCommand(nil, map[string]bool{"d": true})
+		case "down":
+			err = downCommand(nil, map[string]bool{})
 		case "add":
 			err = menuAdd()
 		case "publish":
@@ -91,6 +74,10 @@ func menu() error {
 			err = menuLogs()
 		case "offline":
 			err = menuOffline()
+		case "tools-list":
+			err = toolsList(false, false)
+		case "config":
+			err = configCommand(nil)
 		case "tools":
 			err = toolsInstall(nil, installOptions{})
 		case "tools-rm":
@@ -324,4 +311,40 @@ func menuLogs() error {
 		return err
 	}
 	return services.TailLog(services.FindService(k))
+}
+
+// mainMenu segue o "git help": cada linha mostra o subcomando real, com o que ele faz, em
+// seções. Assim o menu também ensina a usar a linha de comando.
+func mainMenu() []ui.Option {
+	entries := []struct{ section, command, value, desc string }{
+		{i18n.T("Projetos"), "new", "new", i18n.T("Criar um projeto")},
+		{i18n.T("Projetos"), "add", "add", i18n.T("Adicionar código a um projeto")},
+		{i18n.T("Projetos"), "up", "up", i18n.T("Subir serviços, banco e app")},
+		{i18n.T("Projetos"), "down", "down", i18n.T("Derrubar o que o up subiu")},
+		{i18n.T("Projetos"), "run", "run", i18n.T("Rodar um projeto")},
+		{i18n.T("Projetos"), "code", "code", i18n.T("Abrir um projeto no code-server")},
+		{i18n.T("Projetos"), "open", "open", i18n.T("Abrir no navegador")},
+		{i18n.T("Projetos"), "publish", "publish", i18n.T("Publicar no GitHub")},
+		{i18n.T("Projetos"), "list", "list", i18n.T("Listar os projetos")},
+		{i18n.T("Projetos"), "rm", "rm", i18n.T("Remover um projeto")},
+		{i18n.T("Serviços"), "start", "start", i18n.T("Iniciar serviços")},
+		{i18n.T("Serviços"), "stop", "stop", i18n.T("Parar serviços")},
+		{i18n.T("Serviços"), "restart", "restart", i18n.T("Reiniciar serviços")},
+		{i18n.T("Serviços"), "restore", "restore", i18n.T("Religar o que estava ligado")},
+		{i18n.T("Serviços"), "logs", "logs", i18n.T("Ver os logs de um serviço")},
+		{i18n.T("Serviços"), "install", "install", i18n.T("Preparar um serviço")},
+		{i18n.T("Ferramentas"), "tools list", "tools-list", i18n.T("Listar as ferramentas")},
+		{i18n.T("Ferramentas"), "tools install", "tools", i18n.T("Instalar ferramentas")},
+		{i18n.T("Ferramentas"), "tools uninstall", "tools-rm", i18n.T("Remover ferramentas")},
+		{i18n.T("Sistema"), "system", "system", i18n.T("CPU, memória, disco e bateria")},
+		{i18n.T("Sistema"), "doctor", "doctor", i18n.T("Versões das ferramentas principais")},
+		{i18n.T("Sistema"), "offline", "offline", i18n.T("Preparar para ficar sem internet")},
+		{i18n.T("Sistema"), "config", "config", i18n.T("Idioma")},
+		{"", "quit", "quit", i18n.T("Sair")},
+	}
+	options := make([]ui.Option, len(entries))
+	for i, e := range entries {
+		options[i] = ui.Option{Label: fmt.Sprintf("%-16s %s", e.command, ui.SGray.Render(e.desc)), Value: e.value, Section: e.section}
+	}
+	return options
 }

@@ -29,40 +29,53 @@ func openWhenUp(p string) {
 	}()
 }
 
-// runProject roda o projeto em primeiro plano; Ctrl+C encerra só o projeto.
-func RunProject(name string, open bool) error {
-	p, err := ProjectPath(name)
-	if err != nil {
-		return err
-	}
-	var cmd []string
+// RunCommand descobre como rodar o projeto, instalando as dependências de Node se faltarem.
+func RunCommand(p, name string) ([]string, error) {
 	project, hasManifest := manifest.Read(p)
 	switch t := DetectType(p); {
 	case hasManifest:
-		cmd = strings.Fields(project.Run)
-		for _, key := range project.Services {
-			if s := services.FindService(key); s != nil && !s.Running() {
-				ui.Warnf("%s não está rodando e o projeto depende dele: romanctl start %s", s.Name, s.Key)
-			}
-		}
+		return strings.Fields(project.Run), nil
 	case t == "dotnet":
-		cmd = []string{"dotnet", "run"}
+		return []string{"dotnet", "run"}, nil
 	case t == "go":
-		cmd = []string{"go", "run", "."}
+		return []string{"go", "run", "."}, nil
 	case t != "?":
 		if !sys.Exists(filepath.Join(p, "node_modules")) {
 			ui.Infof("Instalando dependências (npm install)...")
 			offlineMode = !sys.IsOnline()
 			if err := npmInstall(p); err != nil {
-				return err
+				return nil, err
 			}
 		}
-		cmd = []string{"npm", "run", "dev"}
 		if b, _ := os.ReadFile(filepath.Join(p, "package.json")); !strings.Contains(string(b), `"dev"`) {
-			cmd = []string{"npm", "start"}
+			return []string{"npm", "start"}, nil
 		}
-	default:
-		return i18n.Errorf("não sei rodar %q (tipo não reconhecido)", name)
+		return []string{"npm", "run", "dev"}, nil
+	}
+	return nil, i18n.Errorf("não sei rodar %q (tipo não reconhecido)", name)
+}
+
+// RunProject roda o projeto em primeiro plano; Ctrl+C encerra só o projeto.
+func RunProject(name string, open bool) error {
+	p, err := ProjectPath(name)
+	if err != nil {
+		return err
+	}
+	if project, ok := manifest.Read(p); ok {
+		for _, key := range project.Services {
+			if s := services.FindService(key); s != nil && !s.Running() {
+				ui.Warnf("%s não está rodando e o projeto depende dele: romanctl start %s", s.Name, s.Key)
+			}
+		}
+	}
+	return RunAt(p, name, nil, open)
+}
+
+// RunAt roda em primeiro plano, com variáveis extras.
+func RunAt(p, name string, env []string, open bool) error {
+	cmd, err := RunCommand(p, name)
+	if err != nil {
+		return err
 	}
 	state.MarkProject(name, true)
 	defer state.MarkProject(name, false)
@@ -73,7 +86,7 @@ func RunProject(name string, open bool) error {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
 	defer signal.Stop(sig)
-	err = sys.Run(p, nil, cmd[0], cmd[1:]...)
+	err = sys.Run(p, env, cmd[0], cmd[1:]...)
 	select {
 	case <-sig:
 		fmt.Println()

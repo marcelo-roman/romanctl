@@ -45,10 +45,10 @@ var commands = []command{
 	{path: "status", aliases: []string{"st"}, usage: "romanctl status [--json]",
 		summary: text{"Mostra o estado de todos os serviços", "Shows the state of all services"},
 		options: []helpOption{optJSON}, examples: []string{"romanctl status"}},
-	{path: "start", aliases: []string{"iniciar", "up"}, usage: "romanctl start [serviço|all]",
+	{path: "start", aliases: []string{"iniciar"}, usage: "romanctl start [serviço|all]",
 		summary:  text{"Inicia serviços; sem argumento, abre uma lista", "Starts services; without an argument, opens a list"},
 		examples: []string{"romanctl start", "romanctl start postgres", "romanctl start all"}},
-	{path: "stop", aliases: []string{"parar", "down"}, usage: "romanctl stop [serviço|all]",
+	{path: "stop", aliases: []string{"parar"}, usage: "romanctl stop [serviço|all]",
 		summary:  text{"Para serviços; sem argumento, abre uma lista", "Stops services; without an argument, opens a list"},
 		examples: []string{"romanctl stop", "romanctl stop all"}},
 	{path: "restart", aliases: []string{"reiniciar"}, usage: "romanctl restart [serviço|all]",
@@ -90,6 +90,21 @@ var commands = []command{
 	{path: "list", aliases: []string{"ls", "projetos"}, usage: "romanctl list [--filter <texto>] [--plain] [--json]",
 		summary: text{"Lista os projetos; no terminal, com filtro e ações em cada um", "Lists the projects; in a terminal, with a filter and actions on each one"},
 		options: []helpOption{optFilter, optPlain, optJSON}, examples: []string{"romanctl list", "romanctl list --filter dotnet"}},
+	{path: "up", aliases: []string{"subir"}, usage: "romanctl up [projeto] [-d] [--no-run] [--open]",
+		summary: text{"Sobe o ambiente do projeto: serviços, banco, .env e o app", "Brings up the project's environment: services, database, .env and the app"},
+		details: text{"O .env só ganha o que falta: o que você mudou continua como está.", "The .env only gets what is missing: what you changed stays as it is."},
+		options: []helpOption{
+			{"-d, --detach", text{"roda em segundo plano e espera o app responder", "runs in the background and waits for the app to respond"}},
+			{"--no-run", text{"prepara o ambiente, sem rodar o app", "prepares the environment, without running the app"}},
+			{"--open", text{"abre o navegador quando o app subir", "opens the browser when the app is up"}}, optJSON},
+		examples: []string{"romanctl up", "romanctl up loja -d", "romanctl up --no-run"}},
+	{path: "down", aliases: []string{"derrubar"}, usage: "romanctl down [projeto] [--all] [--keep-services]",
+		summary: text{"Para o app e os serviços que só ele estava usando", "Stops the app and the services only it was using"},
+		details: text{"Um serviço que já estava ligado antes do up, ou que outro projeto usa, continua ligado.", "A service that was already on before up, or that another project uses, stays on."},
+		options: []helpOption{
+			{"--all", text{"derruba todos os projetos no ar", "brings down all running projects"}},
+			{"--keep-services", text{"para só o app", "stops only the app"}}, optJSON},
+		examples: []string{"romanctl down", "romanctl down loja", "romanctl down --all"}},
 	{path: "run", aliases: []string{"dev", "rodar"}, usage: "romanctl run [projeto] [--open]",
 		summary:  text{"Roda um projeto; sem argumento, abre uma lista", "Runs a project; without an argument, opens a list"},
 		options:  []helpOption{{"--open", text{"abre o navegador quando o app subir", "opens the browser when the app is up"}}},
@@ -181,6 +196,11 @@ var commands = []command{
 	{path: "offline test", aliases: []string{"testar"}, usage: "romanctl offline test",
 		summary: text{"Cria e compila cada tipo de projeto com a rede bloqueada", "Creates and builds each project type with the network blocked"}},
 
+	{path: "ui", aliases: []string{"painel", "tui"}, usage: "romanctl ui",
+		summary: text{"Abre o painel de tela cheia; é o que romanctl faz sem argumentos", "Opens the full-screen panel; it is what romanctl does without arguments"},
+		details: text{"Dentro dele: Tab troca de tela, / filtra, : vai direto, Enter mostra as ações, ? mostra a ajuda.", "Inside it: Tab changes screens, / filters, : jumps, Enter shows the actions, ? shows the help."}},
+	{path: "menu", usage: "romanctl menu",
+		summary: text{"Abre o menu em lista, mais simples que o painel", "Opens the list menu, simpler than the panel"}},
 	{path: "config", usage: "romanctl config [lang [pt|en|auto]]",
 		summary: text{"Mostra ou grava as configurações", "Shows or saves the settings"}},
 	{path: "config lang", usage: "romanctl config lang [pt|en|auto]",
@@ -298,7 +318,7 @@ func printHelp(words []string) {
 
 const helpPT = `
 Uso: romanctl [comando] [argumentos] [--lang pt|en]
-     romanctl              abre o menu interativo
+     romanctl              abre o painel interativo
      romanctl <comando> --help   mostra a ajuda de qualquer comando ou subcomando
 
 Em um terminal, o que faltar é perguntado, e nas listas basta digitar para filtrar.
@@ -307,7 +327,7 @@ Sem terminal ou com --json, nada é perguntado.
 
 const helpEN = `
 Usage: romanctl [command] [arguments] [--lang pt|en]
-       romanctl            opens the interactive menu
+       romanctl            opens the interactive panel
        romanctl <command> --help   shows the help of any command or subcommand
 
 In a terminal, whatever is missing is asked for, and in lists you just type to filter.
@@ -319,10 +339,10 @@ var usageGroups = []struct {
 	paths []string
 }{
 	{text{"Ferramentas", "Tools"}, []string{"tools"}},
-	{text{"Projetos", "Projects"}, []string{"new", "add", "run", "publish", "list", "code", "open", "rm", "catalog", "types"}},
+	{text{"Projetos", "Projects"}, []string{"new", "add", "up", "down", "run", "publish", "list", "code", "open", "rm", "catalog", "types"}},
 	{text{"Serviços", "Services"}, []string{"status", "start", "stop", "restart", "restore", "logs", "install"}},
 	{text{"Sistema", "System"}, []string{"system", "platform", "doctor", "offline"}},
-	{text{"Outros", "Other"}, []string{"config", "help", "version"}},
+	{text{"Outros", "Other"}, []string{"ui", "menu", "config", "help", "version"}},
 }
 
 func init() { i18n.Add(map[string]string{helpPT: helpEN}) }

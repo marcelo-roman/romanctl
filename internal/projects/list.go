@@ -8,6 +8,7 @@ import (
 	"romanctl/internal/config"
 	"romanctl/internal/i18n"
 	"romanctl/internal/manifest"
+	"romanctl/internal/state"
 	"romanctl/internal/sys"
 	"romanctl/internal/ui"
 	"sort"
@@ -101,9 +102,13 @@ func PrintProjectsFiltered(filter string) {
 
 func ListJSON() []map[string]any {
 	out := []map[string]any{}
+	ups := state.ReadState().Ups
 	for _, p := range ListProjects() {
 		item := map[string]any{"name": p.Name, "path": p.Path, "type": p.Type,
 			"modified": p.Mod.Format(time.RFC3339), "url": AppURL(p.Path)}
+		if e, ok := ups[p.Name]; ok {
+			item["up"] = map[string]any{"pid": e.PID, "alive": e.Alive(), "url": e.URL, "services": e.Uses}
+		}
 		if m, ok := manifest.Read(p.Path); ok {
 			item["manifest"] = m
 		}

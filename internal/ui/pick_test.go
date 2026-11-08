@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func press(m *pickModel, keys ...any) {
@@ -172,6 +173,34 @@ func TestRolagemMantemOCursorVisivel(t *testing.T) {
 	}
 	if lines := strings.Count(m.View(), "\n"); lines > 12 {
 		t.Fatalf("%d linhas não cabem em 12:\n%s", lines, m.View())
+	}
+}
+
+func TestSecoesAcompanhamOFiltro(t *testing.T) {
+	m := newPickModel(PickConfig{Options: []Option{
+		{Label: "new", Value: "new", Section: "Projetos"},
+		{Label: "add", Value: "add", Section: "Projetos"},
+		{Label: "status", Value: "status", Section: "Servicos"},
+	}})
+	view := m.View()
+	if strings.Count(view, "Projetos") != 1 || !strings.Contains(view, "Servicos") {
+		t.Fatal(view)
+	}
+	press(m, "status")
+	if view := m.View(); strings.Contains(view, "Projetos") || !strings.Contains(view, "Servicos") {
+		t.Fatal(view)
+	}
+}
+
+func TestListaSemIcones(t *testing.T) {
+	for _, multi := range []bool{false, true} {
+		m := newPickModel(PickConfig{Title: "T", Options: options(), Multi: multi, All: multi,
+			Categories: []Category{{"x", "X"}}})
+		for _, r := range ansi.Strip(m.View()) {
+			if r > 0x2000 {
+				t.Errorf("símbolo %q na lista", r)
+			}
+		}
 	}
 }
 
