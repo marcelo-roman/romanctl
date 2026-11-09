@@ -86,7 +86,7 @@ jobs:
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Sobe cada serviço em container
         run: |
-          for service in postgres mongo redis mysql mariadb sqlserver rabbitmq kafka minio; do
+          for service in postgres mongo redis mysql mariadb sqlserver rabbitmq kafka; do
             ./romanctl start "$service"
           done
           ./romanctl status

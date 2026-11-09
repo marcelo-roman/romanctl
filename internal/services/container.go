@@ -172,9 +172,6 @@ func containerOnly() []*Service {
 		{Key: "rabbitmq", Name: "RabbitMQ", Aliases: []string{"rabbit"}, Image: "rabbitmq:4-management",
 			URL: i18n.T("amqp://guest:guest@127.0.0.1:5672 (painel: http://127.0.0.1:15672)"), Ports: []string{"5672:5672", "15672:15672"}, Volume: "/var/lib/rabbitmq"},
 		{Key: "kafka", Name: "Kafka", Image: "apache/kafka:4.1.0", URL: "127.0.0.1:9092", Ports: []string{"9092:9092"}, Volume: "/var/lib/kafka/data"},
-		{Key: "minio", Name: "MinIO", Aliases: []string{"s3"}, Image: "quay.io/minio/minio",
-			URL: i18n.T("http://127.0.0.1:9000 (painel: http://127.0.0.1:9001, minioadmin/minioadmin)"), Ports: []string{"9000:9000", "9001:9001"},
-			Volume: "/data", Args: []string{"server", "/data", "--console-address", ":9001"}},
 	}
 	var out []*Service
 	for _, c := range specs {

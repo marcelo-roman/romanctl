@@ -30,8 +30,6 @@ func (s *Service) EnvVars(db string) [][2]string {
 		return [][2]string{{"RABBITMQ_URL", "amqp://guest:guest@127.0.0.1:5672"}}
 	case "kafka":
 		return [][2]string{{"KAFKA_BROKERS", "127.0.0.1:9092"}}
-	case "minio":
-		return [][2]string{{"S3_ENDPOINT", "http://127.0.0.1:9000"}, {"S3_ACCESS_KEY", "minioadmin"}, {"S3_SECRET_KEY", "minioadmin"}}
 	}
 	return nil
 }

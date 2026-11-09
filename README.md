@@ -53,10 +53,19 @@ própria linha, e remover sempre pede confirmação. `romanctl menu` abre a vers
 ## Instalação
 
 ```bash
-go build -ldflags="-s -w" -o ~/.local/bin/romanctl ./cmd/romanctl
+curl -fsSL https://raw.githubusercontent.com/marcelo-roman/romanctl/main/install.sh | sh
 ```
 
-`~/.local/bin` precisa estar no `PATH`.
+O script detecta o sistema e a arquitetura, baixa o binário da última release, confere o SHA-256 e instala em
+`~/.local/bin`, ou em `/usr/local/bin` como root. Variáveis: `ROMANCTL_VERSION` (por exemplo, `v0.1.0`) e
+`ROMANCTL_INSTALL_DIR`. Para ler antes de rodar:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/marcelo-roman/romanctl/main/install.sh -o install.sh
+less install.sh && sh install.sh
+```
+
+Para compilar a partir do código: `go build -ldflags="-s -w" -o ~/.local/bin/romanctl ./cmd/romanctl`.
 
 ## Uso
 
@@ -227,7 +236,6 @@ nomeados. O code-server roda como processo local.
 | `sqlserver` | `Server=127.0.0.1,1433`; só `amd64`; a imagem aceita a licença do SQL Server Developer |
 | `rabbitmq` | `amqp://guest:guest@127.0.0.1:5672`; painel em `http://127.0.0.1:15672` |
 | `kafka` | `127.0.0.1:9092` |
-| `minio` | `http://127.0.0.1:9000`; painel em `http://127.0.0.1:9001` |
 
 As senhas são fixas e servem só para desenvolvimento local.
 

@@ -426,13 +426,25 @@ func InstallOne(t *Tool, force bool) Result {
 	return Result{Key: t.Key, Action: "installed", Version: version}
 }
 
-// isExternal diz se o binário que sobrou não é nosso: o do Termux e os que vêm com o macOS,
-// como o jq em /usr/bin, que nem o Homebrew nem o romanctl podem tirar.
-func isExternal(path, goos string) bool {
+// isExternal diz se o binário que sobrou não é nosso: o do Termux, os que vêm com o macOS, como
+// o jq em /usr/bin, e os que a máquina já tinha, como o kubectl dos runners do GitHub. Uma
+// ferramenta instalada pelo gerenciador de pacotes que continua em /usr/bin é falha de verdade.
+func isExternal(path, goos string, managedByPackages bool, ours []string) bool {
 	if strings.HasPrefix(path, termuxPrefix) {
 		return true
 	}
-	return goos == "darwin" && (strings.HasPrefix(path, "/usr/bin/") || strings.HasPrefix(path, "/bin/"))
+	if goos == "darwin" && (strings.HasPrefix(path, "/usr/bin/") || strings.HasPrefix(path, "/bin/")) {
+		return true
+	}
+	if managedByPackages {
+		return false
+	}
+	for _, dir := range ours {
+		if dir != "" && strings.HasPrefix(path, dir+"/") {
+			return false
+		}
+	}
+	return true
 }
 
 // UninstallOne remove o que a declaração da ferramenta indica e confere o resultado.
@@ -454,7 +466,9 @@ func UninstallOne(t *Tool) Result {
 				where = p
 			}
 		}
-		if isExternal(where, platform.Current.OS) {
+		p := platform.Current
+		managed := p.OS != "darwin" && len(t.removePkgsFor(p.Manager)) > 0
+		if isExternal(where, p.OS, managed, []string{p.BinDir, p.OptDir}) {
 			ui.Warnf("%s continua disponível pelo sistema, fora do romanctl: %s", t.Name, where)
 			return Result{Key: t.Key, Action: "external", Version: where}
 		}

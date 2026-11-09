@@ -360,16 +360,22 @@ func TestNomesDeCategoria(t *testing.T) {
 }
 
 func TestBinarioQueNaoENosso(t *testing.T) {
+	ours := []string{"/home/a/.local/bin", "/home/a/.local/share/romanctl/tools"}
 	cases := []struct {
 		path, goos string
+		managed    bool
 		want       bool
 	}{
-		{"/usr/bin/jq", "darwin", true}, {"/usr/bin/jq", "linux", false}, {"/opt/homebrew/bin/jq", "darwin", false},
-		{termuxPrefix + "/bin/jq", "linux", true}, {"/usr/local/bin/jq", "linux", false},
+		{"/usr/bin/jq", "darwin", false, true},
+		{"/usr/bin/kubectl", "linux", false, true},            // o runner já tinha
+		{"/home/a/.local/bin/kubectl", "linux", false, false}, // o nosso continua lá
+		{"/usr/bin/jq", "linux", true, false},                 // apt removeu e sobrou: falha
+		{termuxPrefix + "/bin/jq", "linux", true, true},
+		{"/home/a/.local/share/romanctl/tools/go/bin/go", "linux", false, false},
 	}
 	for _, c := range cases {
-		if got := isExternal(c.path, c.goos); got != c.want {
-			t.Errorf("%s em %s: %v", c.path, c.goos, got)
+		if got := isExternal(c.path, c.goos, c.managed, ours); got != c.want {
+			t.Errorf("%s em %s (pacote=%v): %v", c.path, c.goos, c.managed, got)
 		}
 	}
 }
