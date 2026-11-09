@@ -208,6 +208,14 @@ var commands = []command{
 		examples: []string{"romanctl config lang", "romanctl config lang en"}},
 	{path: "help", aliases: []string{"ajuda"}, usage: "romanctl help [comando]",
 		summary: text{"Mostra esta ajuda", "Shows this help"}, examples: []string{"romanctl help tools install"}},
+	{path: "self-update", aliases: []string{"update", "atualizar"}, usage: "romanctl self-update [--check] [--version <vX.Y.Z>] [--yes]",
+		summary: text{"Atualiza o romanctl para a última versão publicada", "Updates romanctl to the latest published version"},
+		details: text{"Confere o SHA-256 e roda a versão nova antes de trocar; se ela não funcionar, a atual fica.", "Checks the SHA-256 and runs the new version before swapping; if it does not work, the current one stays."},
+		options: []helpOption{
+			{"--check", text{"só mostra se há versão nova", "only shows whether there is a new version"}},
+			{"--version <vX.Y.Z>", text{"instala esta versão, mesmo que mais antiga", "installs this version, even if older"}},
+			{"-y, --yes", text{"não pede confirmação", "does not ask for confirmation"}}, optJSON},
+		examples: []string{"romanctl self-update", "romanctl self-update --check", "romanctl self-update --version v0.1.0"}},
 	{path: "version", aliases: []string{"versao"}, usage: "romanctl version",
 		summary: text{"Mostra a versão", "Shows the version"}},
 }
@@ -342,7 +350,7 @@ var usageGroups = []struct {
 	{text{"Projetos", "Projects"}, []string{"new", "add", "up", "down", "run", "publish", "list", "code", "open", "rm", "catalog", "types"}},
 	{text{"Serviços", "Services"}, []string{"status", "start", "stop", "restart", "restore", "logs", "install"}},
 	{text{"Sistema", "System"}, []string{"system", "platform", "doctor", "offline"}},
-	{text{"Outros", "Other"}, []string{"ui", "menu", "config", "help", "version"}},
+	{text{"Outros", "Other"}, []string{"ui", "menu", "config", "self-update", "help", "version"}},
 }
 
 func init() { i18n.Add(map[string]string{helpPT: helpEN}) }

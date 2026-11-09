@@ -385,6 +385,22 @@ var en = map[string]string{
 	"Idioma":                             "Language",
 	"Sair":                               "Quit",
 
+	// self-update
+	"não consegui descobrir a última versão do romanctl":                               "could not find the latest version of romanctl",
+	"não consegui baixar a lista de checksums da versão %s: %v":                        "could not download the checksum list for version %s: %v",
+	"a versão %s não tem binário para %s/%s":                                           "version %s has no binary for %s/%s",
+	"não consegui baixar %s: %v":                                                       "could not download %s: %v",
+	"checksum não confere (esperado %s, obtido %s); nada foi trocado":                  "checksum does not match (expected %s, got %s); nothing was replaced",
+	"sem permissão para gravar em %s; rode com sudo ou reinstale pelo install.sh":      "no permission to write to %s; run with sudo or reinstall with install.sh",
+	"a versão baixada não rodou nesta máquina (%v: %s); nada foi trocado":              "the downloaded version did not run on this machine (%v: %s); nothing was replaced",
+	"sem permissão para trocar %s; rode com sudo ou reinstale pelo install.sh":         "no permission to replace %s; run with sudo or reinstall with install.sh",
+	"Procurando a última versão...":                                                    "Looking for the latest version...",
+	"Você já está na última versão: %s":                                                "You are already on the latest version: %s",
+	"Versão nova disponível: %s (instalada: %s). Para atualizar: romanctl self-update": "New version available: %s (installed: %s). To update: romanctl self-update",
+	"Atualizar o romanctl de %s para %s?":                                              "Update romanctl from %s to %s?",
+	"Baixando a versão %s...":                                                          "Downloading version %s...",
+	"romanctl atualizado de %s para %s (%s)":                                           "romanctl updated from %s to %s (%s)",
+
 	// up e down
 	"%s iniciado; sem endereço para conferir se está respondendo":              "%s started; no address to check whether it is responding",
 	"a porta %s já está em uso pelo projeto %s; derrube com: romanctl down %s": "port %s is already in use by project %s; bring it down with: romanctl down %s",

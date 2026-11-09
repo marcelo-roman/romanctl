@@ -19,7 +19,9 @@ import (
 	"strings"
 )
 
-const version = "0.1.0"
+// version vem da tag na release (-ldflags "-X romanctl/internal/cli.version=..."); o valor
+// abaixo vale para quem compila do código.
+var version = "0.1.0"
 
 // pathWithBin coloca a pasta do romanctl no fim: o PATH da pessoa continua mandando, e
 // um programa que ela escolheu nunca é trocado pelo que o romanctl instalou.
@@ -81,12 +83,12 @@ func Main() {
 	}
 }
 
-var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "seconds": true, "interval": true, "lang": true, "project": true, "in": true, "description": true, "filter": true, "category": true}
+var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "seconds": true, "interval": true, "lang": true, "project": true, "in": true, "description": true, "filter": true, "category": true, "version": true}
 
 var flagVals = map[string]string{}
 
 var boolFlags = map[string]bool{"json": true, "y": true, "yes": true, "force": true, "app": true,
-	"open": true, "all": true, "public": true, "no-ci": true, "list": true, "plain": true, "d": true, "detach": true, "no-run": true, "keep-services": true, "sem-git": true, "offline": true, "dry-run": true, "h": true, "help": true}
+	"open": true, "all": true, "public": true, "no-ci": true, "list": true, "plain": true, "d": true, "detach": true, "check": true, "no-run": true, "keep-services": true, "sem-git": true, "offline": true, "dry-run": true, "h": true, "help": true}
 
 var flagError error
 
@@ -221,6 +223,8 @@ func dispatch(args []string, flags map[string]bool) error {
 		return tui.Run()
 	case "menu":
 		return menu()
+	case "self-update", "update", "atualizar":
+		return selfUpdateCommand(flags)
 	case "config":
 		return configCommand(args[1:])
 	case "add", "adicionar", "generate", "g":

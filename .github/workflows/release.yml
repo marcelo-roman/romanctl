@@ -19,10 +19,13 @@ jobs:
         run: |
           for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
             os="${target%/*}"; arch="${target#*/}"
-            CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -trimpath -ldflags="-s -w" \
+            CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -trimpath \
+              -ldflags="-s -w -X romanctl/internal/cli.version=${GITHUB_REF_NAME#v}" \
               -o "romanctl-$os-$arch" ./cmd/romanctl
           done
           sha256sum romanctl-* > SHA256SUMS
-      - run: gh release create "$GITHUB_REF_NAME" romanctl-* SHA256SUMS --generate-notes
+          # O self-update lê este arquivo para saber qual é a última versão.
+          echo "$GITHUB_REF_NAME" > VERSION
+      - run: gh release create "$GITHUB_REF_NAME" romanctl-* SHA256SUMS VERSION --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
