@@ -21,7 +21,7 @@ import (
 
 // version vem da tag na release (-ldflags "-X romanctl/internal/cli.version=..."); o valor
 // abaixo vale para quem compila do código.
-var version = "0.1.0"
+var version = "0.2.0"
 
 // pathWithBin coloca a pasta do romanctl no fim: o PATH da pessoa continua mandando, e
 // um programa que ela escolheu nunca é trocado pelo que o romanctl instalou.
