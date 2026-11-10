@@ -1,0 +1,60 @@
+description: CRUD completo nos três programas - domínio, repositórios, serviço e rotas na API, tela e ações no BFF, página na web e testes
+aliases: [crud, scaffold]
+conditional:
+  - path: apps/api/src/repositories/postgres
+    when: postgres
+  - path: apps/api/test/repositories/postgres
+    when: postgres
+patches:
+  - file: apps/api/src/app.ts
+    before: "// romanctl:imports"
+    text: |
+      import { sampleItemRoutes } from './routes/sample-items.js';
+      import { SampleItemService } from './services/sample-item-service.js';
+  - file: apps/api/src/app.ts
+    before: "// romanctl:routes"
+    text: "app.register(sampleItemRoutes(new SampleItemService(repositories.sampleItems, clock)));"
+  - file: apps/api/src/repositories/repositories.ts
+    before: "// romanctl:imports"
+    text: "import type { SampleItemRepository } from './sample-item-repository.js';"
+  - file: apps/api/src/repositories/repositories.ts
+    before: "// romanctl:repositories"
+    text: "sampleItems: SampleItemRepository;"
+  - file: apps/api/src/repositories/memory/memory-repositories.ts
+    before: "// romanctl:imports"
+    text: "import { MemorySampleItemRepository } from './memory-sample-item-repository.js';"
+  - file: apps/api/src/repositories/memory/memory-repositories.ts
+    before: "// romanctl:repositories"
+    text: "sampleItems: new MemorySampleItemRepository(),"
+  - when: postgres
+    file: apps/api/src/repositories/postgres/postgres-repositories.ts
+    before: "// romanctl:imports"
+    text: "import { PostgresSampleItemRepository } from './postgres-sample-item-repository.js';"
+  - when: postgres
+    file: apps/api/src/repositories/postgres/postgres-repositories.ts
+    before: "// romanctl:repositories"
+    text: "sampleItems: new PostgresSampleItemRepository(database),"
+  - when: postgres
+    file: apps/api/src/repositories/postgres/schema.ts
+    before: "-- romanctl:tables"
+    text: |
+      CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
+  - file: apps/bff/src/app.ts
+    before: "// romanctl:imports"
+    text: |
+      import { SampleItemsApi } from './api/sample-items-api.js';
+      import { sampleItemRoutes } from './routes/sample-items.js';
+      import { SampleItemsScreens } from './screens/sample-items-screen.js';
+  - file: apps/bff/src/app.ts
+    before: "// romanctl:routes"
+    text: "app.register(sampleItemRoutes(new SampleItemsScreens(new SampleItemsApi(http))));"
+  - file: apps/web/src/routes.tsx
+    before: "// romanctl:imports"
+    text: "import { SampleItemsPage } from './pages/SampleItemsPage';"
+  - file: apps/web/src/routes.tsx
+    before: "// romanctl:routes"
+    text: "{ pattern: /^\\/sample-items\\/?$/, render: () => <SampleItemsPage /> },"
+  - file: apps/web/src/navigation.ts
+    before: "// romanctl:navigation"
+    text: "{ path: '/sample-items', label: 'Sample Items' },"
+next: "API em /sample-items, tela em /screens/sample-items e ações em /actions/sample-items no BFF, página /sample-items na web, registradas nos app.ts, em routes.tsx e em navigation.ts. Rode npm test para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização da API.{{end}}"

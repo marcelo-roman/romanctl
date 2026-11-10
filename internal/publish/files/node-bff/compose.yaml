@@ -1,0 +1,19 @@
+services:
+  api:
+    build:
+      context: .
+      args:
+        APP: api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+  bff:
+    build:
+      context: .
+      args:
+        APP: bff
+    environment:
+      API_URL: http://api:3302
+    ports:
+      - "3301:3301"
+    depends_on:
+      - api

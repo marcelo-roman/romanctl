@@ -1,0 +1,34 @@
+id: bff
+stack: node
+arch: [bff]
+description: Monorepo Node com Backend for Frontend - API de pedidos e BFF em Fastify, web em React com Vite
+services: [postgres]
+requires: [node]
+setup:
+  - npm ci
+run: npm run dev
+test: npm test
+url: http://localhost:3300
+processes:
+  - name: api
+    dir: apps/api
+    run: npm run dev
+    url: http://localhost:3302
+  - name: bff
+    dir: apps/bff
+    run: npm run dev
+    url: http://localhost:3301/health
+  - name: web
+    dir: apps/web
+    run: npm run dev
+    url: http://localhost:3300
+publish:
+  kind: node-bff
+conditional:
+  - path: apps/api/src/repositories/postgres
+    when: postgres
+  - path: apps/api/test/repositories/postgres
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"
