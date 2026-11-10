@@ -141,6 +141,13 @@ Os containers dos serviços se chamam `romanctl-<serviço>`, e os dados ficam em
 
 ## Primeiros passos
 
+**0. Faça login.** O romanctl só roda com login no Keycloak (realm `romanctl` em
+`auth.marceloroman.com.br`):
+
+```bash
+romanctl login   # abre o navegador; a sessão fica em ~/.config/romanctl/session.json
+```
+
 **1. Veja os comandos** e rode o que quiser pela lista:
 
 ```bash
@@ -205,6 +212,47 @@ de consulta, para scripts. Sem terminal, nada é perguntado. Os códigos de saí
 0 (sucesso), 1 (falha ao executar) e 2 (uso incorreto).
 
 # Referência
+
+## Login e Keycloak
+
+```bash
+romanctl login                   # authorization code com PKCE, redirect em 127.0.0.1
+romanctl whoami                  # usuário, papéis e até quando a sessão vale
+romanctl logout                  # revoga a sessão no Keycloak e apaga a local
+```
+
+O login acontece no realm `romanctl` de `https://auth.marceloroman.com.br`, num client público
+(`romanctl`) que exige PKCE S256 e só aceita redirect para `http://127.0.0.1:<porta>/callback`. O
+token é offline: a sessão vale 30 dias sem uso e renova a cada comando. Sem internet, a sessão salva
+basta enquanto valer; com internet, ela é conferida no Keycloak a cada 12 h, então um usuário
+bloqueado ou uma sessão encerrada saem na hora. Sem login rodam só `login`, `logout`, `whoami`,
+`help`, `version`, `self-update` e `templates`.
+
+Em pipelines não há navegador: `ROMANCTL_CLIENT_ID` e `ROMANCTL_CLIENT_SECRET` (o client confidencial
+`romanctl-ci`, com `client_credentials`) substituem o login, sem gravar nada em disco. O CI deste
+repositório usa os secrets de mesmo nome. `ROMANCTL_AUTH_ISSUER` e `ROMANCTL_IAM_API` (ou `--issuer` e
+`--api` no login) apontam para outro Keycloak.
+
+O mesmo login administra o Keycloak pela API do [IAM Manager](https://iam-api.marceloroman.com.br/api/guide.md):
+
+```bash
+romanctl iam me                                   # o que você pode fazer
+romanctl iam realms
+romanctl iam realm create acme --display-name ACME
+romanctl iam users acme --search ana
+romanctl iam user create acme ana --email ana@acme.com --roles billing   # devolve um link para a senha
+romanctl iam user disable acme ana
+romanctl iam api-key create acme worker --roles billing                  # o secret só aparece aqui
+romanctl iam operator roles ana --realm romanctl --realms acme=admin     # delegar um realm
+romanctl iam audit
+romanctl iam api GET /api/realms/acme/settings    # qualquer rota da API
+```
+
+As permissões vêm dos papéis do realm `romanctl`: `iam-admin` (tudo), `iam-user-admin` (usuários,
+senhas e API keys), `iam-theme-admin` (temas) e `iam-auditor` (leitura), ou delegações
+`<realm>:admin|viewer` no client `iam-manager-api`. Quem só usa o romanctl não precisa de papel
+nenhum. O realm `romanctl` é tratado como o dos operadores do IAM Manager: só `iam-admin` vê e
+altera usuários e papéis dele.
 
 ## Interface web
 

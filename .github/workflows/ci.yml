@@ -15,6 +15,9 @@ on:
 
 env:
   ROMANCTL_TEMPLATES: ${{ github.workspace }}/templates
+  # O romanctl só roda com login; aqui o login é o client romanctl-ci do realm romanctl.
+  ROMANCTL_CLIENT_ID: ${{ secrets.ROMANCTL_CLIENT_ID }}
+  ROMANCTL_CLIENT_SECRET: ${{ secrets.ROMANCTL_CLIENT_SECRET }}
 
 jobs:
   test:
@@ -85,10 +88,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: romanctl-linux-amd64
-      - run: chmod +x romanctl && ./romanctl platform
-      - name: Certificados raiz, que a imagem do Debian não traz
+      - name: Certificados raiz, que a imagem do Debian não traz (o login usa HTTPS)
         if: matrix.image == 'debian:stable'
         run: apt-get update -qq && apt-get install -y -qq ca-certificates
+      - run: chmod +x romanctl && ./romanctl platform
       - name: Pacote da distribuição
         run: |
           ./romanctl tools install jq curl

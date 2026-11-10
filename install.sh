@@ -83,4 +83,4 @@ case ":$PATH:" in
      say "Adicione $dir ao PATH do seu shell, por exemplo:"
      say "  echo 'export PATH=\"$dir:\$PATH\"' >> ~/.bashrc" ;;
 esac
-say "Para começar: romanctl"
+say "Para começar: romanctl login"

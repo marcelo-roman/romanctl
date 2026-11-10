@@ -20,6 +20,10 @@ O Claude roda sem terminal interativo. Então:
   Código de saída 2 é erro de uso (corrija os argumentos); 1 é falha da operação.
 - **Use `--yes` quando o comando pedir confirmação** e você já tiver o aval do usuário.
   `--dry-run` mostra o plano sem executar; use antes de algo destrutivo ou grande.
+- **O romanctl só roda com login.** Se um comando falhar com "só funciona com login" ou "sessão
+  expirou", não tente contornar: o login abre o navegador, então peça ao usuário para rodar
+  `! romanctl login`. `romanctl whoami --json` diz se há sessão. Para administrar o Keycloak
+  (realms, usuários, API keys) com esse login, veja `romanctl help iam`.
 - **Na dúvida, `romanctl help <comando> [subcomando]`.** A ajuda é a fonte da verdade sobre
   opções; esta skill é um mapa.
 

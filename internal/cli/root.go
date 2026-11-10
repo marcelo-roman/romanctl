@@ -59,10 +59,14 @@ func Main() {
 		err = flagError
 	} else if len(args) == 0 {
 		// Sem terminal não há lista: mostra a ajuda, em vez de falhar.
-		if ui.Interactive() {
-			err = commandMenu()
-		} else {
+		if !ui.Interactive() {
 			usage()
+		} else if err = requireLogin(); err == nil {
+			err = commandMenu()
+		}
+	} else if needsLogin(args) {
+		if err = requireLogin(); err == nil {
+			err = dispatch(args, flags)
 		}
 	} else {
 		err = dispatch(args, flags)
@@ -87,7 +91,9 @@ func Main() {
 	}
 }
 
-var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "seconds": true, "interval": true, "lang": true, "project": true, "in": true, "description": true, "filter": true, "category": true, "version": true, "ref": true, "plural": true, "port": true}
+var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "seconds": true, "interval": true, "lang": true, "project": true, "in": true, "description": true, "filter": true, "category": true, "version": true, "ref": true, "plural": true, "port": true,
+	"issuer": true, "api": true, "display-name": true, "email": true, "first-name": true, "last-name": true, "search": true,
+	"credential": true, "roles": true, "global": true, "realms": true, "realm": true, "limit": true, "data": true}
 
 var flagVals = map[string]string{}
 
@@ -135,6 +141,14 @@ func dispatch(args []string, flags map[string]bool) error {
 		printHelp(args[1:])
 	case "version", "versao":
 		fmt.Println("romanctl", version)
+	case "login", "entrar":
+		return loginCommand()
+	case "logout", "sair":
+		return logoutCommand()
+	case "whoami":
+		return whoamiCommand()
+	case "iam", "keycloak":
+		return iamCommand(args[1:], flags)
 	case "status", "st":
 		if ui.JSONOutput {
 			return ui.PrintJSON(services.StatusJSON(flags["all"]))
