@@ -52,7 +52,7 @@ func InstalledRef() string {
 
 func versionRef() string {
 	if Version == "" || Version == "dev" {
-		return "refs/heads/main"
+		return mainRef
 	}
 	return "refs/tags/v" + strings.TrimPrefix(Version, "v")
 }
@@ -113,27 +113,12 @@ func download(url string) (io.ReadCloser, int, error) {
 }
 
 // Update baixa a pasta templates de uma tag ou branch. Vazio, a da versão do binário; se a tag
-// ainda não existe, a da main.
+// não existe ou ainda não tem templates, a da main.
 func Update(ref string) (UpdateResult, error) {
 	if os.Getenv("ROMANCTL_TEMPLATES") != "" {
 		return UpdateResult{}, i18n.Errorf("ROMANCTL_TEMPLATES aponta para %s; os templates de lá não são baixados", Root())
 	}
 	result := UpdateResult{Path: Root()}
-	wanted := ref
-	if wanted == "" {
-		wanted = versionRef()
-	}
-	body, status, err := download(archiveURL(wanted))
-	if status == http.StatusNotFound && ref == "" && wanted != "refs/heads/main" {
-		wanted, result.Fallback = "refs/heads/main", true
-		body, _, err = download(archiveURL(wanted))
-	}
-	if err != nil {
-		return result, err
-	}
-	defer body.Close()
-	result.Ref = wanted
-
 	dest := Root()
 	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 		return result, err
@@ -143,13 +128,22 @@ func Update(ref string) (UpdateResult, error) {
 		return result, err
 	}
 	defer os.RemoveAll(tmp)
-	if err := extractTemplates(body, tmp); err != nil {
+
+	result.Ref = ref
+	if ref == "" {
+		result.Ref = versionRef()
+	}
+	err = fetch(result.Ref, tmp)
+	if err != nil && ref == "" && result.Ref != mainRef {
+		os.RemoveAll(tmp)
+		os.MkdirAll(tmp, 0o755)
+		result.Ref, result.Fallback = mainRef, true
+		err = fetch(mainRef, tmp)
+	}
+	if err != nil {
 		return result, err
 	}
-	if !sys.Exists(filepath.Join(tmp, "projects")) {
-		return result, i18n.Errorf("%s não tem a pasta templates/projects", wanted)
-	}
-	if err := os.WriteFile(filepath.Join(tmp, refFile), []byte(wanted+"\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmp, refFile), []byte(result.Ref+"\n"), 0o644); err != nil {
 		return result, err
 	}
 	old := dest + ".old"
@@ -166,6 +160,23 @@ func Update(ref string) (UpdateResult, error) {
 	os.RemoveAll(old)
 	result.OK = true
 	return result, nil
+}
+
+const mainRef = "refs/heads/main"
+
+func fetch(ref, dest string) error {
+	body, _, err := download(archiveURL(ref))
+	if err != nil {
+		return err
+	}
+	defer body.Close()
+	if err := extractTemplates(body, dest); err != nil {
+		return err
+	}
+	if !sys.Exists(filepath.Join(dest, "projects")) {
+		return i18n.Errorf("%s não tem a pasta templates/projects", ref)
+	}
+	return nil
 }
 
 // extractTemplates tira do tar.gz do GitHub só o que está em <raiz>/templates/.

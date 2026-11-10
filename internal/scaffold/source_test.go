@@ -50,6 +50,7 @@ func fakeCodeload(t *testing.T, archives map[string][]byte) {
 
 func TestUpdateBaixaATagEDepoisAMain(t *testing.T) {
 	fakeCodeload(t, map[string][]byte{
+		"refs/tags/v9.9.8": tarball(t, map[string]string{"romanctl-9.9.8/README.md": "sem templates"}),
 		"refs/heads/main": tarball(t, map[string]string{
 			"romanctl-main/templates/projects/go/x/template.yaml": "id: x\n",
 			"romanctl-main/internal/cli/root.go":                  "package cli",
@@ -62,6 +63,10 @@ func TestUpdateBaixaATagEDepoisAMain(t *testing.T) {
 	r, err := Update("")
 	if err != nil {
 		t.Fatal(err)
+	}
+	Version = "9.9.8"
+	if r2, err := Update(""); err != nil || !r2.Fallback {
+		t.Fatalf("tag sem templates: %+v %v", r2, err)
 	}
 	if !r.Fallback || r.Ref != "refs/heads/main" || InstalledRef() != "refs/heads/main" {
 		t.Fatalf("%+v %q", r, InstalledRef())
