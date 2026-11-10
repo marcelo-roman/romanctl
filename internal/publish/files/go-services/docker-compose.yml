@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: [[.Database]]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      retries: 30
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      retries: 30
+
+  orders:
+    build:
+      context: .
+      args:
+        SERVICE: orders
+    image: [[.Lower]]-orders
+    environment:
+      PORT: "8080"
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/[[.Database]]
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      BILLING_URL: http://billing:8080
+    ports:
+      - "8091:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  billing:
+    build:
+      context: .
+      args:
+        SERVICE: billing
+    image: [[.Lower]]-billing
+    environment:
+      PORT: "8080"
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/[[.Database]]
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "8092:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy

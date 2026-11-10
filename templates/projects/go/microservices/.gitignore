@@ -1,0 +1,4 @@
+/bin/
+/sample-app
+.env
+coverage.out

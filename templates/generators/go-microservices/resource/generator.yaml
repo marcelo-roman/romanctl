@@ -1,0 +1,40 @@
+description: CRUD completo no serviço de pedidos - domínio, caso de uso, repositório, rotas HTTP e testes
+aliases: [crud, scaffold]
+conditional:
+  - path: internal/services/orders/adapters/postgres
+    when: postgres
+patches:
+  - file: internal/services/orders/adapters/httpapi/server.go
+    before: "// romanctl:imports"
+    text: '"sample-app/internal/services/orders/application/sampleitems"'
+  - file: internal/services/orders/adapters/httpapi/server.go
+    before: "// romanctl:services"
+    text: "SampleItems *sampleitems.Service"
+  - file: internal/services/orders/adapters/httpapi/server.go
+    before: "// romanctl:routes"
+    text: "registerSampleItems(mux, s.SampleItems)"
+  - file: cmd/orders/main.go
+    before: "// romanctl:imports"
+    text: '"sample-app/internal/services/orders/application/sampleitems"'
+  - file: cmd/orders/main.go
+    before: "// romanctl:storage"
+    text: "sampleItems sampleitems.Repository"
+  - file: cmd/orders/main.go
+    before: "// romanctl:services"
+    text: "SampleItems: sampleitems.NewService(st.sampleItems, now),"
+  - when: postgres
+    file: cmd/orders/store.go
+    before: "// romanctl:repositories"
+    text: "sampleItems: postgres.NewSampleItemRepository(pool),"
+  - when: "!postgres"
+    file: cmd/orders/store.go
+    before: "// romanctl:repositories"
+    text: "sampleItems: memory.NewSampleItemRepository(),"
+  - when: postgres
+    file: internal/services/orders/adapters/postgres/schema.sql
+    before: "-- romanctl:tables"
+    text: |
+      CREATE TABLE IF NOT EXISTS orders.sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
+after:
+  - gofmt -w cmd internal
+next: "Rotas em /sample-items no serviço orders (porta 8091). Rode go test ./... para conferir.{{if .Postgres}} A tabela orders.sample_items é criada na próxima inicialização do orders.{{end}}"

@@ -1,0 +1,38 @@
+id: microservices
+stack: go
+arch: [event-driven, microservices]
+description: Microsserviços Go de pedidos e faturamento que se falam por eventos, com outbox e inbox
+services: [postgres, rabbitmq]
+requires: [go]
+setup:
+  - go mod tidy
+run: go run ./cmd/orders & go run ./cmd/billing & wait
+processes:
+  - name: orders
+    run: go run ./cmd/orders
+    url: http://localhost:8091/health
+  - name: billing
+    run: go run ./cmd/billing
+    url: http://localhost:8092/health
+test: go test ./...
+url: http://localhost:8091
+publish:
+  kind: go-services
+  vars:
+    Database: sample_app
+conditional:
+  - path: internal/platform/postgres
+    when: postgres
+  - path: internal/services/orders/adapters/postgres
+    when: postgres
+  - path: internal/services/billing/adapters/postgres
+    when: postgres
+  - path: internal/platform/messaging/rabbitmq
+    when: rabbitmq
+  - path: internal/platform/messaging/httppush
+    when: "!rabbitmq"
+overlays:
+  - from: _variants/memory
+    when: "!postgres"
+  - from: _variants/http-push
+    when: "!rabbitmq"
