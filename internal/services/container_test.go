@@ -124,7 +124,9 @@ func TestCicloDeVidaComMotorSimulado(t *testing.T) {
 	defer func() { platform.Current = saved }()
 	platform.Current = platform.Info{OS: "linux", Arch: "amd64"}
 
-	// Porta local aberta para a espera de prontidão terminar logo.
+	// Porta local aberta para a espera de prontidão terminar logo; aqui ela é do "container".
+	defer func(saved func(containerSpec, string) error) { checkPorts = saved }(checkPorts)
+	checkPorts = func(containerSpec, string) error { return nil }
 	ln := listenLocal(t)
 	defer ln.Close()
 	port := ln.Addr().String()[strings.LastIndex(ln.Addr().String(), ":")+1:]
@@ -156,5 +158,16 @@ func TestCicloDeVidaComMotorSimulado(t *testing.T) {
 	}
 	if !slices.Equal(verbs, []string{"run", "stop", "start"}) {
 		t.Fatalf("a segunda subida deveria reaproveitar o container: %v", verbs)
+	}
+}
+
+func TestPortaOcupadaImpedeLigar(t *testing.T) {
+	fakeEngine(t)
+	ln := listenLocal(t)
+	defer ln.Close()
+	port := ln.Addr().String()[strings.LastIndex(ln.Addr().String(), ":")+1:]
+	err := portsFree(containerSpec{Key: "x", Name: "X", Ports: []string{port + ":1"}}, "romanctl-x")
+	if err == nil || !strings.Contains(err.Error(), port) {
+		t.Fatalf("aceitou a porta ocupada: %v", err)
 	}
 }

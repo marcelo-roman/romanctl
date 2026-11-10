@@ -2,11 +2,11 @@ package services
 
 import (
 	"net"
-	"romanctl/internal/i18n"
 	"strings"
 	"sync"
 	"time"
 
+	"romanctl/internal/i18n"
 	"romanctl/internal/platform"
 	"romanctl/internal/sys"
 )
@@ -168,6 +168,9 @@ func containerService(c containerSpec) *Service {
 	}
 	s.start = func() error {
 		defer forgetEngine()
+		if err := checkPorts(c, name); err != nil {
+			return err
+		}
 		_, created := readEngine().containers[name]
 		var out string
 		var err error
@@ -180,6 +183,15 @@ func containerService(c containerSpec) *Service {
 			return i18n.Errorf("%v: %s", err, sys.Tail(out, 6))
 		}
 		return waitPort(hostPort(c.Ports[0]), 90*time.Second)
+	}
+	s.Conflict = func() string {
+		for _, mapping := range c.Ports {
+			port := hostPort(mapping)
+			if owner := portOwner(port, name); owner != "" {
+				return i18n.Sprintf("o container %s também publica a porta %s: o app pode estar falando com ele, e não com o %s", owner, port, c.Name)
+			}
+		}
+		return ""
 	}
 	s.stop = func() error {
 		defer forgetEngine()
@@ -205,6 +217,39 @@ func containerService(c containerSpec) *Service {
 		return nil
 	}
 	return s
+}
+
+var checkPorts = portsFree
+
+// portsFree impede ligar o serviço com a porta já ocupada: o app falaria com outro programa, e esperar
+// a porta abrir daria certo na hora, sem o container ter subido.
+func portsFree(c containerSpec, name string) error {
+	for _, mapping := range c.Ports {
+		port := hostPort(mapping)
+		conn, err := net.DialTimeout("tcp", "127.0.0.1:"+port, time.Second)
+		if err != nil {
+			continue
+		}
+		conn.Close()
+		if owner := portOwner(port, name); owner != "" {
+			return i18n.Errorf("a porta %s já está em uso pelo container %s; pare-o antes de ligar o %s", port, owner, c.Name)
+		}
+		return i18n.Errorf("a porta %s já está em uso por outro programa; libere-a antes de ligar o %s", port, c.Name)
+	}
+	return nil
+}
+
+func portOwner(port, self string) string {
+	out, err := engineOutput("ps", "--filter", "publish="+port, "--format", "{{.Names}}")
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(out, "\n") {
+		if line = strings.TrimSpace(line); line != "" && line != self {
+			return line
+		}
+	}
+	return ""
 }
 
 func waitPort(port string, timeout time.Duration) error {

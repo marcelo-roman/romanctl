@@ -27,6 +27,7 @@ type Service struct {
 	Engine      bool            // é o motor de containers: fica fora de "all"
 	before      func() error    // roda antes do spinner, como a senha do sudo
 	Warning     string          // o que mais para junto; parar pede confirmação
+	Conflict    func() string   // outro programa disputando a porta do serviço já ligado
 }
 
 // All lista os serviços: no proot, Postgres, Mongo e Redis rodam como processo local;
@@ -58,6 +59,11 @@ func (s *Service) Start() error {
 	state.MarkService(s.Key, true) // mesmo se falhar: o restore tenta de novo
 	if s.Running() {
 		ui.Okf("%s já está rodando → %s", s.Name, s.URL())
+		if s.Conflict != nil {
+			if warning := s.Conflict(); warning != "" {
+				ui.Warnf("%s", warning)
+			}
+		}
 		return nil
 	}
 	if s.before != nil {
