@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
   workflow_dispatch:
     inputs:
       sweep:
@@ -34,7 +36,8 @@ jobs:
           kubectl version --client
           terraform version
           ./romanctl tools uninstall jq kubectl terraform --yes
-      - run: ./romanctl new loja --stack dotnet --arch clean,ddd,cqrs --with postgres --dry-run --json
+      - name: Simula cada template do catálogo
+        run: scripts/templates.sh dry ./romanctl
 
   build:
     runs-on: ubuntu-latest
@@ -91,13 +94,8 @@ jobs:
           done
           ./romanctl status
           ./romanctl stop all
-      - name: Template .NET contra um PostgreSQL de verdade
-        run: |
-          ./romanctl tools install dotnet
-          ./romanctl start postgres
-          ./romanctl new loja --stack dotnet --arch clean,ddd,cqrs --with postgres --sem-git
-          cd ~/projetos/loja
-          dotnet test
+      - name: Gera cada template com todos os serviços e roda os testes dele
+        run: scripts/templates.sh test ./romanctl
 
   sweep:
     if: github.event_name == 'workflow_dispatch' && inputs.sweep

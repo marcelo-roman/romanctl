@@ -22,25 +22,50 @@ import (
 )
 
 type templateData struct {
-	Name     string // nome em PascalCase, usado em namespaces e projetos
-	Lower    string // nome do projeto como foi digitado
-	DbName   string // nome válido para banco de dados
-	Postgres bool
-	Services map[string]bool
+	Name        string // PascalCase: namespaces, classes e projetos .NET
+	Lower       string // o nome como foi digitado
+	Snake       string // snake_case: pacotes Python e bancos
+	Kebab       string // kebab-case: pacotes npm, imagens e serviços
+	Camel       string // camelCase
+	DbName      string // nome válido para banco de dados
+	Module      string // módulo Go
+	Package     string // pacote Java e Kotlin
+	PackagePath string // o pacote em pastas: com/example/loja
+	Postgres    bool
+	Services    map[string]bool
 }
 
+const packagePrefix = "com.example."
+
 func newTemplateData(name string, withs []string) templateData {
+	pascal := projects.DotnetName(name)
+	snake := strings.NewReplacer("-", "_", ".", "_").Replace(name)
+	pkg := packagePrefix + strings.ReplaceAll(snake, "_", "")
 	d := templateData{
-		Name:     projects.DotnetName(name),
-		Lower:    name,
-		DbName:   strings.NewReplacer("-", "_", ".", "_").Replace(name),
-		Services: map[string]bool{},
+		Name:        pascal,
+		Lower:       name,
+		Snake:       snake,
+		Kebab:       strings.NewReplacer("_", "-", ".", "-").Replace(name),
+		DbName:      snake,
+		Module:      name,
+		Package:     pkg,
+		PackagePath: strings.ReplaceAll(pkg, ".", "/"),
+		Services:    map[string]bool{},
+	}
+	if pascal != "" {
+		d.Camel = strings.ToLower(pascal[:1]) + pascal[1:]
 	}
 	for _, s := range withs {
 		d.Services[s] = true
 	}
 	d.Postgres = d.Services["postgres"]
 	return d
+}
+
+// pathReplacer troca os marcadores dos caminhos, como __Name__ e __PackagePath__.
+func (d templateData) pathReplacer() *strings.Replacer {
+	return strings.NewReplacer("__Name__", d.Name, "__Lower__", d.Lower, "__Snake__", d.Snake, "__Kebab__", d.Kebab,
+		"__Camel__", d.Camel, "__PackagePath__", d.PackagePath)
 }
 
 type generatedFile struct {
@@ -74,6 +99,7 @@ func renderAny(name, text string, data any) (string, error) {
 
 func renderTemplate(t *Template, data templateData) ([]generatedFile, error) {
 	var files []generatedFile
+	paths := data.pathReplacer()
 	err := fs.WalkDir(t.files, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -94,7 +120,7 @@ func renderTemplate(t *Template, data templateData) ([]generatedFile, error) {
 		if err != nil {
 			return i18n.Errorf("template %s: %w", p, err)
 		}
-		files = append(files, generatedFile{strings.ReplaceAll(p, "__Name__", data.Name), content})
+		files = append(files, generatedFile{paths.Replace(p), content})
 		return nil
 	})
 	return files, err
@@ -104,10 +130,8 @@ func validateScaffold(t *Template, name string, withs []string) error {
 	if err := projects.ValidateName(name); err != nil {
 		return ui.Usagef("%v", err)
 	}
-	if t.Stack == "dotnet" {
-		if pascal := projects.DotnetName(name); pascal == "" || !unicode.IsLetter(rune(pascal[0])) {
-			return ui.Usagef("em .NET o nome precisa começar com letra, porque vira namespace: %q", name)
-		}
+	if pascal := projects.DotnetName(name); pascal == "" || !unicode.IsLetter(rune(pascal[0])) {
+		return ui.Usagef("o nome precisa começar com letra, porque vira namespace e pacote: %q", name)
 	}
 	for _, s := range withs {
 		if services.FindService(s) == nil {
@@ -127,6 +151,13 @@ type ScaffoldResult struct {
 	Path     string           `json:"path"`
 	Manifest manifest.Project `json:"manifest"`
 	Files    []string         `json:"files"`
+	Missing  []string         `json:"missingTools,omitempty"`
+	Setup    string           `json:"setup,omitempty"`
+}
+
+// Options são as escolhas de new para um template.
+type Options struct {
+	Git, DryRun, Offline bool
 }
 
 func buildManifest(t *Template, name string, withs []string, data templateData) (manifest.Project, error) {
@@ -134,8 +165,31 @@ func buildManifest(t *Template, name string, withs []string, data templateData) 
 	if err != nil {
 		return manifest.Project{}, err
 	}
-	return manifest.Project{Name: name, Stack: t.Stack, Template: t.ID, Arch: t.Arch,
-		Services: withs, Run: string(run), Test: t.Test, URL: t.URL}, nil
+	test, err := renderString("test", t.Test, data)
+	if err != nil {
+		return manifest.Project{}, err
+	}
+	m := manifest.Project{Name: name, Stack: t.Stack, Template: t.ID, Arch: t.Arch, Services: withs,
+		Run: string(run), Test: string(test), URL: t.URL, Requires: t.Requires, Publish: manifest.Publish{Kind: t.Publish.Kind}}
+	for _, s := range withs {
+		if vars, ok := t.Env[s]; ok {
+			if m.Env == nil {
+				m.Env = manifest.Env{}
+			}
+			m.Env[s] = vars
+		}
+	}
+	for key, value := range t.Publish.Vars {
+		rendered, err := renderString("publish."+key, value, data)
+		if err != nil {
+			return manifest.Project{}, err
+		}
+		if m.Publish.Vars == nil {
+			m.Publish.Vars = map[string]string{}
+		}
+		m.Publish.Vars[key] = string(rendered)
+	}
+	return m, nil
 }
 
 // writeScaffold grava numa pasta temporária e só depois move, para nunca deixar
@@ -189,7 +243,7 @@ func WriteScaffold(t *Template, name, dest string, withs []string) (ScaffoldResu
 	return result, os.Rename(tmp, dest)
 }
 
-func NewFromTemplate(name, stack, archFlag, withFlag string, git, dryRun bool) error {
+func NewFromTemplate(name, stack, archFlag, withFlag string, opts Options) error {
 	arch, err := normalizeArch(splitList(archFlag))
 	if err != nil {
 		return err
@@ -198,36 +252,41 @@ func NewFromTemplate(name, stack, archFlag, withFlag string, git, dryRun bool) e
 	if err != nil {
 		return err
 	}
-	withs := SplitServices(withFlag)
-	return ScaffoldProject(t, name, withs, git, dryRun)
+	return ScaffoldProject(t, name, SplitServices(withFlag), opts)
 }
 
-func ScaffoldProject(t *Template, name string, withs []string, git, dryRun bool) error {
+func ScaffoldProject(t *Template, name string, withs []string, opts Options) error {
 	if err := validateScaffold(t, name, withs); err != nil {
 		return err
 	}
 	dest := filepath.Join(config.ProjDir, name)
 	target := dest
-	if dryRun {
+	if opts.DryRun {
 		target = "" // writeScaffold só lista os arquivos, sem gravar nada
 	}
 	result, err := WriteScaffold(t, name, target, withs)
 	if err != nil {
 		return i18n.Errorf("falha ao gerar %s: %w", name, err)
 	}
-	result.Path, result.DryRun = dest, dryRun
-	if !dryRun && git && sys.Have("git") {
-		sys.Output("git", "-C", dest, "init", "-q")
-	}
-	if ui.JSONOutput {
-		return ui.PrintJSON(result)
-	}
-	if dryRun {
+	result.Path, result.DryRun = dest, opts.DryRun
+	if opts.DryRun {
+		result.Missing = missingTools(t.Requires)
+		if ui.JSONOutput {
+			return ui.PrintJSON(result)
+		}
 		ui.Infof("Simulação: nada foi gravado. Seriam criados %d arquivos em %s:", len(result.Files), dest)
 		for _, f := range result.Files {
 			fmt.Println("  " + f)
 		}
 		return nil
+	}
+	if opts.Git && sys.Have("git") {
+		sys.Output("git", "-C", dest, "init", "-q")
+	}
+	result.Missing = ensureTools(t.Requires)
+	result.Setup = runSetup(t, dest, opts.Offline, result.Missing)
+	if ui.JSONOutput {
+		return ui.PrintJSON(result)
 	}
 	ui.Okf("Projeto %s criado com o template %s (%d arquivos)", ui.SBoldTxt.Render(name), t.Key(), len(result.Files))
 	i18n.Printf("   Pasta:   %s\n   Rodar:   romanctl run %s\n   Testar:  cd %s && %s\n   Abrir:   romanctl code %s\n",

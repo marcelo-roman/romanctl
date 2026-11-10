@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"romanctl/internal/config"
 	"romanctl/internal/i18n"
+	"romanctl/internal/manifest"
 	"romanctl/internal/ui"
 	"slices"
 	"sort"
@@ -19,12 +20,23 @@ import (
 var embeddedTemplates embed.FS
 
 // Vocabulário reconhecido, mesmo quando ainda não há template para a combinação.
-var knownArch = []string{"clean", "ddd", "cqrs", "event-sourcing", "bff", "trpc"}
+var knownArch = []string{"bff", "clean", "cqrs", "ddd", "event-driven", "event-sourcing", "feature-sliced", "hexagonal",
+	"layered", "microservices", "modular-monolith", "trpc", "vertical-slice"}
 
 var archAliases = map[string]string{
 	"clean-architecture": "clean",
 	"eventsourcing":      "event-sourcing",
 	"es":                 "event-sourcing",
+	"ports-and-adapters": "hexagonal",
+	"ports-adapters":     "hexagonal",
+	"n-tier":             "layered",
+	"mvc":                "layered",
+	"vsa":                "vertical-slice",
+	"vertical-slices":    "vertical-slice",
+	"modular":            "modular-monolith",
+	"modulith":           "modular-monolith",
+	"eda":                "event-driven",
+	"fsd":                "feature-sliced",
 }
 
 type conditionalPath struct {
@@ -42,6 +54,10 @@ type Template struct {
 	Run         string            `yaml:"run" json:"run"`
 	Test        string            `yaml:"test" json:"test"`
 	URL         string            `yaml:"url" json:"url"`
+	Requires    []string          `yaml:"requires" json:"requires,omitempty"`
+	Setup       []string          `yaml:"setup" json:"setup,omitempty"`
+	Env         manifest.Env      `yaml:"env" json:"env,omitempty"`
+	Publish     manifest.Publish  `yaml:"publish" json:"publish,omitempty"`
 	Conditional []conditionalPath `yaml:"conditional" json:"-"`
 	Source      string            `yaml:"-" json:"source"`
 	files       fs.FS
@@ -161,6 +177,16 @@ func MatchTemplates(stack, archFlag string) ([]*Template, error) {
 		}
 	}
 	return out, nil
+}
+
+// FindByKey acha o template de um projeto pelo stack e pelo id gravados no romanctl.yaml.
+func FindByKey(stack, id string) *Template {
+	for _, t := range LoadTemplates() {
+		if t.Stack == stack && t.ID == id {
+			return t
+		}
+	}
+	return nil
 }
 
 // AvailableCombinations descreve os templates, para mensagens de erro.

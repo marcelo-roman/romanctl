@@ -40,8 +40,13 @@ romanctl new loja --stack dotnet --arch clean,ddd,cqrs --with postgres
 
 - As combinações válidas de `--arch` e os serviços aceitos em `--with` estão em
   `romanctl catalog --json`; não invente combinações.
-- `--dry-run` mostra os arquivos que seriam criados.
-- Nomes: letras minúsculas, números, `-`, `_` ou `.`.
+- `--dry-run` mostra os arquivos que seriam criados, e `missingTools` no `--json` diz que ferramentas
+  faltam para rodar o projeto.
+- Depois de gerar, o `new` roda o preparo do template (`dotnet restore`, `npm install`...). Sem as
+  ferramentas, ou com `--offline`, o preparo fica para depois e `setup` no `--json` diz por quê
+  (`skipped`, `offline`, `failed` ou `done`). Faltando ferramenta, instale pela skill `romanctl-tools`
+  e rode o preparo na pasta do projeto.
+- Nomes: letras minúsculas, números, `-`, `_` ou `.`; num template, começando por letra.
 - O projeto nasce em `~/projetos/<nome>` (ou em `$ROMANCTL_PROJETOS`).
 
 Depois de criar, o próximo passo natural é subir o ambiente (skill `romanctl-dev`) e, se o

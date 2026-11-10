@@ -150,7 +150,7 @@ const templatePrefix = "template:"
 type newRequest struct {
 	typ, name, stack, arch string
 	with                   []string
-	noGit, dryRun          bool
+	noGit, dryRun, offline bool
 }
 
 func menuNewProject(typ, name string) error {
@@ -229,9 +229,9 @@ func runNewWizard(req newRequest) error {
 			return i18n.Errorf("template %s não encontrado", key)
 		}
 		sort.Strings(chosen)
-		return scaffold.ScaffoldProject(t, name, chosen, git, req.dryRun)
+		return scaffold.ScaffoldProject(t, name, chosen, scaffold.Options{Git: git, DryRun: req.dryRun, Offline: req.offline})
 	}
-	return projects.NewProject(typ, name, git, false)
+	return projects.NewProject(typ, name, git, req.offline)
 }
 
 func templateByKey(key string) *scaffold.Template {

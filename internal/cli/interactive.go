@@ -36,24 +36,25 @@ func newCommand(args []string, flags map[string]bool) error {
 	a, b := arg(args, 0), arg(args, 1)
 	stack, archFlag := flagVals["stack"], flagVals["arch"]
 	git := !flags["sem-git"]
+	opts := scaffold.Options{Git: git, DryRun: flags["dry-run"], Offline: flags["offline"]}
 
 	if stack != "" || archFlag != "" {
 		if a != "" && stack != "" && archFlag != "" {
-			return scaffold.NewFromTemplate(a, stack, archFlag, flagVals["with"], git, flags["dry-run"])
+			return scaffold.NewFromTemplate(a, stack, archFlag, flagVals["with"], opts)
 		}
 		if !ui.Interactive() {
 			if a == "" {
 				return ui.Usagef("informe o nome: romanctl new <nome> --stack <stack> --arch <arquiteturas>")
 			}
-			return scaffold.NewFromTemplate(a, stack, archFlag, flagVals["with"], git, flags["dry-run"])
+			return scaffold.NewFromTemplate(a, stack, archFlag, flagVals["with"], opts)
 		}
 		return runNewWizard(newRequest{name: a, stack: stack, arch: archFlag, with: scaffold.SplitServices(flagVals["with"]),
-			noGit: !git, dryRun: flags["dry-run"]})
+			noGit: !git, dryRun: flags["dry-run"], offline: flags["offline"]})
 	}
 	if a != "" && b != "" {
 		return projects.NewProject(a, b, git, flags["offline"])
 	}
-	req := newRequest{typ: a, noGit: !git}
+	req := newRequest{typ: a, noGit: !git, offline: flags["offline"]}
 	// "new loja" informa o nome; "new express" informa o tipo.
 	if a != "" && projects.FindType(a) == nil {
 		req.typ, req.name = "", a

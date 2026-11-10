@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"gopkg.in/yaml.v3"
+
+	"romanctl/internal/scaffold"
 )
 
 func TestSensitive(t *testing.T) {
@@ -20,7 +22,7 @@ func TestSensitive(t *testing.T) {
 }
 
 func TestTodoTipoGeraArquivosValidos(t *testing.T) {
-	data := fileData{Name: "Loja", Lower: "loja", API: "src/Loja.Api", Dll: "Loja.Api"}
+	data := fileData{"Name": "Loja", "Lower": "loja", "API": "src/Loja.Api", "Dll": "Loja.Api"}
 	for _, kind := range []string{"dotnet-solution", "dotnet", "next", "react", "node", "go"} {
 		files, err := render(kind, data)
 		if err != nil {
@@ -220,5 +222,22 @@ func TestSemLoginExplica(t *testing.T) {
 	fakeGH(t, false)
 	if _, err := Plan(goProject(t), Options{}); err == nil || !strings.Contains(err.Error(), "gh auth login") {
 		t.Fatalf("erro: %v", err)
+	}
+}
+
+func TestTodoTemplateTemPublicacao(t *testing.T) {
+	for _, tpl := range scaffold.LoadTemplates() {
+		dest := filepath.Join(t.TempDir(), "minha-loja")
+		if _, err := scaffold.WriteScaffold(tpl, "minha-loja", dest, nil); err != nil {
+			t.Fatalf("%s: %v", tpl.Key(), err)
+		}
+		kind, data := KindOf(dest)
+		if !slices.Contains(Kinds(), kind) {
+			t.Errorf("%s: publish.kind %q não existe (existem: %v)", tpl.Key(), kind, Kinds())
+			continue
+		}
+		if _, err := render(kind, data); err != nil {
+			t.Errorf("%s: %v", tpl.Key(), err)
+		}
 	}
 }

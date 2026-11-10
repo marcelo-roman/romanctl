@@ -11,27 +11,52 @@ import (
 
 var safeDBName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
-// EnvVars são as variáveis que um projeto usa para falar com o serviço.
-func (s *Service) EnvVars(db string) [][2]string {
+// Conn é como um projeto alcança o serviço. Os templates montam as próprias variáveis com estes campos.
+type Conn struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Database string
+	URL      string
+}
+
+// Conn devolve o endereço e as credenciais do serviço para o banco db.
+func (s *Service) Conn(db string) (Conn, bool) {
 	switch s.Key {
 	case "postgres":
-		return [][2]string{{"DATABASE_URL", "postgres://postgres:postgres@127.0.0.1:5432/" + db}}
+		return Conn{"127.0.0.1", "5432", "postgres", "postgres", db, "postgres://postgres:postgres@127.0.0.1:5432/" + db}, true
 	case "mongo":
-		return [][2]string{{"MONGODB_URL", "mongodb://127.0.0.1:27017/" + db}}
+		return Conn{"127.0.0.1", "27017", "", "", db, "mongodb://127.0.0.1:27017/" + db}, true
 	case "redis":
-		return [][2]string{{"REDIS_URL", "redis://127.0.0.1:6379"}}
+		return Conn{"127.0.0.1", "6379", "", "", "", "redis://127.0.0.1:6379"}, true
 	case "mysql":
-		return [][2]string{{"DATABASE_URL", "mysql://root:mysql@127.0.0.1:3306/" + db}}
+		return Conn{"127.0.0.1", "3306", "root", "mysql", db, "mysql://root:mysql@127.0.0.1:3306/" + db}, true
 	case "mariadb":
-		return [][2]string{{"DATABASE_URL", "mysql://root:mariadb@127.0.0.1:3307/" + db}}
+		return Conn{"127.0.0.1", "3307", "root", "mariadb", db, "mysql://root:mariadb@127.0.0.1:3307/" + db}, true
 	case "sqlserver":
-		return [][2]string{{"SQLSERVER_CONNECTION_STRING", "Server=127.0.0.1,1433;Database=" + db + ";User Id=sa;Password=Romanctl!Dev1;TrustServerCertificate=True"}}
+		return Conn{"127.0.0.1", "1433", "sa", "Romanctl!Dev1", db,
+			"Server=127.0.0.1,1433;Database=" + db + ";User Id=sa;Password=Romanctl!Dev1;TrustServerCertificate=True"}, true
 	case "rabbitmq":
-		return [][2]string{{"RABBITMQ_URL", "amqp://guest:guest@127.0.0.1:5672"}}
+		return Conn{"127.0.0.1", "5672", "guest", "guest", "", "amqp://guest:guest@127.0.0.1:5672"}, true
 	case "kafka":
-		return [][2]string{{"KAFKA_BROKERS", "127.0.0.1:9092"}}
+		return Conn{"127.0.0.1", "9092", "", "", "", "127.0.0.1:9092"}, true
 	}
-	return nil
+	return Conn{}, false
+}
+
+var envNames = map[string]string{
+	"postgres": "DATABASE_URL", "mongo": "MONGODB_URL", "redis": "REDIS_URL", "mysql": "DATABASE_URL",
+	"mariadb": "DATABASE_URL", "sqlserver": "SQLSERVER_CONNECTION_STRING", "rabbitmq": "RABBITMQ_URL", "kafka": "KAFKA_BROKERS",
+}
+
+// EnvVars são as variáveis que todo projeto recebe para falar com o serviço.
+func (s *Service) EnvVars(db string) [][2]string {
+	c, ok := s.Conn(db)
+	if !ok {
+		return nil
+	}
+	return [][2]string{{envNames[s.Key], c.URL}}
 }
 
 // HasDatabases diz se o banco precisa ser criado antes de o app conectar.

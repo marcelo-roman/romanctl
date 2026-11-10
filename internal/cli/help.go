@@ -79,10 +79,10 @@ var commands = []command{
 		summary: text{"Cria um projeto, perguntando o que faltar", "Creates a project, asking for whatever is missing"},
 		options: []helpOption{
 			{"--stack <stack>", text{"linguagem do template, como dotnet", "template language, such as dotnet"}},
-			{"--arch <a,b>", text{"arquiteturas: clean, ddd, cqrs, event-sourcing, bff, trpc", "architectures: clean, ddd, cqrs, event-sourcing, bff, trpc"}},
+			{"--arch <a,b>", text{"arquiteturas, como clean, ddd, cqrs e hexagonal; romanctl catalog lista todas", "architectures, such as clean, ddd, cqrs and hexagonal; romanctl catalog lists them all"}},
 			{"--with <serviços>", text{"serviços do projeto, como postgres", "project services, such as postgres"}},
 			{"--sem-git", text{"não cria repositório git", "does not create a git repository"}},
-			{"--offline", text{"usa só templates e cache", "uses only templates and cache"}},
+			{"--offline", text{"usa só templates e cache, sem baixar dependências", "uses only templates and cache, without downloading dependencies"}},
 			{"--dry-run", text{"mostra o que seria criado", "shows what would be created"}}, optJSON},
 		examples: []string{"romanctl new", "romanctl new loja", "romanctl new express api", "romanctl new loja --stack dotnet --arch clean,ddd,cqrs --with postgres"}},
 	{path: "catalog", aliases: []string{"catalogo"}, usage: "romanctl catalog [--json]",

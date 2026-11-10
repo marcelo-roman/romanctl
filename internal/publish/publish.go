@@ -16,6 +16,7 @@ import (
 	"romanctl/internal/i18n"
 	"romanctl/internal/manifest"
 	"romanctl/internal/projects"
+	"romanctl/internal/scaffold"
 	"romanctl/internal/sys"
 	"romanctl/internal/ui"
 )
@@ -43,19 +44,34 @@ type Result struct {
 	Committed bool     `json:"committed"`
 }
 
-type fileData struct {
-	Name, Lower, API, Dll string
+// fileData são os valores dos arquivos de CI e Dockerfile: Name, Lower e o que o template definir.
+type fileData map[string]string
+
+// Kinds são os conjuntos de CI e Dockerfile que existem.
+func Kinds() []string {
+	entries, _ := fs.ReadDir(embedded, "files")
+	var out []string
+	for _, e := range entries {
+		if e.IsDir() {
+			out = append(out, e.Name())
+		}
+	}
+	return out
 }
 
 // KindOf diz qual conjunto de CI e Dockerfile serve para o projeto.
 func KindOf(projectPath string) (string, fileData) {
 	base := filepath.Base(projectPath)
-	data := fileData{Name: projects.DotnetName(base), Lower: base}
-	if m, ok := manifest.Read(projectPath); ok && m.Stack == "dotnet" {
-		data.Name = projects.DotnetName(m.Name)
-		data.API = "src/" + data.Name + ".Api"
-		data.Dll = data.Name + ".Api"
-		return "dotnet-solution", data
+	data := fileData{"Name": projects.DotnetName(base), "Lower": base, "Dll": ""}
+	if m, ok := manifest.Read(projectPath); ok {
+		scaffold.Complete(m)
+		if m.Publish.Kind != "" {
+			data["Name"], data["Lower"] = projects.DotnetName(m.Name), m.Name
+			for k, v := range m.Publish.Vars {
+				data[k] = v
+			}
+			return m.Publish.Kind, data
+		}
 	}
 	switch projects.DetectType(projectPath) {
 	case "next":
@@ -68,7 +84,7 @@ func KindOf(projectPath string) (string, fileData) {
 		return "go", data
 	case "dotnet":
 		if files, _ := filepath.Glob(filepath.Join(projectPath, "*.csproj")); len(files) > 0 {
-			data.Dll = strings.TrimSuffix(filepath.Base(files[0]), ".csproj")
+			data["Dll"] = strings.TrimSuffix(filepath.Base(files[0]), ".csproj")
 		}
 		return "dotnet", data
 	}

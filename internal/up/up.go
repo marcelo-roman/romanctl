@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"romanctl/internal/browser"
@@ -16,9 +17,11 @@ import (
 	"romanctl/internal/i18n"
 	"romanctl/internal/manifest"
 	"romanctl/internal/projects"
+	"romanctl/internal/scaffold"
 	"romanctl/internal/services"
 	"romanctl/internal/state"
 	"romanctl/internal/sys"
+	"romanctl/internal/tools"
 	"romanctl/internal/ui"
 )
 
@@ -87,21 +90,63 @@ func checkPort(rawURL, self string) error {
 	return i18n.Errorf("a porta %s já está em uso por outro programa", port)
 }
 
-// serviceEnv junta as variáveis dos serviços do projeto.
-func serviceEnv(m *manifest.Project, db string) []KV {
+// serviceEnv junta as variáveis dos serviços do projeto: as de todo projeto e as que o template pede.
+func serviceEnv(m *manifest.Project, db string) ([]KV, error) {
 	var vars []KV
 	for _, key := range m.Services {
-		if s := services.FindService(key); s != nil {
-			for _, kv := range s.EnvVars(db) {
-				vars = append(vars, KV{kv[0], kv[1]})
-			}
+		s := services.FindService(key)
+		if s == nil {
+			continue
+		}
+		for _, kv := range s.EnvVars(db) {
+			vars = append(vars, KV{kv[0], kv[1]})
+		}
+		own, err := templateEnv(m.Env[key], s, db)
+		if err != nil {
+			return nil, err
+		}
+		vars = append(vars, own...)
+	}
+	return vars, nil
+}
+
+func templateEnv(spec map[string]string, s *services.Service, db string) ([]KV, error) {
+	conn, ok := s.Conn(db)
+	if !ok || len(spec) == 0 {
+		return nil, nil
+	}
+	keys := make([]string, 0, len(spec))
+	for k := range spec {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+	var out []KV
+	for _, k := range keys {
+		tpl, err := template.New(k).Option("missingkey=error").Parse(spec[k])
+		if err != nil {
+			return nil, i18n.Errorf("variável %s do romanctl.yaml: %w", k, err)
+		}
+		var b strings.Builder
+		if err := tpl.Execute(&b, conn); err != nil {
+			return nil, i18n.Errorf("variável %s do romanctl.yaml: %w", k, err)
+		}
+		out = append(out, KV{k, b.String()})
+	}
+	return out, nil
+}
+
+// missingTool diz qual ferramenta do projeto falta para rodá-lo.
+func missingTool(keys []string) error {
+	for _, key := range keys {
+		t := tools.Find(key)
+		if t == nil {
+			continue
+		}
+		if _, ok := t.Detected(); !ok {
+			return i18n.Errorf("o projeto precisa de %s: romanctl tools install %s", t.Name, t.Key)
 		}
 	}
-	// O ASP.NET lê a connection string desta variável, por cima do appsettings.
-	if m.Stack == "dotnet" && slices.Contains(m.Services, "postgres") {
-		vars = append(vars, KV{"ConnectionStrings__Default", "Host=127.0.0.1;Port=5432;Database=" + db + ";Username=postgres;Password=postgres"})
-	}
-	return vars
+	return nil
 }
 
 func ensureService(key string) (*services.Service, error) {
@@ -133,6 +178,9 @@ func ensureService(key string) (*services.Service, error) {
 // Run sobe o ambiente. Em primeiro plano, só volta quando o app para.
 func Run(name, path string, opts Options) (Result, error) {
 	m, hasManifest := manifest.Read(path)
+	if hasManifest {
+		scaffold.Complete(m)
+	}
 	result := Result{Project: name, Path: path, Services: []string{}, Started: []string{}, EnvAdded: []string{}}
 	previous, wasKnown := state.ReadState().Ups[name]
 	if wasKnown && previous.PID != 0 && previous.Alive() {
@@ -142,6 +190,11 @@ func Run(name, path string, opts Options) (Result, error) {
 	}
 	appURL := projects.AppURL(path)
 	result.URL = appURL
+	if !opts.NoRun && hasManifest {
+		if err := missingTool(m.Requires); err != nil {
+			return result, err
+		}
+	}
 	if !opts.NoRun && appURL != "" {
 		if err := checkPort(appURL, name); err != nil {
 			return result, err
@@ -181,7 +234,11 @@ func Run(name, path string, opts Options) (Result, error) {
 			}
 			result.Database = db
 		}
-		if vars := serviceEnv(m, db); len(vars) > 0 {
+		vars, err := serviceEnv(m, db)
+		if err != nil {
+			return result, err
+		}
+		if len(vars) > 0 {
 			added, err := MergeEnv(filepath.Join(path, ".env"), vars)
 			if err != nil {
 				return result, err

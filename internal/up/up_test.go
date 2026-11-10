@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"romanctl/internal/manifest"
 	"romanctl/internal/state"
 )
 
@@ -81,5 +82,27 @@ func TestNomesEPorta(t *testing.T) {
 	}
 	if portOf("http://localhost:5080") != "5080" || portOf("nada") != "" {
 		t.Fatal("porta")
+	}
+}
+
+func TestVariaveisDoTemplateUsamAConexaoDoServico(t *testing.T) {
+	m := &manifest.Project{Services: []string{"postgres", "redis"}, Env: manifest.Env{
+		"postgres": {"ConnectionStrings__Default": "Host={{.Host}};Port={{.Port}};Database={{.Database}};Username={{.User}};Password={{.Password}}"},
+	}}
+	vars, err := serviceEnv(m, "loja")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []KV{
+		{"DATABASE_URL", "postgres://postgres:postgres@127.0.0.1:5432/loja"},
+		{"ConnectionStrings__Default", "Host=127.0.0.1;Port=5432;Database=loja;Username=postgres;Password=postgres"},
+		{"REDIS_URL", "redis://127.0.0.1:6379"},
+	}
+	if !slices.Equal(vars, want) {
+		t.Fatalf("obtido %v", vars)
+	}
+	m.Env["postgres"]["X"] = "{{.Inexistente}}"
+	if _, err := serviceEnv(m, "loja"); err == nil {
+		t.Fatal("aceitou campo que não existe")
 	}
 }

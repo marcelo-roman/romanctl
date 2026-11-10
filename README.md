@@ -313,10 +313,58 @@ binário mudar, e o tamanho dos caches do `offline` fica guardado por uma hora.
 romanctl new pedidos --stack dotnet --arch clean,ddd,cqrs --with postgres
 ```
 
+`romanctl catalog` lista os templates e as arquiteturas conhecidas: `bff`, `clean`, `cqrs`, `ddd`, `event-driven`,
+`event-sourcing`, `feature-sliced`, `hexagonal`, `layered`, `microservices`, `modular-monolith`, `trpc` e
+`vertical-slice`. Apelidos como `ports-and-adapters`, `vsa`, `modulith` e `fsd` também valem.
+
+Depois de gerar, o `new` confere as ferramentas de que o projeto precisa e, em um terminal, oferece instalá-las. Com
+tudo instalado, ele roda o preparo do template, como `dotnet restore` ou `npm install`. Com `--offline`, o preparo
+fica para depois. Uma falha no preparo não apaga o projeto.
+
 Cada template é uma pasta com um `template.yaml`: os embutidos ficam em `templates/`, e uma pasta em
-`~/.config/romanctl/templates/<stack>/<id>/` tem prioridade sobre eles. Todo arquivo é processado
-com `text/template`, e `__Name__` nos caminhos vira o nome do projeto em PascalCase. Cada projeto
-gerado ganha um `romanctl.yaml`, que o `run` e o `open` usam.
+`~/.config/romanctl/templates/<stack>/<id>/` tem prioridade sobre eles.
+
+```yaml
+id: clean-ddd-cqrs
+stack: dotnet
+arch: [clean, ddd, cqrs]
+description: API .NET com Clean Architecture, DDD e CQRS
+services: [postgres]                  # o que --with aceita
+requires: [dotnet]                    # ferramentas do romanctl tools
+setup: [dotnet restore]               # roda na pasta do projeto, depois de gerar
+run: dotnet run --project src/{{.Name}}.Api
+test: dotnet test
+url: http://localhost:5080
+env:                                  # variáveis que o up grava no .env, por serviço
+  postgres:
+    ConnectionStrings__Default: Host={{.Host}};Port={{.Port}};Database={{.Database}};Username={{.User}};Password={{.Password}}
+publish:                              # CI e Dockerfile do romanctl publish
+  kind: dotnet-solution
+  vars: {API: "src/{{.Name}}.Api", Dll: "{{.Name}}.Api"}
+conditional:                          # pastas que só existem com ou sem um serviço
+  - path: src/__Name__.Infrastructure/Persistence/EfCore
+    when: postgres
+```
+
+Todo arquivo, e também `run`, `test` e `publish.vars`, é processado com `text/template` sobre o nome do projeto:
+
+| Campo | `minha-loja` vira | Nos caminhos |
+|---|---|---|
+| `{{.Name}}` | `MinhaLoja` | `__Name__` |
+| `{{.Lower}}` | `minha-loja` | `__Lower__` |
+| `{{.Snake}}`, `{{.DbName}}` | `minha_loja` | `__Snake__` |
+| `{{.Kebab}}` | `minha-loja` | `__Kebab__` |
+| `{{.Camel}}` | `minhaLoja` | `__Camel__` |
+| `{{.Module}}` | `minha-loja` | |
+| `{{.Package}}` | `com.example.minhaloja` | `__PackagePath__` vira `com/example/minhaloja` |
+| `{{.Postgres}}`, `{{.Services.redis}}` | os serviços escolhidos | |
+
+Os valores de `env` são processados só no `up`, com o endereço do serviço: `{{.Host}}`, `{{.Port}}`, `{{.User}}`,
+`{{.Password}}`, `{{.Database}}` e `{{.URL}}`. Além delas, todo projeto recebe as variáveis padrão de cada serviço,
+como `DATABASE_URL`.
+
+Cada projeto gerado ganha um `romanctl.yaml` com o que o `run`, o `up`, o `add` e o `publish` usam. Um teste
+gera cada template embutido com todas as combinações de serviços, e o CI gera e testa cada um de verdade.
 
 ## Adicionar ao projeto
 
