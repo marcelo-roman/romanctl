@@ -1,0 +1,21 @@
+id: clean-ddd-cqrs
+stack: node
+arch: [clean, ddd, cqrs]
+description: API Node com NestJS, Clean Architecture, DDD e CQRS, em TypeScript
+services: [postgres]
+requires: [node]
+setup:
+  - npm ci
+run: npm start
+test: npm test
+url: http://localhost:3000
+publish:
+  kind: node-ts
+conditional:
+  - path: src/infrastructure/persistence/postgres
+    when: postgres
+  - path: test/infrastructure/postgres
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"

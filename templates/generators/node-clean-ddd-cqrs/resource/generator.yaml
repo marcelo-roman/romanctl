@@ -1,0 +1,53 @@
+description: CRUD completo - domínio, comandos, consultas, persistência, controller NestJS e testes
+aliases: [crud, scaffold]
+conditional:
+  - path: src/infrastructure/persistence/postgres
+    when: postgres
+  - path: test/infrastructure/postgres
+    when: postgres
+patches:
+  - file: src/api/app.module.ts
+    before: "// romanctl:imports"
+    text: |
+      import { sampleItemHandlers } from '../application/sample-items/sample-item-handlers.js';
+      import { SampleItemsController } from './sample-items.controller.js';
+  - file: src/api/app.module.ts
+    before: "// romanctl:controllers"
+    text: "SampleItemsController,"
+  - file: src/api/app.module.ts
+    before: "// romanctl:handlers"
+    text: "...sampleItemHandlers,"
+  - file: src/infrastructure/persistence/memory/in-memory-persistence.module.ts
+    before: "// romanctl:imports"
+    text: |
+      import { SampleItemReadStore } from '../../../application/sample-items/sample-item-read-store.js';
+      import { SampleItemRepository } from '../../../domain/sample-items/sample-item-repository.js';
+      import { InMemorySampleItemReadStore } from './in-memory-sample-item-read-store.js';
+      import { InMemorySampleItemRepository } from './in-memory-sample-item-repository.js';
+      import { InMemorySampleItemStore } from './in-memory-sample-item-store.js';
+  - file: src/infrastructure/persistence/memory/in-memory-persistence.module.ts
+    before: "// romanctl:providers"
+    text: |
+      InMemorySampleItemStore,
+      { provide: SampleItemRepository, useClass: InMemorySampleItemRepository },
+      { provide: SampleItemReadStore, useClass: InMemorySampleItemReadStore },
+  - when: postgres
+    file: src/infrastructure/persistence/postgres/postgres-persistence.module.ts
+    before: "// romanctl:imports"
+    text: |
+      import { SampleItemReadStore } from '../../../application/sample-items/sample-item-read-store.js';
+      import { SampleItemRepository } from '../../../domain/sample-items/sample-item-repository.js';
+      import { PostgresSampleItemReadStore } from './postgres-sample-item-read-store.js';
+      import { PostgresSampleItemRepository } from './postgres-sample-item-repository.js';
+  - when: postgres
+    file: src/infrastructure/persistence/postgres/postgres-persistence.module.ts
+    before: "// romanctl:providers"
+    text: |
+      { provide: SampleItemRepository, useClass: PostgresSampleItemRepository },
+      { provide: SampleItemReadStore, useClass: PostgresSampleItemReadStore },
+  - when: postgres
+    file: src/infrastructure/persistence/postgres/schema.ts
+    before: "-- romanctl:tables"
+    text: |
+      CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
+next: "Rotas em /sample-items. Rode npm test para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}"

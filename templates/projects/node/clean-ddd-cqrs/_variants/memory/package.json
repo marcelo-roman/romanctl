@@ -1,0 +1,31 @@
+{
+  "name": "sample-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "npm run build && node --env-file-if-exists=.env dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc --noEmit && vitest run"
+  },
+  "dependencies": {
+    "@nestjs/common": "12.4.2",
+    "@nestjs/core": "12.4.2",
+    "@nestjs/cqrs": "12.1.2",
+    "@nestjs/platform-express": "12.4.2",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "12.4.2",
+    "@types/node": "24.19.2",
+    "@types/supertest": "7.2.1",
+    "supertest": "7.3.2",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}
