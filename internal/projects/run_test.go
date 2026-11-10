@@ -37,7 +37,7 @@ func TestSupervisorPoeONomeEUsaPastaEAmbienteDeCadaProcesso(t *testing.T) {
 	var out syncBuffer
 	code := Supervise(dir, []manifest.Process{
 		{Name: "api", Run: "echo porta=$API_PORT; sleep 30", Env: map[string]string{"API_PORT": "3302"}},
-		{Name: "web", Dir: "web app", Run: "pwd"},
+		{Name: "web", Dir: "web app", Run: "sleep 0.5; pwd"},
 	}, &out)
 	text := out.String()
 	if !strings.Contains(text, "[api] porta=3302") || !strings.Contains(text, "[web] "+filepath.Join(dir, "web app")) {
