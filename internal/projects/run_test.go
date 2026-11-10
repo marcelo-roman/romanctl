@@ -2,32 +2,64 @@ package projects
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"romanctl/internal/manifest"
-	"romanctl/internal/sys"
 )
 
-func TestSupervisorSobeTodosComONomeNaFrente(t *testing.T) {
+type syncBuffer struct {
+	mu sync.Mutex
+	b  strings.Builder
+}
+
+func (s *syncBuffer) Write(p []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.b.Write(p)
+}
+
+func (s *syncBuffer) String() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.b.String()
+}
+
+func TestSupervisorPoeONomeEUsaPastaEAmbienteDeCadaProcesso(t *testing.T) {
 	dir := t.TempDir()
 	os.MkdirAll(filepath.Join(dir, "web app"), 0o755)
-	script := supervisor([]manifest.Process{
-		{Name: "api", Run: "echo pronta"},
+	var out syncBuffer
+	code := Supervise(dir, []manifest.Process{
+		{Name: "api", Run: "echo porta=$API_PORT; sleep 30", Env: map[string]string{"API_PORT": "3302"}},
 		{Name: "web", Dir: "web app", Run: "pwd"},
-	})
-	cmd := exec.Command("sh", "-c", script)
-	cmd.Dir = dir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("%v: %s", err, out)
-	}
-	text := string(out)
-	if !strings.Contains(text, "[api] pronta") || !strings.Contains(text, "[web] "+filepath.Join(dir, "web app")) {
+	}, &out)
+	text := out.String()
+	if !strings.Contains(text, "[api] porta=3302") || !strings.Contains(text, "[web] "+filepath.Join(dir, "web app")) {
 		t.Fatalf("saída: %q", text)
+	}
+	if code != 1 {
+		t.Fatalf("um processo que termina sozinho derruba o projeto: código %d", code)
+	}
+}
+
+func TestQuedaDeUmProcessoParaOsOutrosNaHora(t *testing.T) {
+	var out syncBuffer
+	start := time.Now()
+	code := Supervise(t.TempDir(), []manifest.Process{
+		{Name: "api", Run: "echo falhou; exit 7"},
+		{Name: "web", Run: "sleep 30"},
+	}, &out)
+	if code != 7 {
+		t.Fatalf("código %d, saída %q", code, out.String())
+	}
+	if time.Since(start) > 4*time.Second {
+		t.Fatalf("demorou %s para parar o web", time.Since(start))
+	}
+	if !strings.Contains(out.String(), "[api] falhou") {
+		t.Fatalf("saída: %q", out.String())
 	}
 }
 
@@ -40,19 +72,11 @@ func TestComandoDoManifestoPassaPeloShell(t *testing.T) {
 	}
 }
 
-func TestPararOGrupoParaTodosOsProcessos(t *testing.T) {
+func TestProjetoComProcessosRodaPeloSupervisor(t *testing.T) {
 	dir := t.TempDir()
-	script := supervisor([]manifest.Process{{Name: "a", Run: "sleep 30"}, {Name: "b", Run: "sleep 30"}})
-	pid, err := sys.StartDetachedEnv(filepath.Join(dir, "log"), dir, nil, "sh", "-c", script)
-	if err != nil {
-		t.Fatal(err)
-	}
-	time.Sleep(300 * time.Millisecond)
-	if !sys.GroupAlive(pid) {
-		t.Fatal("o grupo deveria estar vivo")
-	}
-	sys.StopGroup(pid, 3*time.Second)
-	if !sys.WaitUntil(2*time.Second, func() bool { return !sys.GroupAlive(pid) }) {
-		t.Fatal("sobrou processo do grupo")
+	os.WriteFile(filepath.Join(dir, manifest.FileName), []byte("name: x\nprocesses:\n  - name: a\n    run: true\n"), 0o644)
+	cmd, err := RunCommand(dir, "x")
+	if err != nil || len(cmd) != 2 || cmd[1] != SuperviseArg {
+		t.Fatalf("%v %v", cmd, err)
 	}
 }

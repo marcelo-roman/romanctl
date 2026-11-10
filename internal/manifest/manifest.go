@@ -27,10 +27,11 @@ type Project struct {
 
 // Process é um dos programas de um projeto com vários, como a API e o front de um monorepo.
 type Process struct {
-	Name string `yaml:"name" json:"name"`
-	Dir  string `yaml:"dir,omitempty" json:"dir,omitempty"`
-	Run  string `yaml:"run" json:"run"`
-	URL  string `yaml:"url,omitempty" json:"url,omitempty"`
+	Name string            `yaml:"name" json:"name"`
+	Dir  string            `yaml:"dir,omitempty" json:"dir,omitempty"`
+	Run  string            `yaml:"run" json:"run"`
+	URL  string            `yaml:"url,omitempty" json:"url,omitempty"`
+	Env  map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
 }
 
 // URLs são os endereços que precisam responder para o projeto estar no ar.

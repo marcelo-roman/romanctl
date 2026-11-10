@@ -217,7 +217,7 @@ func buildManifest(t *Template, name string, withs []string) manifest.Project {
 		}
 	}
 	for _, proc := range t.Processes {
-		m.Processes = append(m.Processes, manifest.Process{Name: proc.Name, Dir: r.Replace(proc.Dir), Run: r.Replace(proc.Run), URL: proc.URL})
+		m.Processes = append(m.Processes, manifest.Process{Name: proc.Name, Dir: r.Replace(proc.Dir), Run: r.Replace(proc.Run), URL: proc.URL, Env: proc.Env})
 	}
 	for key, value := range t.Publish.Vars {
 		if m.Publish.Vars == nil {

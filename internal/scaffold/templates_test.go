@@ -48,8 +48,8 @@ func TestTodoTemplateEstaCompleto(t *testing.T) {
 			if tpl.Description == "" || i18n.T(tpl.Description) == tpl.Description {
 				t.Errorf("descrição sem tradução em en.go: %q", tpl.Description)
 			}
-			if tpl.Run == "" || tpl.Test == "" || tpl.URL == "" {
-				t.Errorf("run, test e url são obrigatórios")
+			if (tpl.Run == "" && len(tpl.Processes) == 0) || tpl.Test == "" || tpl.URL == "" {
+				t.Errorf("run (ou processes), test e url são obrigatórios")
 			}
 			if len(tpl.Requires) == 0 {
 				t.Errorf("requires vazio: diga que ferramenta roda o projeto")

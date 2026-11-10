@@ -34,7 +34,11 @@ func RunCommand(p, name string) ([]string, error) {
 	project, hasManifest := manifest.Read(p)
 	switch t := DetectType(p); {
 	case hasManifest && len(project.Processes) > 0:
-		return []string{"sh", "-c", supervisor(project.Processes)}, nil
+		self, err := os.Executable()
+		if err != nil {
+			return nil, err
+		}
+		return []string{self, SuperviseArg}, nil
 	case hasManifest:
 		return []string{"sh", "-c", project.Run}, nil
 	case t == "dotnet":
@@ -57,29 +61,12 @@ func RunCommand(p, name string) ([]string, error) {
 	return nil, i18n.Errorf("não sei rodar %q (tipo não reconhecido)", name)
 }
 
-// supervisor sobe cada processo em segundo plano, com o nome no começo de cada linha da saída, e
-// espera todos. Ficam no mesmo grupo de processos, então parar o grupo para todos.
-func supervisor(processes []manifest.Process) string {
-	var b strings.Builder
-	for _, p := range processes {
-		dir := p.Dir
-		if dir == "" {
-			dir = "."
-		}
-		fmt.Fprintf(&b, "( cd %s && %s ) 2>&1 | awk '{ print \"[%s] \" $0; fflush() }' &\n", shellQuote(dir), p.Run, p.Name)
-	}
-	b.WriteString("wait\n")
-	return b.String()
-}
-
 func display(cmd []string) string {
 	if len(cmd) == 3 && cmd[0] == "sh" && cmd[1] == "-c" {
 		return strings.Join(strings.Fields(strings.ReplaceAll(strings.TrimSpace(cmd[2]), "\n", "; ")), " ")
 	}
 	return strings.Join(cmd, " ")
 }
-
-func shellQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
 
 // RunProject roda o projeto em primeiro plano; Ctrl+C encerra só o projeto.
 func RunProject(name string, open bool) error {

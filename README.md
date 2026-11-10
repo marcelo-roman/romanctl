@@ -428,7 +428,10 @@ processes:
 ```
 
 O `run` e o `up` sobem todos juntos, com o nome do processo no começo de cada linha do log, e o `up -d` espera cada
-`url` responder. O `down` para todos.
+`url` responder. Se um processo termina, os outros são parados e o comando falha na hora, com o fim do log. O `down`
+para todos. Cada processo pode ter variáveis próprias em `env:`, além das do `.env`, como `PORT` diferente para cada um.
+
+Com `processes`, o `run` do topo é opcional.
 
 `run`, `test`, `publish.vars` e os campos `dir` e `run` dos processos também passam pela troca de nomes. Os valores de `env` são montados no `up`, com o
 endereço do serviço: `{{.Host}}`, `{{.Port}}`, `{{.User}}`, `{{.Password}}`, `{{.Database}}` e `{{.URL}}`. Além

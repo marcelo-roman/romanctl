@@ -72,7 +72,10 @@ func portBusy(port string) bool {
 // ownerOfPort diz qual projeto no ar está usando a porta, para o erro ajudar de verdade.
 func ownerOfPort(port, self string) string {
 	for name, e := range state.ReadState().Ups {
-		if name != self && portOf(e.URL) == port && e.Alive() {
+		if name == self || !e.Alive() {
+			continue
+		}
+		if slices.ContainsFunc(append([]string{e.URL}, e.URLs...), func(u string) bool { return portOf(u) == port }) {
 			return name
 		}
 	}
@@ -260,7 +263,7 @@ func Run(name, path string, opts Options) (Result, error) {
 		}
 	}
 
-	entry := state.UpEntry{Path: path, URL: appURL, Uses: result.Services, Started: dedupe(started)}
+	entry := state.UpEntry{Path: path, URL: appURL, URLs: urls, Uses: result.Services, Started: dedupe(started)}
 	if opts.NoRun {
 		state.SetUp(name, entry)
 		result.OK = true

@@ -36,6 +36,9 @@ func pathWithBin(current, bin string) string {
 }
 
 func Main() {
+	if len(os.Args) > 1 && os.Args[1] == projects.SuperviseArg {
+		os.Exit(projects.SuperviseHere())
+	}
 	if p := platform.Current; p.OS != "linux" && p.OS != "darwin" {
 		ui.Failf("romanctl só funciona em Linux e macOS (aqui: %s)", p.OS)
 		os.Exit(1)

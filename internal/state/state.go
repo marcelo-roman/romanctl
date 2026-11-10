@@ -25,6 +25,7 @@ type RunState struct {
 type UpEntry struct {
 	Path    string   `json:"path"`
 	URL     string   `json:"url,omitempty"`
+	URLs    []string `json:"urls,omitempty"` // todas as URLs, num projeto com vários processos
 	Log     string   `json:"log,omitempty"`
 	PID     int      `json:"pid,omitempty"` // zero: só os serviços estão no ar
 	Uses    []string `json:"uses,omitempty"`
