@@ -171,14 +171,14 @@ func TestTodaPastaDeTemplateCarrega(t *testing.T) {
 
 func TestGrafiasDoNome(t *testing.T) {
 	r := projectReplacer("minha-loja.v2")
-	in := "SampleApp sampleApp sample_app sample-app SAMPLE_APP Sample App sampleapp com/example/sampleapp"
-	want := "MinhaLojaV2 minhaLojaV2 minha_loja_v2 minha-loja-v2 MINHA_LOJA_V2 Minha Loja V2 minhalojav2 com/example/minhalojav2"
+	in := "SampleApp sampleApp sample_app sample-app SAMPLE_APP Sample App sample app sampleapp com/example/sampleapp"
+	want := "MinhaLojaV2 minhaLojaV2 minha_loja_v2 minha-loja-v2 MINHA_LOJA_V2 Minha Loja V2 minha loja v2 minhalojav2 com/example/minhalojav2"
 	if got := r.Replace(in); got != want {
 		t.Fatalf("obtido %q", got)
 	}
 	e := entityReplacer("loja", "ProductCategory", "Order")
-	in = "SampleItems sampleItems sample_items sample-items sampleitems SampleItem sample-item SampleParents SampleParent SampleApp"
-	want = "ProductCategories productCategories product_categories product-categories productcategories ProductCategory product-category Orders Order Loja"
+	in = "SampleItems sampleItems sample_items sample-items sampleitems sample items SampleItem sample-item sample item SampleParents SampleParent SampleApp"
+	want = "ProductCategories productCategories product_categories product-categories productcategories product categories ProductCategory product-category product category Orders Order Loja"
 	if got := e.Replace(in); got != want {
 		t.Fatalf("obtido %q", got)
 	}

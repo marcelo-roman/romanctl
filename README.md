@@ -360,6 +360,7 @@ Cada template é um projeto de verdade, que compila e passa nos testes dentro da
 | `sample-app` | `minha-loja` |
 | `SAMPLE_APP` | `MINHA_LOJA` |
 | `Sample App` | `Minha Loja` |
+| `sample app` | `minha loja` |
 | `sampleapp` | `minhaloja`, como em `com.example.sampleapp` |
 
 A troca vale para o conteúdo e para os caminhos, como `src/SampleApp.Api`. A pasta do template é a variante com todos
@@ -453,7 +454,7 @@ como `// romanctl:endpoints`; sem o marcador, o comando mostra o que fazer à m�
 
 Cada gerador é uma pasta em [`templates/generators/<alvo>/<tipo>`](templates/generators), com um `generator.yaml` e
 os arquivos em `files/`. Eles usam a entidade de exemplo `SampleItem` (e `SampleItems`, `sample-item`,
-`sample_items`...), o agregado de `--in` `SampleParent` e o projeto `SampleApp`, trocados como nos templates. Um patch
+`sample_items`, `sample item`...), o agregado de `--in` `SampleParent` e o projeto `SampleApp`, trocados como nos templates. Um patch
 com `when: postgres` só vale com o serviço, e `after:` roda comandos depois de gravar, como `gofmt -w`. Uma pasta em
 `~/.config/romanctl/generators` tem prioridade.
 

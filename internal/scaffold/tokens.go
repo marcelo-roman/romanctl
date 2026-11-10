@@ -69,6 +69,7 @@ func spellings(w []string) []string {
 		strings.Join(w, "-"),
 		strings.ToUpper(strings.Join(w, "_")),
 		strings.Join(title, " "),
+		strings.Join(w, " "),
 		strings.Join(w, ""),
 	}
 }
