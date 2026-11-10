@@ -42,6 +42,9 @@ func loginCommand() error {
 	if v := flagVals["api"]; v != "" {
 		ep.API = v
 	}
+	if v, ok := flagVals["idp"]; ok {
+		ep.IDP = v
+	}
 	session, err := auth.Login(context.Background(), auth.LoginOptions{Endpoints: ep, Open: func(u string) {
 		ui.Infof("Abra no navegador para entrar: %s", u)
 		if ui.Interactive() {

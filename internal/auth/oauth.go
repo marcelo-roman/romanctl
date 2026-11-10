@@ -135,7 +135,7 @@ func Login(ctx context.Context, opts LoginOptions) (*Session, error) {
 	go server.Serve(listener)
 	defer server.Close()
 
-	auth := ep.oidc("auth") + "?" + url.Values{
+	query := url.Values{
 		"client_id":             {ep.ClientID},
 		"response_type":         {"code"},
 		"scope":                 {"openid offline_access"},
@@ -143,7 +143,12 @@ func Login(ctx context.Context, opts LoginOptions) (*Session, error) {
 		"state":                 {state},
 		"code_challenge":        {challenge(verifier)},
 		"code_challenge_method": {"S256"},
-	}.Encode()
+	}
+	// Com o hint, o Keycloak pula a tela do realm romanctl e abre a do realm de usuários.
+	if ep.IDP != "" && ep.IDP != "-" {
+		query.Set("kc_idp_hint", ep.IDP)
+	}
+	auth := ep.oidc("auth") + "?" + query.Encode()
 	if opts.Open != nil {
 		opts.Open(auth)
 	}

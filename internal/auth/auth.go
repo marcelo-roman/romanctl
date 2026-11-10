@@ -19,6 +19,8 @@ const (
 	DefaultIssuer   = "https://auth.marceloroman.com.br/realms/romanctl"
 	DefaultClientID = "romanctl"
 	DefaultAPI      = "https://iam-api.marceloroman.com.br"
+	// DefaultIDP é o realm de usuários das aplicações privadas: o login vai direto para ele.
+	DefaultIDP = "private"
 	// revalidate é de quanto em quanto tempo a sessão é conferida no Keycloak, quando há rede.
 	revalidate = 12 * time.Hour
 )
@@ -57,6 +59,7 @@ type Endpoints struct {
 	Issuer   string
 	ClientID string
 	API      string
+	IDP      string
 }
 
 func DefaultEndpoints() Endpoints {
@@ -64,6 +67,7 @@ func DefaultEndpoints() Endpoints {
 		Issuer:   envOr("ROMANCTL_AUTH_ISSUER", DefaultIssuer),
 		ClientID: envOr("ROMANCTL_AUTH_CLIENT", DefaultClientID),
 		API:      envOr("ROMANCTL_IAM_API", DefaultAPI),
+		IDP:      envOr("ROMANCTL_AUTH_IDP", DefaultIDP),
 	}
 }
 

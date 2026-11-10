@@ -92,7 +92,7 @@ func Main() {
 }
 
 var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "seconds": true, "interval": true, "lang": true, "project": true, "in": true, "description": true, "filter": true, "category": true, "version": true, "ref": true, "plural": true, "port": true,
-	"issuer": true, "api": true, "display-name": true, "email": true, "first-name": true, "last-name": true, "search": true,
+	"issuer": true, "api": true, "idp": true, "display-name": true, "email": true, "first-name": true, "last-name": true, "search": true,
 	"credential": true, "roles": true, "global": true, "realms": true, "realm": true, "limit": true, "data": true}
 
 var flagVals = map[string]string{}

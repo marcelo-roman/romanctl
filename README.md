@@ -222,7 +222,11 @@ romanctl logout                  # revoga a sessão no Keycloak e apaga a local
 ```
 
 O login acontece no realm `romanctl` de `https://auth.marceloroman.com.br`, num client público
-(`romanctl`) que exige PKCE S256 e só aceita redirect para `http://127.0.0.1:<porta>/callback`. O
+(`romanctl`) que exige PKCE S256 e só aceita redirect para `http://127.0.0.1:<porta>/callback`. As
+contas não moram nele: o romanctl pede `kc_idp_hint=private`, e o Keycloak abre direto o realm
+`private`, onde ficam os usuários das aplicações privadas (o mesmo login do IAM Manager e do console do
+Keycloak). Na primeira entrada a conta no realm `romanctl` é criada sem papéis; `--idp -` mostra a
+tela do próprio realm `romanctl`, para as contas locais. O
 token é offline: a sessão vale 30 dias sem uso e renova a cada comando. Sem internet, a sessão salva
 basta enquanto valer; com internet, ela é conferida no Keycloak a cada 12 h, então um usuário
 bloqueado ou uma sessão encerrada saem na hora. Sem login rodam só `login`, `logout`, `whoami`,
