@@ -379,7 +379,7 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 			if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 				return result, err
 			}
-			if err := os.WriteFile(dest, f.Content, 0o644); err != nil {
+			if err := os.WriteFile(dest, f.Content, f.mode()); err != nil {
 				return result, err
 			}
 		}
@@ -391,6 +391,27 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 	}
 	result.OK = true
 	return result, nil
+}
+
+// containsBlock diz se as linhas do patch já estão no arquivo, juntas e na mesma ordem. Uma linha
+// solta igual, como um ")", não conta: o bloco só é pulado quando já foi inserido inteiro.
+func containsBlock(lines, block []string) bool {
+	if len(block) == 0 {
+		return true
+	}
+	for i := 0; i+len(block) <= len(lines); i++ {
+		match := true
+		for j, want := range block {
+			if strings.TrimSpace(lines[i+j]) != want {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
 }
 
 func appendUnique(list []string, v string) []string {
@@ -413,11 +434,11 @@ func renderGenerator(g *Generator, data addData) ([]generatedFile, error) {
 		return nil, nil
 	}
 	var files []generatedFile
-	err := walkSource(g.files, ".", func(p string, b []byte) error {
+	err := walkSource(g.files, ".", func(p string, f sourceFile) error {
 		if excluded(g.Conditional, p, data.Services) {
 			return nil
 		}
-		files = append(files, generatedFile{data.expandPath(p), replaceContent(data.names, b)})
+		files = append(files, generatedFile{data.expandPath(p), replaceContent(data.names, f.content), f.executable})
 		return nil
 	})
 	return files, err
@@ -453,16 +474,11 @@ func applyPatch(projectPath string, p plannedPatch, dryRun bool) (changed bool, 
 	if p.skipIf != "" && strings.Contains(content, p.skipIf) {
 		return false, nil, nil
 	}
-	var missing []string
-	for _, line := range p.lines {
-		if !strings.Contains(content, line) {
-			missing = append(missing, line)
-		}
-	}
-	if len(missing) == 0 {
+	lines := strings.Split(content, "\n")
+	if containsBlock(lines, p.lines) {
 		return false, nil, nil
 	}
-	lines := strings.Split(content, "\n")
+	missing := p.lines
 	idx := slices.IndexFunc(lines, func(l string) bool { return strings.Contains(l, p.before) })
 	if idx < 0 {
 		return false, manualSteps(), nil

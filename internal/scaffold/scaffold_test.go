@@ -106,3 +106,20 @@ func TestRecusaCombinacoesInvalidas(t *testing.T) {
 		t.Errorf("aceitou combinação sem template: %v", err)
 	}
 }
+
+func TestArquivoExecutavelContinuaExecutavel(t *testing.T) {
+	root := t.TempDir()
+	os.WriteFile(filepath.Join(root, "template.yaml"), []byte("id: x\n"), 0o644)
+	os.WriteFile(filepath.Join(root, "mvnw"), []byte("#!/bin/sh\n"), 0o755)
+	os.WriteFile(filepath.Join(root, "README.md"), []byte("sample-app\n"), 0o644)
+	dest := filepath.Join(t.TempDir(), "loja")
+	if _, err := WriteScaffold(&Template{ID: "x", Stack: "s", files: os.DirFS(root)}, "loja", dest, nil); err != nil {
+		t.Fatal(err)
+	}
+	for name, want := range map[string]os.FileMode{"mvnw": 0o755, "README.md": 0o644} {
+		info, err := os.Stat(filepath.Join(dest, name))
+		if err != nil || info.Mode().Perm() != want {
+			t.Fatalf("%s: %v %v", name, info.Mode(), err)
+		}
+	}
+}

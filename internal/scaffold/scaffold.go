@@ -45,8 +45,21 @@ func newTemplateData(name string, withs []string) templateData {
 }
 
 type generatedFile struct {
-	Path    string
-	Content []byte
+	Path       string
+	Content    []byte
+	Executable bool
+}
+
+func (f generatedFile) mode() os.FileMode {
+	if f.Executable {
+		return 0o755
+	}
+	return 0o644
+}
+
+type sourceFile struct {
+	content    []byte
+	executable bool
 }
 
 func conditionHolds(when string, withs map[string]bool) bool {
@@ -78,7 +91,7 @@ var localFiles = map[string]bool{".env": true, "coverage.out": true, ".DS_Store"
 func under(p, dir string) bool { return p == dir || strings.HasPrefix(p, dir+"/") }
 
 // walkSource lê os arquivos de uma pasta do template, sem os artefatos de build.
-func walkSource(fsys fs.FS, root string, visit func(rel string, b []byte) error) error {
+func walkSource(fsys fs.FS, root string, visit func(rel string, f sourceFile) error) error {
 	return fs.WalkDir(fsys, root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -99,11 +112,15 @@ func walkSource(fsys fs.FS, root string, visit func(rel string, b []byte) error)
 		if err != nil {
 			return err
 		}
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
 		rel := p
 		if root != "." {
 			rel = strings.TrimPrefix(p, root+"/")
 		}
-		return visit(rel, b)
+		return visit(rel, sourceFile{content: b, executable: info.Mode()&0o111 != 0})
 	})
 }
 
@@ -118,20 +135,20 @@ func excluded(conditional []conditionalPath, p string, withs map[string]bool) bo
 
 // renderTemplate copia a raiz do template, aplica as variantes que valem e troca o nome de exemplo.
 func renderTemplate(t *Template, name string, withs map[string]bool) ([]generatedFile, error) {
-	files := map[string][]byte{}
+	files := map[string]sourceFile{}
 	var order []string
-	add := func(rel string, b []byte) error {
+	add := func(rel string, f sourceFile) error {
 		if _, seen := files[rel]; !seen {
 			order = append(order, rel)
 		}
-		files[rel] = b
+		files[rel] = f
 		return nil
 	}
-	err := walkSource(t.files, ".", func(p string, b []byte) error {
+	err := walkSource(t.files, ".", func(p string, f sourceFile) error {
 		if p == "template.yaml" || under(p, variantsDir) || excluded(t.Conditional, p, withs) {
 			return nil
 		}
-		return add(p, b)
+		return add(p, f)
 	})
 	if err != nil {
 		return nil, err
@@ -147,7 +164,8 @@ func renderTemplate(t *Template, name string, withs map[string]bool) ([]generate
 	r := projectReplacer(name)
 	out := make([]generatedFile, 0, len(order))
 	for _, rel := range order {
-		out = append(out, generatedFile{r.Replace(rel), replaceContent(r, files[rel])})
+		f := files[rel]
+		out = append(out, generatedFile{r.Replace(rel), replaceContent(r, f.content), f.executable})
 	}
 	return out, nil
 }
@@ -219,7 +237,7 @@ func WriteScaffold(t *Template, name, dest string, withs []string) (ScaffoldResu
 	if err != nil {
 		return ScaffoldResult{}, err
 	}
-	files = append(files, generatedFile{manifest.FileName, manifestYAML})
+	files = append(files, generatedFile{Path: manifest.FileName, Content: manifestYAML})
 
 	result := ScaffoldResult{OK: true, Path: dest, Manifest: project}
 	for _, f := range files {
@@ -244,7 +262,7 @@ func WriteScaffold(t *Template, name, dest string, withs []string) (ScaffoldResu
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 			return result, err
 		}
-		if err := os.WriteFile(target, f.Content, 0o644); err != nil {
+		if err := os.WriteFile(target, f.Content, f.mode()); err != nil {
 			return result, err
 		}
 	}

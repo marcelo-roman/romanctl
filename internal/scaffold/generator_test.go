@@ -226,3 +226,13 @@ func TestProjetosSimples(t *testing.T) {
 		t.Fatalf("%+v %v", r, err)
 	}
 }
+
+func TestPatchPulaSoOBlocoInteiro(t *testing.T) {
+	file := []string{"routes = [", "    orders,", ")", "    # romanctl:routes", "]"}
+	if containsBlock(file, []string{"products,", ")"}) {
+		t.Fatal("um ) solto não deveria contar como o bloco já inserido")
+	}
+	if !containsBlock(file, []string{"orders,", ")"}) {
+		t.Fatal("o bloco existe, na ordem")
+	}
+}
