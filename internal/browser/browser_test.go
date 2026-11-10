@@ -19,6 +19,7 @@ func TestOpener(t *testing.T) {
 		{platform.Info{OS: "darwin"}, only(), "open"},
 		{platform.Info{OS: "linux"}, only(termuxPrefix + "/bin/termux-open-url"), termuxPrefix + "/bin/termux-open-url"},
 		{platform.Info{OS: "linux", WSL: true}, only("wslview", "xdg-open"), "wslview"},
+		{platform.Info{OS: "linux", WSL: true}, only("rundll32.exe", "cmd.exe"), "rundll32.exe"},
 		{platform.Info{OS: "linux", WSL: true}, only("cmd.exe"), "cmd.exe"},
 		{platform.Info{OS: "linux"}, only("xdg-open"), "xdg-open"},
 		{platform.Info{OS: "linux"}, only(), ""},
@@ -31,5 +32,12 @@ func TestOpener(t *testing.T) {
 		if got != c.want {
 			t.Errorf("%+v: obtido %q, esperado %q", c.p, got, c.want)
 		}
+	}
+}
+
+func TestCmdEscapeNaoCortaAURLNoPrimeiroE(t *testing.T) {
+	got := cmdEscape("https://auth/x?a=1&b=(2)")
+	if got != "https://auth/x?a=1^&b=^(2^)" {
+		t.Fatalf("%q", got)
 	}
 }
