@@ -23,7 +23,8 @@ type containerSpec struct {
 	Env     []string
 	Volume  string // pasta de dados dentro do container
 	Args    []string
-	Arches  []string // vazio significa todas
+	Arches  []string  // vazio significa todas
+	Ready   readiness // como saber que está pronto, além de a porta abrir
 }
 
 // containerEngine devolve o motor disponível, preferindo o Docker.
@@ -182,7 +183,16 @@ func containerService(c containerSpec) *Service {
 		if err != nil {
 			return i18n.Errorf("%v: %s", err, sys.Tail(out, 6))
 		}
-		return waitPort(hostPort(c.Ports[0]), 90*time.Second)
+		if err := waitPort(hostPort(c.Ports[0]), 90*time.Second); err != nil {
+			return err
+		}
+		if c.Ready == nil {
+			return nil
+		}
+		if !sys.WaitUntil(90*time.Second, func() bool { return c.Ready(hostPort(c.Ports[0])) }) {
+			return i18n.Errorf("%s abriu a porta, mas não respondeu a tempo", c.Name)
+		}
+		return nil
 	}
 	s.Conflict = func() string {
 		for _, mapping := range c.Ports {
@@ -270,7 +280,7 @@ func waitPort(port string, timeout time.Duration) error {
 var (
 	postgresContainer = containerSpec{Key: "postgres", Name: "PostgreSQL", Aliases: []string{"pg", "postgresql", "psql"}, Image: "postgres:17",
 		URL: "postgres://postgres:postgres@127.0.0.1:5432/postgres", Ports: []string{"5432:5432"},
-		Env: []string{"POSTGRES_PASSWORD=postgres"}, Volume: "/var/lib/postgresql/data"}
+		Env: []string{"POSTGRES_PASSWORD=postgres"}, Volume: "/var/lib/postgresql/data", Ready: postgresReady}
 	mongoContainer = containerSpec{Key: "mongo", Name: "MongoDB", Aliases: []string{"mongodb", "mongod"}, Image: "mongo:8",
 		URL: "mongodb://127.0.0.1:27017", Ports: []string{"27017:27017"}, Volume: "/data/db"}
 	redisContainer = containerSpec{Key: "redis", Name: "Redis", Aliases: []string{"redis-server"}, Image: "redis:8",
@@ -288,7 +298,7 @@ func containerOnly() []*Service {
 			URL: "Server=127.0.0.1,1433;User Id=sa;Password=Romanctl!Dev1;TrustServerCertificate=True", Ports: []string{"1433:1433"},
 			Env: []string{"ACCEPT_EULA=Y", "MSSQL_SA_PASSWORD=Romanctl!Dev1", "MSSQL_PID=Developer"}, Volume: "/var/opt/mssql", Arches: []string{"amd64"}},
 		{Key: "rabbitmq", Name: "RabbitMQ", Aliases: []string{"rabbit"}, Image: "rabbitmq:4-management",
-			URL: i18n.T("amqp://guest:guest@127.0.0.1:5672 (painel: http://127.0.0.1:15672)"), Ports: []string{"5672:5672", "15672:15672"}, Volume: "/var/lib/rabbitmq"},
+			URL: i18n.T("amqp://guest:guest@127.0.0.1:5672 (painel: http://127.0.0.1:15672)"), Ports: []string{"5672:5672", "15672:15672"}, Volume: "/var/lib/rabbitmq", Ready: amqpReady},
 		{Key: "kafka", Name: "Kafka", Image: "apache/kafka:4.1.0", URL: "127.0.0.1:9092", Ports: []string{"9092:9092"}, Volume: "/var/lib/kafka/data"},
 	}
 	var out []*Service

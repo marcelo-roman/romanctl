@@ -29,7 +29,10 @@ func (s *syncBuffer) String() string {
 }
 
 func TestSupervisorPoeONomeEUsaPastaEAmbienteDeCadaProcesso(t *testing.T) {
-	dir := t.TempDir()
+	dir, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
 	os.MkdirAll(filepath.Join(dir, "web app"), 0o755)
 	var out syncBuffer
 	code := Supervise(dir, []manifest.Process{

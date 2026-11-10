@@ -301,6 +301,7 @@ var en = map[string]string{
 	"a porta %s já está em uso pelo container %s; pare-o antes de ligar o %s":                    "port %s is already used by container %s; stop it before starting %s",
 	"a porta %s já está em uso por outro programa; libere-a antes de ligar o %s":                 "port %s is already used by another program; free it before starting %s",
 	"o container %s também publica a porta %s: o app pode estar falando com ele, e não com o %s": "container %s also publishes port %s: the app may be talking to it instead of %s",
+	"%s abriu a porta, mas não respondeu a tempo":                                                "%s opened its port but did not answer in time",
 	"a porta %s não abriu a tempo":                                                               "port %s did not open in time",
 	"amqp://guest:guest@127.0.0.1:5672 (painel: http://127.0.0.1:15672)":                         "amqp://guest:guest@127.0.0.1:5672 (dashboard: http://127.0.0.1:15672)",
 	"Procurando a última versão 7.0.x...":                                                        "Looking for the latest 7.0.x version...",

@@ -28,7 +28,24 @@ func brokerURL(t *testing.T) string {
 	if url == "" {
 		t.Skip("RABBITMQ_URL not set: romanctl up sample-app --no-run starts RabbitMQ and writes the .env")
 	}
+	waitForBroker(t, url)
 	return url
+}
+
+func waitForBroker(t *testing.T, url string) {
+	t.Helper()
+	deadline := time.Now().Add(60 * time.Second)
+	for {
+		conn, err := amqp.Dial(url)
+		if err == nil {
+			conn.Close()
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("RabbitMQ did not accept connections: %v", err)
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
 }
 
 func uniqueTopology(t *testing.T, url string) Topology {
