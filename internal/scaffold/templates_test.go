@@ -10,6 +10,8 @@ import (
 	"testing"
 	"text/template"
 
+	"gopkg.in/yaml.v3"
+
 	"romanctl/internal/config"
 	"romanctl/internal/i18n"
 	"romanctl/internal/services"
@@ -86,6 +88,14 @@ func TestTodoTemplateEstaCompleto(t *testing.T) {
 				}
 				if _, err := fs.Stat(tpl.files, c.Path); err != nil {
 					t.Errorf("conditional aponta para caminho que não existe: %s", c.Path)
+				}
+			}
+			for _, step := range tpl.Setup {
+				if step.Run == "" {
+					t.Errorf("passo de setup sem run")
+				}
+				if step.When != "" && !slices.Contains(tpl.Services, strings.TrimPrefix(step.When, "!")) {
+					t.Errorf("setup %q depende de serviço que o template não oferece: %s", step.Run, step.When)
 				}
 			}
 			for _, p := range tpl.Processes {
@@ -176,7 +186,7 @@ func TestGrafiasDoNome(t *testing.T) {
 	if got := r.Replace(in); got != want {
 		t.Fatalf("obtido %q", got)
 	}
-	e := entityReplacer("loja", "ProductCategory", "Order")
+	e := entityReplacer("loja", "ProductCategory", "ProductCategories", "Order")
 	in = "SampleItems sampleItems sample_items sample-items sampleitems sample items SampleItem sample-item sample item SampleParents SampleParent SampleApp"
 	want = "ProductCategories productCategories product_categories product-categories productcategories product categories ProductCategory product-category product category Orders Order Loja"
 	if got := e.Replace(in); got != want {
@@ -197,5 +207,18 @@ func TestApelidosDeArquitetura(t *testing.T) {
 		if !slices.Contains(knownArch, target) {
 			t.Errorf("apelido %s aponta para arquitetura desconhecida %s", alias, target)
 		}
+	}
+}
+
+func TestSetupAceitaStringOuPassoComWhen(t *testing.T) {
+	var tpl Template
+	if err := yaml.Unmarshal([]byte("setup:\n  - go mod tidy\n  - run: npm ci\n    when: postgres\n  - run: npm install\n    when: \"!postgres\"\n"), &tpl); err != nil {
+		t.Fatal(err)
+	}
+	if got := tpl.setupFor(map[string]bool{}); !slices.Equal(got, []string{"go mod tidy", "npm install"}) {
+		t.Fatalf("sem postgres: %v", got)
+	}
+	if got := tpl.setupFor(map[string]bool{"postgres": true}); !slices.Equal(got, []string{"go mod tidy", "npm ci"}) {
+		t.Fatalf("com postgres: %v", got)
 	}
 }

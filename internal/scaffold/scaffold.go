@@ -316,7 +316,7 @@ func ScaffoldProject(t *Template, name string, withs []string, opts Options) err
 		sys.Output("git", "-C", dest, "init", "-q")
 	}
 	result.Missing = ensureTools(t.Requires)
-	result.Setup = runSetup(t, dest, opts.Offline, result.Missing)
+	result.Setup = runSetup(t, dest, newTemplateData(name, withs).Services, opts.Offline, result.Missing)
 	if ui.JSONOutput {
 		return ui.PrintJSON(result)
 	}

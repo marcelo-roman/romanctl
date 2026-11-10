@@ -32,7 +32,7 @@ only=${3:-}
     root=$("$romanctl" templates status --json | jq -r .path)
     (
       cd "$root/$stack/projects/$id"
-      echo "$tpl" | jq -r '.setup // [] | .[]' | while read -r step; do sh -c "$step"; done
+      echo "$tpl" | jq -r '.setup // [] | .[] | select((.when // "") | startswith("!") | not) | .run' | while read -r step; do sh -c "$step"; done
       sh -c "$(echo "$tpl" | jq -r .test)"
     )
     echo "::endgroup::"

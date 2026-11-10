@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @EnabledIfEnvironmentVariable(named = "DATABASE_URL", matches = ".+",
-        disabledReason = "DATABASE_URL not set: romanctl up sample-app --no-run creates the database and the .env")
+        disabledReason = "DATABASE_URL not set: romanctl up --no-run creates the database and the .env")
 @SpringBootTest(properties = "app.persistence=postgres")
 class PostgresSampleItemRepositoryTest {
 

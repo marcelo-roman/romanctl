@@ -198,14 +198,16 @@ func projectIdentity(projectPath string) (name string, services []string) {
 	return base, nil
 }
 
-func newAddData(projectPath, entity, in string) addData {
+func newAddData(projectPath, entity, plural, in string) addData {
 	name, services := projectIdentity(projectPath)
 	base := newTemplateData(name, services)
-	plural := Plural(entity)
+	if plural == "" {
+		plural = Plural(entity)
+	}
 	d := addData{templateData: base, Entity: entity, EntityPlural: plural, In: in,
 		EntitySnake: separated(entity, "_"), EntityPluralSnake: separated(plural, "_"),
 		EntityKebab: separated(entity, "-"), EntityPluralKebab: separated(plural, "-"),
-		names: entityReplacer(name, entity, in)}
+		names: entityReplacer(name, entity, plural, in)}
 	if _, err := os.Stat(filepath.Join(projectPath, "tsconfig.json")); err != nil {
 		d.jsExt = true
 	}
@@ -237,8 +239,8 @@ func renderData(name, text string, data addData) (string, error) {
 
 // AddOptions são as escolhas do comando add.
 type AddOptions struct {
-	Kind, Name, In string
-	Force, DryRun  bool
+	Kind, Name, In, Plural string
+	Force, DryRun          bool
 }
 
 // AddResult é o que o add informa, inclusive em --dry-run e --json.
@@ -305,7 +307,7 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 	}
 	result.Kind, result.Name = g.Kind, entity
 
-	data := newAddData(projectPath, entity, in)
+	data := newAddData(projectPath, entity, Pascal(opts.Plural), in)
 	var files []generatedFile
 	var patches []plannedPatch
 	var requires []requirement
@@ -403,7 +405,7 @@ func containsBlock(lines, block []string) bool {
 	for i := 0; i+len(block) <= len(lines); i++ {
 		match := true
 		for j, want := range block {
-			if strings.TrimSpace(lines[i+j]) != want {
+			if strings.TrimSpace(lines[i+j]) != strings.TrimSpace(want) {
 				match = false
 				break
 			}
@@ -450,12 +452,39 @@ func planPatch(p patch, data addData) (plannedPatch, bool) {
 		return plannedPatch{}, false
 	}
 	planned := plannedPatch{file: data.expand(p.File), before: p.Before, skipIf: data.expand(p.SkipIf)}
-	for _, line := range strings.Split(data.expand(p.Text), "\n") {
-		if line = strings.TrimSpace(line); line != "" {
-			planned.lines = append(planned.lines, line)
+	planned.lines = dedent(strings.Split(data.expand(p.Text), "\n"))
+	return planned, true
+}
+
+// dedent tira a indentação comum do bloco e as linhas vazias das pontas: cada linha guarda o recuo
+// relativo, e o patch soma a ele o recuo do marcador.
+func dedent(lines []string) []string {
+	for len(lines) > 0 && strings.TrimSpace(lines[0]) == "" {
+		lines = lines[1:]
+	}
+	for len(lines) > 0 && strings.TrimSpace(lines[len(lines)-1]) == "" {
+		lines = lines[:len(lines)-1]
+	}
+	common := ""
+	first := true
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		indent := line[:len(line)-len(strings.TrimLeft(line, " \t"))]
+		if first {
+			common, first = indent, false
+			continue
+		}
+		for !strings.HasPrefix(indent, common) {
+			common = common[:len(common)-1]
 		}
 	}
-	return planned, true
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		out = append(out, strings.TrimRight(strings.TrimPrefix(line, common), " \t"))
+	}
+	return out
 }
 
 func applyPatch(projectPath string, p plannedPatch, dryRun bool) (changed bool, manual []string, err error) {
@@ -490,6 +519,10 @@ func applyPatch(projectPath string, p plannedPatch, dryRun bool) (changed bool, 
 	indent := lines[idx][:len(lines[idx])-len(strings.TrimLeft(lines[idx], " \t"))]
 	var inserted []string
 	for _, line := range missing {
+		if line == "" {
+			inserted = append(inserted, "")
+			continue
+		}
 		inserted = append(inserted, indent+line)
 	}
 	lines = slices.Insert(lines, idx, inserted...)

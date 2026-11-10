@@ -3,7 +3,7 @@ import { PostgresDatabase } from '../../src/postgres/postgres-database';
 export const databaseUrl = process.env.DATABASE_URL;
 
 export function suiteTitle(name: string): string {
-  return databaseUrl ? name : `${name} (skipped: DATABASE_URL not set, romanctl up sample-app --no-run creates the database and the .env)`;
+  return databaseUrl ? name : `${name} (skipped: DATABASE_URL not set, romanctl up --no-run creates the database and the .env)`;
 }
 
 export function openDatabase(): Promise<PostgresDatabase> {

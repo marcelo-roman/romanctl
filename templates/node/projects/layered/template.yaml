@@ -5,7 +5,10 @@ description: API Node enxuta em camadas (rotas, serviços e repositórios), com 
 services: [postgres]
 requires: [node]
 setup:
-  - npm ci
+  - run: npm ci
+    when: postgres
+  - run: npm install
+    when: "!postgres"
 run: npm start
 test: npm test
 url: http://localhost:3001

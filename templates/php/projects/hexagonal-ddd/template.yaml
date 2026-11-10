@@ -5,7 +5,10 @@ description: API PHP com arquitetura hexagonal e DDD, com Symfony e Doctrine DBA
 services: [postgres]
 requires: [php]
 setup:
-  - composer install --no-interaction
+  - run: composer install --no-interaction
+    when: postgres
+  - run: composer update doctrine/dbal doctrine/deprecations --no-interaction
+    when: "!postgres"
 run: php -S 127.0.0.1:8002 -t public
 test: vendor/bin/phpunit
 url: http://localhost:8002

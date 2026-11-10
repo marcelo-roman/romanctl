@@ -30,6 +30,7 @@ romanctl add route pedidos --project api                     # Express
 ```
 
 - `--in <Agregado>` é obrigatório para `command`, `query`, `event` e `value-object`.
+- `--plural <Nome>` corrige o plural quando a regra do inglês erra, como `add resource Person --plural People`.
 - `--dry-run` lista os arquivos antes de criar; use para mostrar o plano ao usuário quando a
   mudança for grande.
 - Arquivo existente não é sobrescrito; `--force` sobrescreve, então só com pedido explícito.

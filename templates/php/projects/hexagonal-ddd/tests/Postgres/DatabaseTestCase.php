@@ -15,7 +15,7 @@ abstract class DatabaseTestCase extends TestCase
     {
         $url = getenv('DATABASE_URL');
         if ($url === false || $url === '') {
-            self::markTestSkipped('DATABASE_URL not set: romanctl up sample-app --no-run creates the database and the .env');
+            self::markTestSkipped('DATABASE_URL not set: romanctl up --no-run creates the database and the .env');
         }
         $this->database = new Database($url);
     }

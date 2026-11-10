@@ -99,9 +99,9 @@ func projectReplacer(name string) *strings.Replacer {
 
 // entityReplacer troca também a entidade e o agregado de exemplo. O plural vem antes, porque
 // SampleItems contém SampleItem.
-func entityReplacer(project, entity, parent string) *strings.Replacer {
+func entityReplacer(project, entity, plural, parent string) *strings.Replacer {
 	var all []string
-	all = append(all, pairs(pluralWords(sampleEntity), pluralWords(words(entity)))...)
+	all = append(all, pairs(pluralWords(sampleEntity), words(plural))...)
 	all = append(all, pairs(sampleEntity, words(entity))...)
 	if parent != "" {
 		all = append(all, pairs(pluralWords(sampleParent), pluralWords(words(parent)))...)

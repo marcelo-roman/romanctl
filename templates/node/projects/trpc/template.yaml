@@ -5,7 +5,10 @@ description: Monorepo full-stack com Next.js e tRPC (npm workspaces), React Quer
 services: [postgres]
 requires: [node]
 setup:
-  - npm ci
+  - run: npm ci
+    when: postgres
+  - run: npm install
+    when: "!postgres"
 run: npm run dev
 test: npm test
 url: http://localhost:3200

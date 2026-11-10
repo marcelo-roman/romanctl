@@ -30,7 +30,7 @@ func addCommand(args []string, flags map[string]bool) error {
 	if kind == "" || name == "" {
 		return ui.Usagef("informe o tipo e o nome: romanctl add <tipo> <nome>; veja com: romanctl add --list")
 	}
-	return runAdd(path, scaffold.AddOptions{Kind: kind, Name: name, In: in, Force: flags["force"], DryRun: flags["dry-run"]})
+	return runAdd(path, scaffold.AddOptions{Kind: kind, Name: name, In: in, Plural: flagVals["plural"], Force: flags["force"], DryRun: flags["dry-run"]})
 }
 
 func addIsIncomplete(target, kind, name, in string) bool {
@@ -99,7 +99,7 @@ func addInteractive(path, target, kind, name, in string, flags map[string]bool) 
 	if err := ui.Wizard(steps...); err != nil {
 		return err
 	}
-	return runAdd(path, scaffold.AddOptions{Kind: kind, Name: name, In: in, Force: flags["force"], DryRun: flags["dry-run"]})
+	return runAdd(path, scaffold.AddOptions{Kind: kind, Name: name, In: in, Plural: flagVals["plural"], Force: flags["force"], DryRun: flags["dry-run"]})
 }
 
 func runAdd(path string, opts scaffold.AddOptions) error {

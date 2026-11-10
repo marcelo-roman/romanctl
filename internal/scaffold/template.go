@@ -48,6 +48,33 @@ type overlay struct {
 
 const variantsDir = "_variants"
 
+// setupStep é um comando do preparo. Em YAML, uma string ou {run, when}: when restringe o passo a
+// uma variante, como npm ci com postgres e npm install sem ele, para reconciliar o lockfile.
+type setupStep struct {
+	Run  string `yaml:"run" json:"run"`
+	When string `yaml:"when" json:"when,omitempty"`
+}
+
+func (s *setupStep) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind == yaml.ScalarNode {
+		s.Run = node.Value
+		return nil
+	}
+	type plain setupStep
+	return node.Decode((*plain)(s))
+}
+
+// setupFor são os comandos do preparo que valem para os serviços escolhidos.
+func (t *Template) setupFor(withs map[string]bool) []string {
+	var out []string
+	for _, step := range t.Setup {
+		if step.When == "" || conditionHolds(step.When, withs) {
+			out = append(out, step.Run)
+		}
+	}
+	return out
+}
+
 // Template é uma pasta com template.yaml e os arquivos a gerar.
 type Template struct {
 	ID          string             `yaml:"id" json:"id"`
@@ -59,7 +86,7 @@ type Template struct {
 	Test        string             `yaml:"test" json:"test"`
 	URL         string             `yaml:"url" json:"url"`
 	Requires    []string           `yaml:"requires" json:"requires,omitempty"`
-	Setup       []string           `yaml:"setup" json:"setup,omitempty"`
+	Setup       []setupStep        `yaml:"setup" json:"setup,omitempty"`
 	Env         manifest.Env       `yaml:"env" json:"env,omitempty"`
 	Publish     manifest.Publish   `yaml:"publish" json:"publish,omitempty"`
 	Processes   []manifest.Process `yaml:"processes" json:"processes,omitempty"`

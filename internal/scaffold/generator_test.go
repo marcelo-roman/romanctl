@@ -58,7 +58,7 @@ func TestTodoGeradorRenderiza(t *testing.T) {
 				}
 			}
 			for _, services := range [][]string{nil, {"postgres"}} {
-				d := newAddData(filepath.Join(t.TempDir(), "loja"), "ProductItem", "Order")
+				d := newAddData(filepath.Join(t.TempDir(), "loja"), "ProductItem", "", "Order")
 				for _, s := range services {
 					d.Services[s] = true
 				}
@@ -234,5 +234,34 @@ func TestPatchPulaSoOBlocoInteiro(t *testing.T) {
 	}
 	if !containsBlock(file, []string{"orders,", ")"}) {
 		t.Fatal("o bloco existe, na ordem")
+	}
+}
+
+func TestPatchMantemORecuoRelativo(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "config.yaml")
+	os.WriteFile(file, []byte("services:\n  app:\n    image: x\n  # romanctl:services\n"), 0o644)
+	planned := plannedPatch{file: "config.yaml", before: "# romanctl:services",
+		lines: dedent(strings.Split("\n    worker:\n      image: y\n      env:\n        - A=1\n", "\n"))}
+	if _, _, err := applyPatch(dir, planned, false); err != nil {
+		t.Fatal(err)
+	}
+	b, _ := os.ReadFile(file)
+	want := "services:\n  app:\n    image: x\n  worker:\n    image: y\n    env:\n      - A=1\n  # romanctl:services\n"
+	if string(b) != want {
+		t.Fatalf("obtido:\n%s", b)
+	}
+	if changed, _, _ := applyPatch(dir, planned, false); changed {
+		t.Fatal("o bloco já inserido foi inserido de novo")
+	}
+}
+
+func TestPluralInformadoVenceARegra(t *testing.T) {
+	d := newAddData(filepath.Join(t.TempDir(), "loja"), "Person", "People", "")
+	if got := d.expand("SampleItems sample_items sample-items SampleItem"); got != "People people people Person" {
+		t.Fatalf("obtido %q", got)
+	}
+	if got := newAddData(filepath.Join(t.TempDir(), "loja"), "Person", "", "").expand("SampleItems"); got != "Persons" {
+		t.Fatalf("sem --plural, vale a regra: %q", got)
 	}
 }

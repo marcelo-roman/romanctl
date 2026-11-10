@@ -9,7 +9,7 @@ use sample_app::domain::sample_items::SampleItem;
 #[tokio::test]
 async fn sample_item_round_trip() {
     let Ok(url) = env::var("DATABASE_URL") else {
-        eprintln!("skipped: DATABASE_URL not set; romanctl up sample-app --no-run creates the database and the .env");
+        eprintln!("skipped: DATABASE_URL not set; romanctl up --no-run creates the database and the .env");
         return;
     };
     let database = Database::connect(&url).await.expect("connect to DATABASE_URL");

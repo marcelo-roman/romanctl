@@ -58,19 +58,20 @@ func ensureTools(keys []string) []string {
 }
 
 // runSetup baixa as dependências do projeto recém-criado. Uma falha aqui não desfaz o projeto.
-func runSetup(t *Template, dir string, offline bool, missing []string) string {
-	if len(t.Setup) == 0 {
+func runSetup(t *Template, dir string, withs map[string]bool, offline bool, missing []string) string {
+	steps := t.setupFor(withs)
+	if len(steps) == 0 {
 		return ""
 	}
 	if offline {
-		ui.Infof("Sem internet, as dependências ficam para depois: cd %s && %s", dir, strings.Join(t.Setup, " && "))
+		ui.Infof("Sem internet, as dependências ficam para depois: cd %s && %s", dir, strings.Join(steps, " && "))
 		return setupOffline
 	}
 	if len(missing) > 0 {
-		ui.Infof("As dependências ficam para depois: cd %s && %s", dir, strings.Join(t.Setup, " && "))
+		ui.Infof("As dependências ficam para depois: cd %s && %s", dir, strings.Join(steps, " && "))
 		return setupSkipped
 	}
-	for _, command := range t.Setup {
+	for _, command := range steps {
 		var err error
 		ui.Spin(i18n.Sprintf("Rodando %s...", command), func(func(string)) { err = sys.Quiet(dir, nil, "sh", "-c", command) })
 		if err != nil {

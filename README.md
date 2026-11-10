@@ -395,7 +395,7 @@ arch: [ddd, hexagonal]
 description: API Go com arquitetura hexagonal e DDD, com HTTP da biblioteca padrão
 services: [postgres]                  # o que --with aceita
 requires: [go]                        # ferramentas do romanctl tools
-setup: [go mod tidy]                  # roda na pasta do projeto, depois de gerar
+setup: [go mod tidy]                  # roda na pasta do projeto, depois de gerar; um passo pode ter when
 run: go run ./cmd/api
 test: go test ./...
 url: http://localhost:8090
@@ -433,6 +433,20 @@ para todos. Cada processo pode ter variáveis próprias em `env:`, além das do 
 
 Com `processes`, o `run` do topo é opcional.
 
+Um passo do `setup` pode valer só numa variante. Assim a variante sem um serviço não precisa carregar outro lockfile:
+ela instala e o gerenciador de pacotes tira do lock o que o manifesto dela não pede.
+
+```yaml
+setup:
+  - run: npm ci
+    when: postgres
+  - run: npm install
+    when: "!postgres"
+```
+
+Com `uv`, `cargo` e `go mod tidy`, o lock já se ajusta sozinho ao manifesto; no Composer, a variante roda
+`composer update` dos pacotes que saíram.
+
 `run`, `test`, `publish.vars` e os campos `dir` e `run` dos processos também passam pela troca de nomes. Os valores de `env` são montados no `up`, com o
 endereço do serviço: `{{.Host}}`, `{{.Port}}`, `{{.User}}`, `{{.Password}}`, `{{.Database}}` e `{{.URL}}`. Além
 deles, todo projeto recebe as variáveis padrão de cada serviço, como `DATABASE_URL`.
@@ -455,6 +469,7 @@ romanctl add command ArchiveProduct --in Product
 romanctl add query ListActiveProducts --in Product
 romanctl add event ProductArchived --in Product
 romanctl add value-object Sku --in Product
+romanctl add resource Person --plural People       # quando a regra do inglês erra o plural
 romanctl add resource Product --dry-run            # só mostra
 ```
 
@@ -484,7 +499,9 @@ romanctl add resource Product --dry-run            # só mostra
 | Go simples | `handler`, `service`, `model` |
 
 Sem `--force`, nada é sobrescrito. O que precisa de registro em outro arquivo é inserido antes de um marcador,
-como `// romanctl:endpoints`; sem o marcador, o comando mostra o que fazer à mão.
+como `// romanctl:endpoints`; sem o marcador, o comando mostra o que fazer à mão. As linhas inseridas recebem o recuo
+do marcador e mantêm o recuo relativo entre si, então blocos aninhados, como YAML, entram inteiros. Um bloco que já
+está no arquivo não é inserido de novo.
 
 Cada gerador é uma pasta em `templates/<linguagem>/generators/<alvo>/<tipo>`, com um `generator.yaml` e os arquivos em
 `files/`. O alvo é o id do template (`go/hexagonal-ddd`) ou o tipo de projeto simples (`node/express`, `node/next`,
@@ -505,7 +522,8 @@ romanctl down loja           # ou --all, ou --keep-services
 
 O `up` lê os serviços do `romanctl.yaml`, cria o banco do projeto e acrescenta ao `.env` só o que falta, sem mudar
 o que você editou. O `.env` entra no `.gitignore`, e as variáveis valem para o app, salvo as que já estiverem no
-ambiente. Se a porta estiver ocupada, o comando para e diz por qual projeto, quando for o caso.
+ambiente. O `romanctl run` também carrega o `.env`, só sem ligar os serviços. Se a porta estiver ocupada, o comando
+para e diz por qual projeto, quando for o caso.
 
 O `down` desliga só os serviços que o `up` ligou e que nenhum outro projeto no ar usa. O que já estava ligado antes
 continua ligado. Projetos sem `romanctl.yaml` não têm serviços: o `up` só roda o app.

@@ -5,7 +5,10 @@ description: Monorepo Node com Backend for Frontend - API de pedidos e BFF em Fa
 services: [postgres]
 requires: [node]
 setup:
-  - npm ci
+  - run: npm ci
+    when: postgres
+  - run: npm install
+    when: "!postgres"
 run: npm run dev
 test: npm test
 url: http://localhost:3300

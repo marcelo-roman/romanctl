@@ -87,7 +87,7 @@ func Main() {
 	}
 }
 
-var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "seconds": true, "interval": true, "lang": true, "project": true, "in": true, "description": true, "filter": true, "category": true, "version": true, "ref": true}
+var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "seconds": true, "interval": true, "lang": true, "project": true, "in": true, "description": true, "filter": true, "category": true, "version": true, "ref": true, "plural": true}
 
 var flagVals = map[string]string{}
 

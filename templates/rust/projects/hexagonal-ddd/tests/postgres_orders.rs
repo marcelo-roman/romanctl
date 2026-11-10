@@ -10,7 +10,7 @@ use sample_app::domain::shared::Id;
 async fn database() -> Option<Database> {
     let Ok(url) = env::var("DATABASE_URL") else {
         eprintln!(
-            "skipped: DATABASE_URL not set; romanctl up sample-app --no-run creates the database and the .env"
+            "skipped: DATABASE_URL not set; romanctl up --no-run creates the database and the .env"
         );
         return None;
     };

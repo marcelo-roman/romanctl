@@ -26,7 +26,7 @@ func brokerURL(t *testing.T) string {
 	t.Helper()
 	url := os.Getenv("RABBITMQ_URL")
 	if url == "" {
-		t.Skip("RABBITMQ_URL not set: romanctl up sample-app --no-run starts RabbitMQ and writes the .env")
+		t.Skip("RABBITMQ_URL not set: romanctl up --no-run starts RabbitMQ and writes the .env")
 	}
 	waitForBroker(t, url)
 	return url

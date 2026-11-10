@@ -10,7 +10,7 @@ from sample_app.adapters.postgres.database import Database
 def database() -> Iterator[Database]:
     url = os.environ.get("DATABASE_URL")
     if not url:
-        pytest.skip("DATABASE_URL not set: romanctl up sample-app --no-run creates the database and the .env")
+        pytest.skip("DATABASE_URL not set: romanctl up --no-run creates the database and the .env")
     database = Database(url)
     database.open()
     yield database

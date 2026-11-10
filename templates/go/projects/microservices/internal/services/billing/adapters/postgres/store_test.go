@@ -17,7 +17,7 @@ func openStore(t *testing.T) *Store {
 	t.Helper()
 	url := os.Getenv("DATABASE_URL")
 	if url == "" {
-		t.Skip("DATABASE_URL not set: romanctl up sample-app --no-run creates the database and the .env")
+		t.Skip("DATABASE_URL not set: romanctl up --no-run creates the database and the .env")
 	}
 	ctx := context.Background()
 	pool, err := platform.Open(ctx, url)

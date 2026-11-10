@@ -128,6 +128,7 @@ var commands = []command{
 		details: text{"Os tipos dependem do projeto: veja com romanctl add --list.", "The types depend on the project: see with romanctl add --list."},
 		options: []helpOption{
 			{"--in <agregado>", text{"agregado de destino, em command, query, event e value-object", "target aggregate, for command, query, event and value-object"}},
+			{"--plural <nome>", text{"plural do nome, quando a regra do inglês erra, como --plural People", "plural of the name, when the English rule gets it wrong, such as --plural People"}},
 			{"--project <nome>", text{"projeto de destino; sem isto, usa a pasta atual", "target project; without this, uses the current folder"}},
 			{"--list", text{"lista o que dá para gerar", "lists what can be generated"}},
 			{"--force", text{"sobrescreve arquivos existentes", "overwrites existing files"}},

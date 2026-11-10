@@ -7,7 +7,7 @@ object TestDatabase {
 
     fun connectOrSkip(): Database {
         val url = System.getenv("DATABASE_URL")
-        assumeTrue(!url.isNullOrBlank(), "DATABASE_URL not set: romanctl up sample-app --no-run creates the database and the .env")
+        assumeTrue(!url.isNullOrBlank(), "DATABASE_URL not set: romanctl up --no-run creates the database and the .env")
         return connected
     }
 }
