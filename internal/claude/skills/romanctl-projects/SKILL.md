@@ -1,6 +1,6 @@
 ---
 name: romanctl-projects
-description: Cria, lista e remove projetos pelo romanctl, a partir de templates (Node, Express, React, Next.js, .NET Web API/MVC/Blazor/Console, Go) e de templates de arquitetura (.NET Clean/DDD/CQRS, .NET event sourcing, .NET vertical slice, Node NestJS Clean/DDD/CQRS, Go, Java Spring e Python FastAPI hexagonais com DDD, com Postgres). Use quando o usuário pedir um projeto novo, uma API, um site, um app web, ou quiser saber que projetos existem.
+description: Cria, lista e remove projetos pelo romanctl, a partir de templates (Node, Express, React, Next.js, .NET Web API/MVC/Blazor/Console, Go) e de templates de arquitetura (Go, Rust, Java, Kotlin, PHP e Python hexagonais com DDD; .NET Clean/DDD/CQRS, event sourcing, vertical slice e monólito modular; Node NestJS Clean/DDD/CQRS e Fastify em camadas; Django em camadas; com Postgres). Use quando o usuário pedir um projeto novo, uma API, um site, um app web, ou quiser saber que projetos existem.
 ---
 
 # Projetos pelo romanctl

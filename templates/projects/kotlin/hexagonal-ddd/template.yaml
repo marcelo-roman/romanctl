@@ -1,0 +1,25 @@
+id: hexagonal-ddd
+stack: kotlin
+arch: [ddd, hexagonal]
+description: API Kotlin com arquitetura hexagonal e DDD, com Ktor e Gradle
+services: [postgres]
+requires: [java]
+setup:
+  - ./gradlew --quiet testClasses
+run: ./gradlew --quiet run
+test: ./gradlew test
+url: http://localhost:8081
+publish:
+  kind: kotlin-gradle
+  vars:
+    Dist: sample-app
+conditional:
+  - path: src/main/kotlin/com/example/sampleapp/adapters/postgres
+    when: postgres
+  - path: src/test/kotlin/com/example/sampleapp/adapters/postgres
+    when: postgres
+  - path: src/main/resources/schema.sql
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"

@@ -1,0 +1,51 @@
+description: CRUD completo - domínio, caso de uso, repositório, rotas HTTP e testes, com Ktor
+aliases: [crud, scaffold]
+conditional:
+  - path: src/main/kotlin/com/example/sampleapp/adapters/postgres
+    when: postgres
+  - path: src/test/kotlin/com/example/sampleapp/adapters/postgres
+    when: postgres
+patches:
+  - file: src/main/kotlin/com/example/sampleapp/adapters/http/Services.kt
+    before: "// romanctl:imports"
+    text: import com.example.sampleapp.application.sampleitems.SampleItemService
+  - file: src/main/kotlin/com/example/sampleapp/adapters/http/Services.kt
+    before: "// romanctl:services"
+    text: "val sampleItems: SampleItemService,"
+  - file: src/main/kotlin/com/example/sampleapp/adapters/http/Api.kt
+    before: "// romanctl:routes"
+    text: sampleItems(services.sampleItems)
+  - file: src/test/kotlin/com/example/sampleapp/adapters/http/InMemoryServices.kt
+    before: "// romanctl:imports"
+    text: |
+      import com.example.sampleapp.adapters.memory.MemorySampleItemRepository
+      import com.example.sampleapp.application.sampleitems.SampleItemService
+  - file: src/test/kotlin/com/example/sampleapp/adapters/http/InMemoryServices.kt
+    before: "// romanctl:services"
+    text: sampleItems = SampleItemService(MemorySampleItemRepository(), clock),
+  - when: postgres
+    file: src/main/kotlin/com/example/sampleapp/Application.kt
+    before: "// romanctl:imports"
+    text: |
+      import com.example.sampleapp.adapters.postgres.PostgresSampleItemRepository
+      import com.example.sampleapp.application.sampleitems.SampleItemService
+  - when: postgres
+    file: src/main/kotlin/com/example/sampleapp/Application.kt
+    before: "// romanctl:services"
+    text: sampleItems = SampleItemService(PostgresSampleItemRepository(database), clock),
+  - when: "!postgres"
+    file: src/main/kotlin/com/example/sampleapp/Application.kt
+    before: "// romanctl:imports"
+    text: |
+      import com.example.sampleapp.adapters.memory.MemorySampleItemRepository
+      import com.example.sampleapp.application.sampleitems.SampleItemService
+  - when: "!postgres"
+    file: src/main/kotlin/com/example/sampleapp/Application.kt
+    before: "// romanctl:services"
+    text: sampleItems = SampleItemService(MemorySampleItemRepository(), clock),
+  - when: postgres
+    file: src/main/resources/schema.sql
+    before: "-- romanctl:tables"
+    text: |
+      CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
+next: "Rotas em /sample-items. Rode ./gradlew test para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}"

@@ -321,6 +321,7 @@ romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
 | `dotnet` | `modular-monolith`, `ddd` | Módulos Catalog e Ordering, contratos públicos, eventos de integração, um esquema por módulo | `postgres` |
 | `dotnet` | `vertical-slice` | Minimal API, uma pasta por funcionalidade, EF Core | `postgres` |
 | `go` | `hexagonal`, `ddd` | `net/http` da biblioteca padrão, pgx | `postgres` |
+| `kotlin` | `hexagonal`, `ddd` | Ktor, Gradle com wrapper, HikariCP, Konsist | `postgres` |
 | `node` | `clean`, `ddd`, `cqrs` | NestJS com @nestjs/cqrs, TypeScript, pg, Vitest | `postgres` |
 | `node` | `layered` | Fastify, rotas, serviços e repositórios, pg | `postgres` |
 | `java` | `hexagonal`, `ddd` | Spring Boot, Maven, JdbcClient, ArchUnit | `postgres` |
@@ -449,6 +450,7 @@ romanctl add resource Product --dry-run            # só mostra
 | .NET Vertical Slice | `resource` |
 | Go hexagonal e DDD | `resource` |
 | Java hexagonal e DDD | `resource` |
+| Kotlin hexagonal e DDD | `resource` |
 | Node Clean, DDD e CQRS | `resource` |
 | Node em camadas | `resource` |
 | PHP hexagonal e DDD | `resource` |
