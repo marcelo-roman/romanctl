@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"romanctl/internal/browser"
+	"romanctl/internal/dotenv"
 	"romanctl/internal/i18n"
 	"romanctl/internal/manifest"
 	"romanctl/internal/services"
@@ -81,7 +82,7 @@ func RunProject(name string, open bool) error {
 			}
 		}
 	}
-	return RunAt(p, name, nil, open)
+	return RunAt(p, name, dotenv.Load(filepath.Join(p, ".env"), os.LookupEnv), open)
 }
 
 // RunAt roda em primeiro plano, com variáveis extras.

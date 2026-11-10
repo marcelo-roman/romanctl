@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"romanctl/internal/dotenv"
 )
 
 // KV é uma variável do .env.
@@ -16,29 +18,6 @@ func quote(v string) string {
 	return v
 }
 
-func unquote(v string) string {
-	v = strings.TrimSpace(v)
-	if len(v) >= 2 && (v[0] == '"' && v[len(v)-1] == '"' || v[0] == '\'' && v[len(v)-1] == '\'') {
-		return strings.ReplaceAll(v[1:len(v)-1], `\"`, `"`)
-	}
-	return v
-}
-
-// parseEnv lê um .env; linhas em branco e comentários são ignorados.
-func parseEnv(text string) []KV {
-	var out []KV
-	for _, line := range strings.Split(text, "\n") {
-		line = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), "export "))
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		if key, value, ok := strings.Cut(line, "="); ok && strings.TrimSpace(key) != "" {
-			out = append(out, KV{strings.TrimSpace(key), unquote(value)})
-		}
-	}
-	return out
-}
-
 // MergeEnv só acrescenta o que falta: um valor que a pessoa mudou nunca é sobrescrito.
 func MergeEnv(path string, vars []KV) ([]string, error) {
 	existing, err := os.ReadFile(path)
@@ -46,7 +25,7 @@ func MergeEnv(path string, vars []KV) ([]string, error) {
 		return nil, err
 	}
 	present := map[string]bool{}
-	for _, kv := range parseEnv(string(existing)) {
+	for _, kv := range dotenv.Parse(string(existing)) {
 		present[kv.Key] = true
 	}
 	var added []string
@@ -69,17 +48,7 @@ func MergeEnv(path string, vars []KV) ([]string, error) {
 
 // ProcessEnv devolve o .env para o app. O que já está no ambiente tem prioridade.
 func ProcessEnv(path string, lookup func(string) (string, bool)) []string {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		return nil
-	}
-	var out []string
-	for _, kv := range parseEnv(string(b)) {
-		if _, set := lookup(kv.Key); !set {
-			out = append(out, kv.Key+"="+kv.Value)
-		}
-	}
-	return out
+	return dotenv.Load(path, lookup)
 }
 
 // EnsureIgnored evita que o .env acabe em um commit.
