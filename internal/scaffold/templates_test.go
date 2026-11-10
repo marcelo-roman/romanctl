@@ -88,6 +88,16 @@ func TestTodoTemplateEstaCompleto(t *testing.T) {
 					t.Errorf("conditional aponta para caminho que não existe: %s", c.Path)
 				}
 			}
+			for _, p := range tpl.Processes {
+				if p.Name == "" || p.Run == "" {
+					t.Errorf("processo sem name ou run: %+v", p)
+				}
+				if p.Dir != "" {
+					if _, err := fs.Stat(tpl.files, p.Dir); err != nil {
+						t.Errorf("processo %s aponta para pasta que não existe: %s", p.Name, p.Dir)
+					}
+				}
+			}
 			for _, o := range tpl.Overlays {
 				if !under(o.From, variantsDir) {
 					t.Errorf("overlay fora de %s: %s", variantsDir, o.From)

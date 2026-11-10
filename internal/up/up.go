@@ -190,13 +190,20 @@ func Run(name, path string, opts Options) (Result, error) {
 	}
 	appURL := projects.AppURL(path)
 	result.URL = appURL
+	urls := []string{appURL}
+	if hasManifest && len(m.URLs()) > 0 {
+		urls = m.URLs()
+	}
 	if !opts.NoRun && hasManifest {
 		if err := missingTool(m.Requires); err != nil {
 			return result, err
 		}
 	}
-	if !opts.NoRun && appURL != "" {
-		if err := checkPort(appURL, name); err != nil {
+	for _, u := range urls {
+		if opts.NoRun || u == "" {
+			continue
+		}
+		if err := checkPort(u, name); err != nil {
 			return result, err
 		}
 	}
@@ -284,7 +291,13 @@ func Run(name, path string, opts Options) (Result, error) {
 	result.PID, result.Log = pid, entry.Log
 
 	var failed error
-	ui.Spin(i18n.Sprintf("Subindo %s...", name), func(func(string)) { failed = waitForApp(pid, appURL, entry.Log) })
+	ui.Spin(i18n.Sprintf("Subindo %s...", name), func(func(string)) {
+		for _, u := range urls {
+			if failed = waitForApp(pid, u, entry.Log); failed != nil {
+				return
+			}
+		}
+	})
 	if failed != nil {
 		sys.StopGroup(pid, 3*time.Second)
 		entry.PID = 0

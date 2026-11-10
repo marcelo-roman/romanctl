@@ -50,21 +50,22 @@ const variantsDir = "_variants"
 
 // Template é uma pasta com template.yaml e os arquivos a gerar.
 type Template struct {
-	ID          string            `yaml:"id" json:"id"`
-	Stack       string            `yaml:"stack" json:"stack"`
-	Arch        []string          `yaml:"arch" json:"arch"`
-	Description string            `yaml:"description" json:"description"`
-	Services    []string          `yaml:"services" json:"services"`
-	Run         string            `yaml:"run" json:"run"`
-	Test        string            `yaml:"test" json:"test"`
-	URL         string            `yaml:"url" json:"url"`
-	Requires    []string          `yaml:"requires" json:"requires,omitempty"`
-	Setup       []string          `yaml:"setup" json:"setup,omitempty"`
-	Env         manifest.Env      `yaml:"env" json:"env,omitempty"`
-	Publish     manifest.Publish  `yaml:"publish" json:"publish,omitempty"`
-	Conditional []conditionalPath `yaml:"conditional" json:"-"`
-	Overlays    []overlay         `yaml:"overlays" json:"-"`
-	Source      string            `yaml:"-" json:"source"`
+	ID          string             `yaml:"id" json:"id"`
+	Stack       string             `yaml:"stack" json:"stack"`
+	Arch        []string           `yaml:"arch" json:"arch"`
+	Description string             `yaml:"description" json:"description"`
+	Services    []string           `yaml:"services" json:"services"`
+	Run         string             `yaml:"run" json:"run"`
+	Test        string             `yaml:"test" json:"test"`
+	URL         string             `yaml:"url" json:"url"`
+	Requires    []string           `yaml:"requires" json:"requires,omitempty"`
+	Setup       []string           `yaml:"setup" json:"setup,omitempty"`
+	Env         manifest.Env       `yaml:"env" json:"env,omitempty"`
+	Publish     manifest.Publish   `yaml:"publish" json:"publish,omitempty"`
+	Processes   []manifest.Process `yaml:"processes" json:"processes,omitempty"`
+	Conditional []conditionalPath  `yaml:"conditional" json:"-"`
+	Overlays    []overlay          `yaml:"overlays" json:"-"`
+	Source      string             `yaml:"-" json:"source"`
 	files       fs.FS
 }
 

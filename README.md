@@ -389,7 +389,24 @@ overlays:                             # arquivos que substituem os da raiz quand
     when: "!postgres"
 ```
 
-`run`, `test` e `publish.vars` também passam pela troca de nomes. Os valores de `env` são montados no `up`, com o
+Um projeto com vários programas, como um monorepo com API e front, declara `processes` no lugar de `run`:
+
+```yaml
+processes:
+  - name: api
+    dir: apps/api
+    run: npm run dev
+    url: http://localhost:3000
+  - name: web
+    dir: apps/web
+    run: npm run dev
+    url: http://localhost:5173
+```
+
+O `run` e o `up` sobem todos juntos, com o nome do processo no começo de cada linha do log, e o `up -d` espera cada
+`url` responder. O `down` para todos.
+
+`run`, `test`, `publish.vars` e os campos `dir` e `run` dos processos também passam pela troca de nomes. Os valores de `env` são montados no `up`, com o
 endereço do serviço: `{{.Host}}`, `{{.Port}}`, `{{.User}}`, `{{.Password}}`, `{{.Database}}` e `{{.URL}}`. Além
 deles, todo projeto recebe as variáveis padrão de cada serviço, como `DATABASE_URL`.
 
