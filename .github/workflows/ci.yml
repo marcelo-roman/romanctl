@@ -93,14 +93,45 @@ jobs:
       - name: Sobe cada serviço em container
         run: |
           for service in postgres mongo redis mysql mariadb sqlserver rabbitmq kafka; do
+            ./romanctl install "$service"
             ./romanctl start "$service"
           done
           ./romanctl status
           ./romanctl stop all
-      - name: Testa cada template na própria pasta
-        run: scripts/templates.sh inplace ./romanctl
-      - name: Gera cada template com todos os serviços e roda os testes dele
-        run: scripts/templates.sh test ./romanctl
+
+  catalog:
+    runs-on: ubuntu-latest
+    outputs:
+      templates: ${{ steps.list.outputs.templates }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go build -o romanctl ./cmd/romanctl
+      - id: list
+        run: echo "templates=$(./romanctl catalog --json | jq -c '[.templates[] | .stack + "/" + .id]')" >> "$GITHUB_OUTPUT"
+
+  templates:
+    needs: catalog
+    strategy:
+      fail-fast: false
+      matrix:
+        template: ${{ fromJSON(needs.catalog.outputs.templates) }}
+    name: template ${{ matrix.template }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go build -o romanctl ./cmd/romanctl
+      - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Testa o template na própria pasta
+        run: scripts/templates.sh inplace ./romanctl ${{ matrix.template }}
+      - name: Gera com todos os serviços e roda os testes do projeto
+        run: scripts/templates.sh test ./romanctl ${{ matrix.template }}
 
   sweep:
     if: github.event_name == 'workflow_dispatch' && inputs.sweep
