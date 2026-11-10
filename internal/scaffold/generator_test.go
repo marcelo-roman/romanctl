@@ -206,7 +206,7 @@ func TestProjetosSimples(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Target != "express" || !slices.Contains(r.Files, "routes/products.js") {
+	if r.Target != "node/express" || !slices.Contains(r.Files, "routes/products.js") {
 		t.Fatalf("%+v", r)
 	}
 	index, _ := os.ReadFile(filepath.Join(dir, "index.js"))

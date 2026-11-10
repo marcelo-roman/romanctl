@@ -29,7 +29,7 @@ romanctl=${2:-romanctl}
     if [ -n "$requires" ]; then "$romanctl" tools install $requires; fi
     root=$("$romanctl" templates status --json | jq -r .path)
     (
-      cd "$root/projects/$stack/$id"
+      cd "$root/$stack/projects/$id"
       echo "$tpl" | jq -r '.setup // [] | .[]' | while read -r step; do sh -c "$step"; done
       sh -c "$(echo "$tpl" | jq -r .test)"
     )

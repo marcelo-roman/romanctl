@@ -58,8 +58,9 @@ func userGeneratorsDir() string {
 func LoadGenerators(target string) []*Generator {
 	ensureInstalled()
 	found := map[string]*Generator{}
-	load := func(root fs.FS) {
-		manifests, _ := fs.Glob(root, target+"/*/generator.yaml")
+	language, name, _ := strings.Cut(target, "/")
+	load := func(root fs.FS, dir string) {
+		manifests, _ := fs.Glob(root, dir+"/*/generator.yaml")
 		for _, file := range manifests {
 			b, err := fs.ReadFile(root, file)
 			if err != nil {
@@ -78,8 +79,8 @@ func LoadGenerators(target string) []*Generator {
 			found[g.Kind] = &g
 		}
 	}
-	load(os.DirFS(generatorsDir()))
-	load(os.DirFS(userGeneratorsDir()))
+	load(os.DirFS(Root()), path.Join(language, generatorsSubdir, name))
+	load(os.DirFS(userGeneratorsDir()), target)
 	list := make([]*Generator, 0, len(found))
 	for _, g := range found {
 		list = append(list, g)
@@ -91,11 +92,11 @@ func LoadGenerators(target string) []*Generator {
 // AllTargets lista os alvos com geradores, para o catálogo.
 func AllTargets() []string {
 	ensureInstalled()
-	entries, _ := os.ReadDir(generatorsDir())
+	dirs, _ := filepath.Glob(filepath.Join(Root(), "*", generatorsSubdir, "*"))
 	var out []string
-	for _, e := range entries {
-		if e.IsDir() {
-			out = append(out, e.Name())
+	for _, dir := range dirs {
+		if info, err := os.Stat(dir); err == nil && info.IsDir() {
+			out = append(out, filepath.Base(filepath.Dir(filepath.Dir(dir)))+"/"+filepath.Base(dir))
 		}
 	}
 	return out
@@ -104,19 +105,19 @@ func AllTargets() []string {
 // TargetOf descobre que geradores valem para um projeto.
 func TargetOf(projectPath string) string {
 	if m, ok := manifest.Read(projectPath); ok {
-		return m.Stack + "-" + m.Template
+		return m.Stack + "/" + m.Template
 	}
 	switch projects.DetectType(projectPath) {
 	case "next":
-		return "next"
+		return "node/next"
 	case "react/vite":
-		return "react"
+		return "react/vite"
 	case "express":
-		return "express"
+		return "node/express"
 	case "go":
-		return "go"
+		return "go/simple"
 	case "dotnet":
-		return "dotnet"
+		return "dotnet/simple"
 	}
 	return ""
 }

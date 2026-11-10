@@ -160,9 +160,9 @@ func TestTodaPastaDeTemplateCarrega(t *testing.T) {
 	for _, tpl := range repoTemplates(t) {
 		loaded[tpl.Key()] = true
 	}
-	dirs, _ := filepath.Glob(filepath.Join(Root(), "projects", "*", "*"))
+	dirs, _ := filepath.Glob(filepath.Join(Root(), "*", "projects", "*"))
 	for _, dir := range dirs {
-		key := filepath.Base(filepath.Dir(dir)) + "/" + filepath.Base(dir)
+		key := filepath.Base(filepath.Dir(filepath.Dir(dir))) + "/" + filepath.Base(dir)
 		if !loaded[key] {
 			t.Errorf("%s não carregou: confira o template.yaml", key)
 		}

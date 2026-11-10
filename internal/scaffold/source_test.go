@@ -52,7 +52,7 @@ func TestUpdateBaixaATagEDepoisAMain(t *testing.T) {
 	fakeCodeload(t, map[string][]byte{
 		"refs/tags/v9.9.8": tarball(t, map[string]string{"romanctl-9.9.8/README.md": "sem templates"}),
 		"refs/heads/main": tarball(t, map[string]string{
-			"romanctl-main/templates/projects/go/x/template.yaml": "id: x\n",
+			"romanctl-main/templates/go/projects/x/template.yaml": "id: x\n",
 			"romanctl-main/internal/cli/root.go":                  "package cli",
 		}),
 	})
@@ -71,7 +71,7 @@ func TestUpdateBaixaATagEDepoisAMain(t *testing.T) {
 	if !r.Fallback || r.Ref != "refs/heads/main" || InstalledRef() != "refs/heads/main" {
 		t.Fatalf("%+v %q", r, InstalledRef())
 	}
-	if _, err := os.Stat(filepath.Join(Root(), "projects/go/x/template.yaml")); err != nil {
+	if _, err := os.Stat(filepath.Join(Root(), "go/projects/x/template.yaml")); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(Root(), "internal")); err == nil {

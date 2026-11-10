@@ -77,8 +77,8 @@ func userTemplatesDir() string { return filepath.Join(config.Home, ".config", "r
 func LoadTemplates() []*Template {
 	ensureInstalled()
 	found := map[string]*Template{}
-	load := func(root fs.FS, source string) {
-		manifests, _ := fs.Glob(root, "*/*/template.yaml")
+	load := func(root fs.FS, pattern, source string) {
+		manifests, _ := fs.Glob(root, pattern)
 		for _, manifest := range manifests {
 			b, err := fs.ReadFile(root, manifest)
 			if err != nil {
@@ -94,14 +94,14 @@ func LoadTemplates() []*Template {
 			if err != nil {
 				continue
 			}
-			t.Stack, t.ID = path.Dir(dir), path.Base(dir)
+			t.Stack, t.ID = strings.SplitN(dir, "/", 2)[0], path.Base(dir)
 			t.files, t.Source = sub, source
 			sort.Strings(t.Arch)
 			found[t.Key()] = &t
 		}
 	}
-	load(os.DirFS(projectsDir()), "romanctl")
-	load(os.DirFS(userTemplatesDir()), "usuario")
+	load(os.DirFS(Root()), projectsPattern, "romanctl")
+	load(os.DirFS(userTemplatesDir()), "*/*/template.yaml", "usuario")
 
 	list := make([]*Template, 0, len(found))
 	for _, t := range found {

@@ -344,8 +344,21 @@ fica para depois. Uma falha no preparo não apaga o projeto.
 
 ### Onde ficam
 
-Os templates não fazem parte do binário. Eles estão na pasta [`templates/`](templates) deste repositório e são
-baixados para `~/.local/share/romanctl/templates`, na tag da versão instalada:
+Os templates não fazem parte do binário. Eles estão na pasta [`templates/`](templates) deste repositório, uma
+subpasta por linguagem, e são baixados para `~/.local/share/romanctl/templates`, na tag da versão instalada:
+
+```
+templates/
+  go/
+    projects/hexagonal-ddd/          um projeto que compila e testa na própria pasta
+    projects/microservices/
+    generators/hexagonal-ddd/resource/
+    generators/simple/handler/       geradores dos projetos Go simples
+  node/
+    projects/clean-ddd-cqrs/  projects/layered/  projects/trpc/  projects/bff/
+    generators/express/  generators/next/  ...
+  react/  dotnet/  java/  kotlin/  php/  python/  rust/
+```
 
 ```bash
 romanctl templates                 # onde estão e de que versão vieram
@@ -470,11 +483,12 @@ romanctl add resource Product --dry-run            # só mostra
 Sem `--force`, nada é sobrescrito. O que precisa de registro em outro arquivo é inserido antes de um marcador,
 como `// romanctl:endpoints`; sem o marcador, o comando mostra o que fazer à mão.
 
-Cada gerador é uma pasta em [`templates/generators/<alvo>/<tipo>`](templates/generators), com um `generator.yaml` e
-os arquivos em `files/`. Eles usam a entidade de exemplo `SampleItem` (e `SampleItems`, `sample-item`,
+Cada gerador é uma pasta em `templates/<linguagem>/generators/<alvo>/<tipo>`, com um `generator.yaml` e os arquivos em
+`files/`. O alvo é o id do template (`go/hexagonal-ddd`) ou o tipo de projeto simples (`node/express`, `node/next`,
+`react/vite`, `go/simple`, `dotnet/simple`). Eles usam a entidade de exemplo `SampleItem` (e `SampleItems`, `sample-item`,
 `sample_items`, `sample item`...), o agregado de `--in` `SampleParent` e o projeto `SampleApp`, trocados como nos templates. Um patch
 com `when: postgres` só vale com o serviço, e `after:` roda comandos depois de gravar, como `gofmt -w`. Uma pasta em
-`~/.config/romanctl/generators` tem prioridade.
+`~/.config/romanctl/generators/<linguagem>/<alvo>/<tipo>` tem prioridade.
 
 ## Subir o ambiente
 

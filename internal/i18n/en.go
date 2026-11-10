@@ -227,7 +227,7 @@ var en = map[string]string{
 	"Templates atualizados (%s) em %s":                                         "Templates updated (%s) in %s",
 	"use: romanctl templates [status|update] [--ref <tag ou branch>] [--json]": "usage: romanctl templates [status|update] [--ref <tag or branch>] [--json]",
 	"ROMANCTL_TEMPLATES aponta para %s; os templates de lá não são baixados":   "ROMANCTL_TEMPLATES points to %s; templates there are not downloaded",
-	"%s não tem a pasta templates/projects":                                    "%s has no templates/projects folder",
+	"%s não tem templates em templates/<linguagem>/projects":                   "%s has no templates in templates/<language>/projects",
 	"caminho inválido no arquivo: %s":                                          "invalid path in the archive: %s",
 	"%s falhou depois de gerar: %v":                                            "%s failed after generating: %v",
 	"não achei a versão atual do Gradle":                                       "could not find the current Gradle version",

@@ -35,11 +35,20 @@ func Root() string {
 	return filepath.Join(config.DataDir, "templates")
 }
 
-func projectsDir() string   { return filepath.Join(Root(), "projects") }
-func generatorsDir() string { return filepath.Join(Root(), "generators") }
+// A pasta tem uma subpasta por linguagem, cada uma com projects/<id> e generators/<alvo>/<tipo>.
+const (
+	projectsPattern  = "*/projects/*/template.yaml"
+	generatorsSubdir = "generators"
+	languageProjects = "projects"
+)
 
 // Installed diz se há templates nesta máquina.
-func Installed() bool { return sys.Exists(projectsDir()) }
+func Installed() bool { return hasProjects(Root()) }
+
+func hasProjects(root string) bool {
+	matches, _ := filepath.Glob(filepath.Join(root, "*", languageProjects))
+	return len(matches) > 0
+}
 
 // InstalledRef diz de que versão vieram os templates baixados.
 func InstalledRef() string {
@@ -173,8 +182,8 @@ func fetch(ref, dest string) error {
 	if err := extractTemplates(body, dest); err != nil {
 		return err
 	}
-	if !sys.Exists(filepath.Join(dest, "projects")) {
-		return i18n.Errorf("%s não tem a pasta templates/projects", ref)
+	if !hasProjects(dest) {
+		return i18n.Errorf("%s não tem templates em templates/<linguagem>/projects", ref)
 	}
 	return nil
 }
