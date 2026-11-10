@@ -1,0 +1,29 @@
+description: Módulo novo - projetos de implementação e de contratos, DbContext com esquema próprio, CRUD de uma entidade, rotas e testes, registrado no host e na solução
+aliases: [modulo, bounded-context]
+conditional:
+  - path: tests/SampleApp.Tests/Postgres
+    when: postgres
+patches:
+  - file: SampleApp.slnx
+    before: "<!-- romanctl:modules -->"
+    text: |
+      <Project Path="src/Modules/SampleItems/SampleApp.SampleItems/SampleApp.SampleItems.csproj" />
+      <Project Path="src/Modules/SampleItems/SampleApp.SampleItems.Contracts/SampleApp.SampleItems.Contracts.csproj" />
+  - file: src/SampleApp.Api/SampleApp.Api.csproj
+    before: "<!-- romanctl:modules -->"
+    text: <ProjectReference Include="../Modules/SampleItems/SampleApp.SampleItems/SampleApp.SampleItems.csproj" />
+  - file: tests/SampleApp.Tests/SampleApp.Tests.csproj
+    before: "<!-- romanctl:modules -->"
+    text: |
+      <ProjectReference Include="../../src/Modules/SampleItems/SampleApp.SampleItems/SampleApp.SampleItems.csproj" />
+      <ProjectReference Include="../../src/Modules/SampleItems/SampleApp.SampleItems.Contracts/SampleApp.SampleItems.Contracts.csproj" />
+  - file: src/SampleApp.Api/Modules.cs
+    before: "// romanctl:usings"
+    text: using SampleApp.SampleItems;
+  - file: src/SampleApp.Api/Modules.cs
+    before: "// romanctl:modules"
+    text: builder.AddSampleItemsModule();
+  - file: src/SampleApp.Api/Modules.cs
+    before: "// romanctl:endpoints"
+    text: app.MapSampleItemsEndpoints();
+next: "Módulo SampleItems em src/Modules/SampleItems, com a entidade SampleItem, rotas em /sample-items e contratos em SampleApp.SampleItems.Contracts, registrado em Modules.cs, na solução e nos projetos da API e dos testes. Rode dotnet test para conferir.{{if .Postgres}} As tabelas ficam no esquema sample_items, criado na próxima inicialização em desenvolvimento.{{end}}"

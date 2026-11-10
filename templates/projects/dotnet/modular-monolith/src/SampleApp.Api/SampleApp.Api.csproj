@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="../SampleApp.Shared/SampleApp.Shared.csproj" />
+    <ProjectReference Include="../Modules/Catalog/SampleApp.Catalog/SampleApp.Catalog.csproj" />
+    <ProjectReference Include="../Modules/Ordering/SampleApp.Ordering/SampleApp.Ordering.csproj" />
+    <!-- romanctl:modules -->
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+</Project>

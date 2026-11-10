@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SampleApp.Api/SampleApp.Api.csproj" />
+    <Project Path="src/SampleApp.Shared/SampleApp.Shared.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/">
+    <Project Path="src/Modules/Catalog/SampleApp.Catalog/SampleApp.Catalog.csproj" />
+    <Project Path="src/Modules/Catalog/SampleApp.Catalog.Contracts/SampleApp.Catalog.Contracts.csproj" />
+    <Project Path="src/Modules/Ordering/SampleApp.Ordering/SampleApp.Ordering.csproj" />
+    <Project Path="src/Modules/Ordering/SampleApp.Ordering.Contracts/SampleApp.Ordering.Contracts.csproj" />
+    <!-- romanctl:modules -->
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SampleApp.Tests/SampleApp.Tests.csproj" />
+  </Folder>
+</Solution>

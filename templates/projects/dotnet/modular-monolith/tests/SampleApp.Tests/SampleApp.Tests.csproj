@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/SampleApp.Api/SampleApp.Api.csproj" />
+    <ProjectReference Include="../../src/SampleApp.Shared/SampleApp.Shared.csproj" />
+    <ProjectReference Include="../../src/Modules/Catalog/SampleApp.Catalog/SampleApp.Catalog.csproj" />
+    <ProjectReference Include="../../src/Modules/Catalog/SampleApp.Catalog.Contracts/SampleApp.Catalog.Contracts.csproj" />
+    <ProjectReference Include="../../src/Modules/Ordering/SampleApp.Ordering/SampleApp.Ordering.csproj" />
+    <ProjectReference Include="../../src/Modules/Ordering/SampleApp.Ordering.Contracts/SampleApp.Ordering.Contracts.csproj" />
+    <!-- romanctl:modules -->
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

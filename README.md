@@ -318,11 +318,13 @@ romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
 |---|---|---|---|
 | `dotnet` | `clean`, `ddd`, `cqrs` | Minimal API, EF Core, despachante próprio | `postgres` |
 | `dotnet` | `clean`, `ddd`, `cqrs`, `event-sourcing` | Marten no PostgreSQL, projeções, concorrência otimista | `postgres` |
+| `dotnet` | `modular-monolith`, `ddd` | Módulos Catalog e Ordering, contratos públicos, eventos de integração, um esquema por módulo | `postgres` |
 | `dotnet` | `vertical-slice` | Minimal API, uma pasta por funcionalidade, EF Core | `postgres` |
 | `go` | `hexagonal`, `ddd` | `net/http` da biblioteca padrão, pgx | `postgres` |
 | `node` | `clean`, `ddd`, `cqrs` | NestJS com @nestjs/cqrs, TypeScript, pg, Vitest | `postgres` |
 | `node` | `layered` | Fastify, rotas, serviços e repositórios, pg | `postgres` |
 | `java` | `hexagonal`, `ddd` | Spring Boot, Maven, JdbcClient, ArchUnit | `postgres` |
+| `python` | `layered` | Django, Django REST Framework, uv | `postgres` |
 | `rust` | `hexagonal`, `ddd` | axum, tokio, sqlx | `postgres` |
 | `php` | `hexagonal`, `ddd` | Symfony 7.4, Doctrine DBAL, PHPUnit | `postgres` |
 | `python` | `hexagonal`, `ddd` | FastAPI, uv, psycopg | `postgres` |
@@ -443,6 +445,7 @@ romanctl add resource Product --dry-run            # só mostra
 | Next.js | `page`, `api`, `component` |
 | React | `component`, `hook`, `page` |
 | .NET event sourcing | `resource`, `domain`, `application`, `controller`, `test`, `event` |
+| .NET monólito modular | `module`, `resource` (com `--in <módulo>`) |
 | .NET Vertical Slice | `resource` |
 | Go hexagonal e DDD | `resource` |
 | Java hexagonal e DDD | `resource` |
@@ -450,6 +453,7 @@ romanctl add resource Product --dry-run            # só mostra
 | Node em camadas | `resource` |
 | PHP hexagonal e DDD | `resource` |
 | Python hexagonal e DDD | `resource` |
+| Python em camadas (Django) | `resource` |
 | Rust hexagonal e DDD | `resource` |
 | Go simples | `handler`, `service`, `model` |
 

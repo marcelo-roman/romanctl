@@ -1,0 +1,16 @@
+description: CRUD completo - app do Django com modelo, migração, selectors, services, serializers, views, rotas e testes
+aliases: [crud, scaffold]
+conditional:
+  - path: tests/postgres
+    when: postgres
+patches:
+  - file: sample_app/settings.py
+    before: "# romanctl:apps"
+    text: '"sample_items",'
+  - file: sample_app/urls.py
+    before: "# romanctl:urls"
+    text: 'path("", include("sample_items.urls")),'
+  - file: pyproject.toml
+    before: "# romanctl:modules"
+    text: '"sample_items",'
+next: "Rotas em /sample-items, no app sample_items. Rode uv run pytest para conferir. A tabela é criada pela migração em sample_items/migrations no próximo uv run sample-app, ou com uv run python manage.py migrate."

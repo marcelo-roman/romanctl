@@ -1,0 +1,27 @@
+id: modular-monolith
+stack: dotnet
+arch: [ddd, modular-monolith]
+description: API .NET como monólito modular com DDD, módulos que só se falam por contratos públicos e eventos de integração
+services: [postgres]
+requires: [dotnet]
+setup:
+  - dotnet restore
+run: dotnet run --project src/SampleApp.Api
+test: dotnet test
+url: http://localhost:5083
+env:
+  postgres:
+    ConnectionStrings__Default: Host={{.Host}};Port={{.Port}};Database={{.Database}};Username={{.User}};Password={{.Password}}
+publish:
+  kind: dotnet-solution
+  vars:
+    API: src/SampleApp.Api
+    Dll: SampleApp.Api
+conditional:
+  - path: src/SampleApp.Shared/Persistence/Postgres
+    when: postgres
+  - path: tests/SampleApp.Tests/Postgres
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"

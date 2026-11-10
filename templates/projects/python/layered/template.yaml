@@ -1,0 +1,21 @@
+id: layered
+stack: python
+arch: [layered]
+description: API Python em camadas com Django, Django REST Framework e uv
+services: [postgres]
+requires: [uv]
+setup:
+  - uv sync
+run: uv run sample-app
+test: uv run pytest
+url: http://localhost:8001
+publish:
+  kind: python-django
+  vars:
+    Module: sample_app
+conditional:
+  - path: tests/postgres
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"

@@ -1,0 +1,20 @@
+description: Entidade com CRUD dentro de um módulo existente (use --in com o módulo) - domínio, casos de uso, persistência no DbContext do módulo, rotas e testes
+needsIn: true
+aliases: [crud, scaffold, entity]
+requires:
+  - path: src/Modules/SampleParent/SampleApp.SampleParent/SampleParentModule.cs
+    hint: romanctl add module <Nome>, ou passe em --in uma das pastas de src/Modules
+patches:
+  - file: src/Modules/SampleParent/SampleApp.SampleParent/SampleParentModule.cs
+    before: "// romanctl:services"
+    text: |
+      services.AddScoped<ISampleItemRepository, SampleItemRepository>();
+      services.AddScoped<CreateSampleItemHandler>();
+      services.AddScoped<RenameSampleItemHandler>();
+      services.AddScoped<GetSampleItemHandler>();
+      services.AddScoped<ListSampleItemsHandler>();
+      services.AddScoped<DeleteSampleItemHandler>();
+  - file: src/Modules/SampleParent/SampleApp.SampleParent/SampleParentModule.cs
+    before: "// romanctl:endpoints"
+    text: app.MapSampleItemEndpoints();
+next: "Rotas em /sample-parent/sample-items, registradas em SampleParentModule.cs. Rode dotnet test para conferir.{{if .Postgres}} Um esquema que já tem tabelas não ganha tabelas novas na inicialização: em desenvolvimento, apague o banco sample_app para criar a tabela sample_items no esquema sample_parent, ou adote migrações.{{end}}"
