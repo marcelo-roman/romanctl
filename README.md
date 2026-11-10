@@ -323,6 +323,7 @@ romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
 | `node` | `clean`, `ddd`, `cqrs` | NestJS com @nestjs/cqrs, TypeScript, pg, Vitest | `postgres` |
 | `node` | `layered` | Fastify, rotas, serviços e repositórios, pg | `postgres` |
 | `java` | `hexagonal`, `ddd` | Spring Boot, Maven, JdbcClient, ArchUnit | `postgres` |
+| `rust` | `hexagonal`, `ddd` | axum, tokio, sqlx | `postgres` |
 | `python` | `hexagonal`, `ddd` | FastAPI, uv, psycopg | `postgres` |
 
 `romanctl catalog` lista os templates e as arquiteturas conhecidas: `bff`, `clean`, `cqrs`, `ddd`, `event-driven`,
@@ -447,6 +448,7 @@ romanctl add resource Product --dry-run            # só mostra
 | Node Clean, DDD e CQRS | `resource` |
 | Node em camadas | `resource` |
 | Python hexagonal e DDD | `resource` |
+| Rust hexagonal e DDD | `resource` |
 | Go simples | `handler`, `service`, `model` |
 
 Sem `--force`, nada é sobrescrito. O que precisa de registro em outro arquivo é inserido antes de um marcador,

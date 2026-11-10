@@ -253,6 +253,8 @@ var en = map[string]string{
 	"API Node enxuta em camadas (rotas, serviços e repositórios), com Fastify e TypeScript":                                                                           "Lean layered Node API (routes, services and repositories), with Fastify and TypeScript",
 	"CRUD completo em camadas - modelo, repositórios, serviço com as regras, rotas Fastify e testes":                                                                  "Full layered CRUD - model, repositories, service with the rules, Fastify routes and tests",
 	"Rotas em /sample-items, registradas em src/app.ts. Rode npm test para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}": "Routes at /sample-items, registered in src/app.ts. Run npm test to check.{{if .Postgres}} The sample_items table is created on the next start.{{end}}",
+	"API Rust com arquitetura hexagonal e DDD, com axum e tokio":                                                                                                      "Rust API with hexagonal architecture and DDD, using axum and tokio",
+	"Rotas em /sample-items. Rode cargo test para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}":                          "Routes at /sample-items. Run cargo test to check.{{if .Postgres}} The sample_items table is created on the next start.{{end}}",
 	"Template inválido %s: %v":                     "Invalid template %s: %v",
 	"arquitetura desconhecida %q (conhecidas: %s)": "unknown architecture %q (known: %s)",
 	"  nenhum": "  none",

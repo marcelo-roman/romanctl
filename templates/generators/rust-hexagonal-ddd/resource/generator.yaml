@@ -1,0 +1,61 @@
+description: CRUD completo - domínio, caso de uso, repositório, rotas HTTP e testes
+aliases: [crud, scaffold]
+conditional:
+  - path: src/adapters/postgres
+    when: postgres
+  - path: tests/postgres_sample_items.rs
+    when: postgres
+patches:
+  - file: src/domain/mod.rs
+    before: "// romanctl:modules"
+    text: pub mod sample_items;
+  - file: src/application/mod.rs
+    before: "// romanctl:modules"
+    text: pub mod sample_items;
+  - file: src/adapters/memory/mod.rs
+    before: "// romanctl:modules"
+    text: pub mod sample_items;
+  - when: postgres
+    file: src/adapters/postgres/mod.rs
+    before: "// romanctl:modules"
+    text: pub mod sample_items;
+  - file: src/adapters/http/mod.rs
+    before: "// romanctl:modules"
+    text: mod sample_items;
+  - file: src/adapters/http/mod.rs
+    before: "// romanctl:imports"
+    text: use crate::application::sample_items::SampleItemService;
+  - file: src/adapters/http/mod.rs
+    before: "// romanctl:services"
+    text: "pub sample_items: Arc<SampleItemService>,"
+  - file: src/adapters/http/mod.rs
+    before: "// romanctl:routes"
+    skipIf: "(sample_items::routes("
+    text: router = router.merge(sample_items::routes(services.sample_items));
+  - file: src/bootstrap.rs
+    before: "// romanctl:imports"
+    text: use crate::adapters::memory::sample_items::InMemorySampleItemRepository;
+  - when: postgres
+    file: src/bootstrap.rs
+    before: "// romanctl:imports"
+    text: use crate::adapters::postgres::sample_items::PostgresSampleItemRepository;
+  - file: src/bootstrap.rs
+    before: "// romanctl:imports"
+    text: use crate::application::sample_items::SampleItemService;
+  - file: src/bootstrap.rs
+    before: "// romanctl:memory-services"
+    skipIf: "Arc::new(InMemorySampleItemRepository::default())"
+    text: "sample_items: Arc::new(SampleItemService::new(Arc::new(InMemorySampleItemRepository::default()), clock)),"
+  - when: postgres
+    file: src/bootstrap.rs
+    before: "// romanctl:postgres-services"
+    skipIf: "Arc::new(PostgresSampleItemRepository::new("
+    text: "sample_items: Arc::new(SampleItemService::new(Arc::new(PostgresSampleItemRepository::new(database.clone())), clock)),"
+  - when: postgres
+    file: src/adapters/postgres/schema.sql
+    before: "-- romanctl:tables"
+    text: |
+      CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
+after:
+  - cargo fmt
+next: "Rotas em /sample-items. Rode cargo test para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}"

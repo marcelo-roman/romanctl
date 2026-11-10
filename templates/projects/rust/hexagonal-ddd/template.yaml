@@ -1,0 +1,23 @@
+id: hexagonal-ddd
+stack: rust
+arch: [ddd, hexagonal]
+description: API Rust com arquitetura hexagonal e DDD, com axum e tokio
+services: [postgres]
+requires: [rust]
+setup:
+  - cargo fetch
+run: cargo run
+test: cargo test
+url: http://localhost:3100
+publish:
+  kind: rust
+  vars:
+    Bin: sample-app
+conditional:
+  - path: src/adapters/postgres
+    when: postgres
+  - path: tests/postgres_orders.rs
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"
