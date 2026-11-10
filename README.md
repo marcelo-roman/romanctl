@@ -321,6 +321,7 @@ romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
 | `dotnet` | `vertical-slice` | Minimal API, uma pasta por funcionalidade, EF Core | `postgres` |
 | `go` | `hexagonal`, `ddd` | `net/http` da biblioteca padrão, pgx | `postgres` |
 | `node` | `clean`, `ddd`, `cqrs` | NestJS com @nestjs/cqrs, TypeScript, pg, Vitest | `postgres` |
+| `node` | `layered` | Fastify, rotas, serviços e repositórios, pg | `postgres` |
 | `java` | `hexagonal`, `ddd` | Spring Boot, Maven, JdbcClient, ArchUnit | `postgres` |
 | `python` | `hexagonal`, `ddd` | FastAPI, uv, psycopg | `postgres` |
 
@@ -443,6 +444,7 @@ romanctl add resource Product --dry-run            # só mostra
 | Go hexagonal e DDD | `resource` |
 | Java hexagonal e DDD | `resource` |
 | Node Clean, DDD e CQRS | `resource` |
+| Node em camadas | `resource` |
 | Python hexagonal e DDD | `resource` |
 | Go simples | `handler`, `service`, `model` |
 

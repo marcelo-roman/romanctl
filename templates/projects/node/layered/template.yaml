@@ -1,0 +1,23 @@
+id: layered
+stack: node
+arch: [layered]
+description: API Node enxuta em camadas (rotas, serviços e repositórios), com Fastify e TypeScript
+services: [postgres]
+requires: [node]
+setup:
+  - npm ci
+run: npm start
+test: npm test
+url: http://localhost:3001
+publish:
+  kind: node-ts
+  vars:
+    Entry: dist/server.js
+conditional:
+  - path: src/repositories/postgres
+    when: postgres
+  - path: test/repositories/postgres
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"
