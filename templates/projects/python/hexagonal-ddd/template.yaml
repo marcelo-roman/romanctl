@@ -1,0 +1,23 @@
+id: hexagonal-ddd
+stack: python
+arch: [ddd, hexagonal]
+description: API Python com arquitetura hexagonal e DDD, com FastAPI e uv
+services: [postgres]
+requires: [uv]
+setup:
+  - uv sync
+run: uv run sample-app
+test: uv run pytest
+url: http://localhost:8000
+publish:
+  kind: python-uv
+  vars:
+    Module: sample_app
+conditional:
+  - path: src/sample_app/adapters/postgres
+    when: postgres
+  - path: tests/postgres
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"

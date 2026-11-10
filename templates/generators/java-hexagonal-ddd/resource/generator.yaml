@@ -1,0 +1,14 @@
+description: CRUD completo - domínio, caso de uso, repositório, rotas HTTP e testes, com Spring Boot
+aliases: [crud, scaffold]
+conditional:
+  - path: src/main/java/com/example/sampleapp/adapters/postgres
+    when: postgres
+  - path: src/test/java/com/example/sampleapp/adapters/postgres
+    when: postgres
+patches:
+  - when: postgres
+    file: src/main/resources/schema.sql
+    before: "-- romanctl:tables"
+    text: |
+      CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
+next: "Rotas em /sample-items. Rode mvn test para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}"

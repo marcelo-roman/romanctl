@@ -1,0 +1,36 @@
+[project]
+name = "sample-app"
+version = "0.1.0"
+description = "API Python com arquitetura hexagonal e DDD"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.162.2",
+    "pydantic>=2.14.3",
+    "uvicorn>=0.54.0",
+]
+
+[project.scripts]
+sample-app = "sample_app.main:run"
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.16.0",
+    "pytest>=9.2.0",
+    "ruff>=0.17.4",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=importlib"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP", "N", "SIM"]

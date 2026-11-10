@@ -1,0 +1,35 @@
+description: CRUD completo - domínio, caso de uso, repositório, rotas HTTP e testes
+aliases: [crud, scaffold]
+conditional:
+  - path: src/sample_app/adapters/postgres
+    when: postgres
+  - path: tests/postgres
+    when: postgres
+patches:
+  - file: src/sample_app/bootstrap.py
+    before: "# romanctl:imports"
+    text: |
+      from sample_app.adapters.http.sample_items import sample_items_router
+      from sample_app.application.sample_items.service import SampleItemService
+  - when: postgres
+    file: src/sample_app/bootstrap.py
+    before: "# romanctl:imports"
+    text: from sample_app.adapters.postgres.sample_items import PostgresSampleItemRepository
+  - when: "!postgres"
+    file: src/sample_app/bootstrap.py
+    before: "# romanctl:imports"
+    text: from sample_app.adapters.memory.sample_items import InMemorySampleItemRepository
+  - when: postgres
+    file: src/sample_app/bootstrap.py
+    before: "# romanctl:routers"
+    text: sample_items_router(SampleItemService(PostgresSampleItemRepository(database), utc_now)),
+  - when: "!postgres"
+    file: src/sample_app/bootstrap.py
+    before: "# romanctl:routers"
+    text: sample_items_router(SampleItemService(InMemorySampleItemRepository(), utc_now)),
+  - when: postgres
+    file: src/sample_app/adapters/postgres/schema.sql
+    before: "-- romanctl:tables"
+    text: |
+      CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
+next: "Rotas em /sample-items. Rode uv run pytest para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}"

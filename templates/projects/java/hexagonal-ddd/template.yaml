@@ -1,0 +1,28 @@
+id: hexagonal-ddd
+stack: java
+arch: [ddd, hexagonal]
+description: API Java com arquitetura hexagonal e DDD, com Spring Boot e Maven
+services: [postgres]
+requires: [java, maven]
+setup:
+  - mvn -q -B -DskipTests dependency:go-offline
+run: mvn -q spring-boot:run
+test: mvn -q test
+url: http://localhost:8080
+env:
+  postgres:
+    SPRING_DATASOURCE_URL: jdbc:postgresql://{{.Host}}:{{.Port}}/{{.Database}}
+    SPRING_DATASOURCE_USERNAME: "{{.User}}"
+    SPRING_DATASOURCE_PASSWORD: "{{.Password}}"
+publish:
+  kind: java-maven
+conditional:
+  - path: src/main/java/com/example/sampleapp/adapters/postgres
+    when: postgres
+  - path: src/test/java/com/example/sampleapp/adapters/postgres
+    when: postgres
+  - path: src/main/resources/schema.sql
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"

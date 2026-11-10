@@ -319,6 +319,8 @@ romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
 | `dotnet` | `clean`, `ddd`, `cqrs` | Minimal API, EF Core, despachante próprio | `postgres` |
 | `dotnet` | `vertical-slice` | Minimal API, uma pasta por funcionalidade, EF Core | `postgres` |
 | `go` | `hexagonal`, `ddd` | `net/http` da biblioteca padrão, pgx | `postgres` |
+| `java` | `hexagonal`, `ddd` | Spring Boot, Maven, JdbcClient, ArchUnit | `postgres` |
+| `python` | `hexagonal`, `ddd` | FastAPI, uv, psycopg | `postgres` |
 
 `romanctl catalog` lista os templates e as arquiteturas conhecidas: `bff`, `clean`, `cqrs`, `ddd`, `event-driven`,
 `event-sourcing`, `feature-sliced`, `hexagonal`, `layered`, `microservices`, `modular-monolith`, `trpc` e
@@ -419,6 +421,8 @@ romanctl add resource Product --dry-run            # só mostra
 | React | `component`, `hook`, `page` |
 | .NET Vertical Slice | `resource` |
 | Go hexagonal e DDD | `resource` |
+| Java hexagonal e DDD | `resource` |
+| Python hexagonal e DDD | `resource` |
 | Go simples | `handler`, `service`, `model` |
 
 Sem `--force`, nada é sobrescrito. O que precisa de registro em outro arquivo é inserido antes de um marcador,

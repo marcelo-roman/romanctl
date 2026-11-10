@@ -1,0 +1,13 @@
+from typing import Protocol
+
+from sample_app.domain.sample_items.sample_item import SampleItem
+
+
+class SampleItemRepository(Protocol):
+    def save(self, sample_item: SampleItem) -> None: ...
+
+    def find(self, sample_item_id: str) -> SampleItem | None: ...
+
+    def list_recent(self, limit: int) -> list[SampleItem]: ...
+
+    def delete(self, sample_item_id: str) -> bool: ...
