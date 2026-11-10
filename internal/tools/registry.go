@@ -4,11 +4,13 @@ package tools
 import (
 	"context"
 	"os/exec"
-	"romanctl/internal/i18n"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/x/ansi"
+
+	"romanctl/internal/i18n"
 	"romanctl/internal/platform"
 	"romanctl/internal/ui"
 )
@@ -321,7 +323,7 @@ func versionOutput(command ...string) (string, error) {
 }
 
 func firstLine(s string) string {
-	for _, line := range strings.Split(s, "\n") {
+	for _, line := range strings.Split(ansi.Strip(s), "\n") {
 		if line = strings.TrimSpace(line); line != "" && !strings.HasPrefix(line, "WARNING") {
 			return strings.Join(strings.Fields(line), " ")
 		}

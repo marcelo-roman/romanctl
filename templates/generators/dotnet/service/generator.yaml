@@ -1,0 +1,6 @@
+description: Serviço com interface
+aliases: [servico]
+patches:
+  - file: Program.cs
+    before: var app = builder.Build();
+    text: builder.Services.AddScoped<SampleApp.Services.ISampleItemService, SampleApp.Services.SampleItemService>();

@@ -39,7 +39,7 @@ func TestVariacaoEmMemoria(t *testing.T) {
 	if !hasPath(r.Files, "src/MinhaLoja.Domain/MinhaLoja.Domain.csproj") {
 		t.Fatalf("nome não aplicado: %v", r.Files)
 	}
-	if hasPath(r.Files, "__Name__") || hasPath(r.Files, "template.yaml") {
+	if hasPath(r.Files, "SampleApp") || hasPath(r.Files, "template.yaml") {
 		t.Fatalf("sobrou arquivo do template: %v", r.Files)
 	}
 }

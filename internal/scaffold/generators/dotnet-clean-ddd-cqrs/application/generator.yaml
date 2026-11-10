@@ -1,5 +1,0 @@
-description: DTO, leitura, comandos de criar, renomear e remover, e consultas
-aliases: [app, usecases]
-requires:
-  - path: src/__Name__.Domain/__EntityPlural__/__Entity__.cs
-    hint: romanctl add domain {{.Entity}}

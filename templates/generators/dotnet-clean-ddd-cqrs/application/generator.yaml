@@ -1,0 +1,5 @@
+description: DTO, leitura, comandos de criar, renomear e remover, e consultas
+aliases: [app, usecases]
+requires:
+  - path: src/SampleApp.Domain/SampleItems/SampleItem.cs
+    hint: romanctl add domain SampleItem

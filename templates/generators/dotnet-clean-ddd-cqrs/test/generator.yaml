@@ -1,0 +1,5 @@
+description: Testes das regras do agregado
+aliases: [tests, teste]
+requires:
+  - path: src/SampleApp.Domain/SampleItems/SampleItem.cs
+    hint: romanctl add domain SampleItem

@@ -89,6 +89,12 @@ func TestFirstLineIgnoraAvisosEEspacos(t *testing.T) {
 	}
 }
 
+func TestFirstLineTiraCores(t *testing.T) {
+	if got := firstLine("\x1b[1mApache Maven 3.8.7\x1b[m\nMaven home: /usr"); got != "Apache Maven 3.8.7" {
+		t.Fatalf("%q", got)
+	}
+}
+
 func TestNomeDeFerramentaValeMaisQueGrupo(t *testing.T) {
 	got, err := Resolve([]string{"node"})
 	if err != nil || keys(got) != "node" {

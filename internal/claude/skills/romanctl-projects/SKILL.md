@@ -1,6 +1,6 @@
 ---
 name: romanctl-projects
-description: Cria, lista e remove projetos pelo romanctl, a partir de templates (Node, Express, React, Next.js, .NET Web API/MVC/Blazor/Console, Go) e de templates de arquitetura (.NET Clean Architecture + DDD + CQRS, com Postgres e outros serviços). Use quando o usuário pedir um projeto novo, uma API, um site, um app web, ou quiser saber que projetos existem.
+description: Cria, lista e remove projetos pelo romanctl, a partir de templates (Node, Express, React, Next.js, .NET Web API/MVC/Blazor/Console, Go) e de templates de arquitetura (.NET Clean Architecture + DDD + CQRS, Go hexagonal + DDD, com Postgres e outros serviços). Use quando o usuário pedir um projeto novo, uma API, um site, um app web, ou quiser saber que projetos existem.
 ---
 
 # Projetos pelo romanctl
@@ -47,6 +47,8 @@ romanctl new loja --stack dotnet --arch clean,ddd,cqrs --with postgres
   (`skipped`, `offline`, `failed` ou `done`). Faltando ferramenta, instale pela skill `romanctl-tools`
   e rode o preparo na pasta do projeto.
 - Nomes: letras minúsculas, números, `-`, `_` ou `.`; num template, começando por letra.
+- Os templates ficam fora do binário. Se `catalog` vier vazio ou faltar um template que deveria existir,
+  rode `romanctl templates update --json` (precisa de internet) e confira com `romanctl templates --json`.
 - O projeto nasce em `~/projetos/<nome>` (ou em `$ROMANCTL_PROJETOS`).
 
 Depois de criar, o próximo passo natural é subir o ambiente (skill `romanctl-dev`) e, se o

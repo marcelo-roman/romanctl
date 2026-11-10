@@ -43,6 +43,7 @@ Para uma única chamada: `--lang en`. As mensagens mudam; as chaves do JSON, nã
 ```bash
 romanctl offline status
 romanctl offline prep [--force]   # baixa templates, caches e extensões; precisa de internet
+romanctl templates update --json  # baixa de novo os templates de projeto e os geradores
 romanctl offline test             # cria e compila cada tipo de projeto com a rede bloqueada
 ```
 

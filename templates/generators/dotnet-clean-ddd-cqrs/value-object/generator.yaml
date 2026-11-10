@@ -1,0 +1,6 @@
+description: Objeto de valor imutável, com validação (use --in)
+needsIn: true
+aliases: [vo, valueobject, valor]
+requires:
+  - path: src/SampleApp.Domain/SampleParents/SampleParentId.cs
+    hint: romanctl add domain SampleParent

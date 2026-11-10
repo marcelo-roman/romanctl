@@ -1,5 +1,0 @@
-description: Testes das regras do agregado
-aliases: [tests, teste]
-requires:
-  - path: src/__Name__.Domain/__EntityPlural__/__Entity__.cs
-    hint: romanctl add domain {{.Entity}}

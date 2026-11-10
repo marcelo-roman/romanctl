@@ -1,9 +1,0 @@
-description: Endpoints HTTP do agregado, com Minimal API
-aliases: [endpoint, endpoints, api]
-requires:
-  - path: src/__Name__.Application/__EntityPlural__/Commands/Create__Entity__.cs
-    hint: romanctl add application {{.Entity}}
-patches:
-  - file: src/{{.Name}}.Api/Program.cs
-    before: "// romanctl:endpoints"
-    text: app.Map{{.Entity}}Endpoints();

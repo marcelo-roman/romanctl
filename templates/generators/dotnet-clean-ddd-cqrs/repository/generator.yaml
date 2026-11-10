@@ -1,0 +1,27 @@
+description: Persistência do agregado - EF Core com Postgres, ou em memória
+aliases: [repo, persistence, repositorio]
+requires:
+  - path: src/SampleApp.Domain/SampleItems/ISampleItemRepository.cs
+    hint: romanctl add domain SampleItem
+  - path: src/SampleApp.Application/SampleItems/ISampleItemReadStore.cs
+    hint: romanctl add application SampleItem
+conditional:
+  - path: src/SampleApp.Infrastructure/Persistence/EfCore
+    when: postgres
+  - path: src/SampleApp.Infrastructure/Persistence/InMemory
+    when: "!postgres"
+patches:
+  - when: postgres
+    file: src/SampleApp.Infrastructure/DependencyInjection.cs
+    before: "// romanctl:repositories"
+    text: |
+      services.AddScoped<SampleApp.Domain.SampleItems.ISampleItemRepository, SampleApp.Infrastructure.Persistence.EfCore.SampleItemRepository>();
+      services.AddScoped<SampleApp.Application.SampleItems.ISampleItemReadStore, SampleApp.Infrastructure.Persistence.EfCore.SampleItemReadStore>();
+  - when: "!postgres"
+    file: src/SampleApp.Infrastructure/DependencyInjection.cs
+    before: "// romanctl:repositories"
+    text: |
+      services.AddSingleton<SampleApp.Infrastructure.Persistence.InMemory.InMemorySampleItemStore>();
+      services.AddScoped<SampleApp.Domain.SampleItems.ISampleItemRepository, SampleApp.Infrastructure.Persistence.InMemory.InMemorySampleItemRepository>();
+      services.AddScoped<SampleApp.Application.SampleItems.ISampleItemReadStore, SampleApp.Infrastructure.Persistence.InMemory.InMemorySampleItemReadStore>();
+next: "{{if .Postgres}}O EnsureCreated não altera um banco que já existe: em desenvolvimento, apague o banco sample_app para criar a tabela nova, ou adote migrações.{{end}}"

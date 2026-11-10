@@ -45,6 +45,7 @@ func Main() {
 	os.Setenv("PATH", pathWithBin(os.Getenv("PATH"), platform.Current.BinDir))
 	args, flags := splitFlags(os.Args[1:])
 	ui.JSONOutput = flags["json"]
+	scaffold.Version = version
 	var err error
 	if flags["help"] || flags["h"] {
 		// Vem antes de tudo: "--help" nunca executa o comando, nem com argumentos inválidos.
@@ -83,7 +84,7 @@ func Main() {
 	}
 }
 
-var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "seconds": true, "interval": true, "lang": true, "project": true, "in": true, "description": true, "filter": true, "category": true, "version": true}
+var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "seconds": true, "interval": true, "lang": true, "project": true, "in": true, "description": true, "filter": true, "category": true, "version": true, "ref": true}
 
 var flagVals = map[string]string{}
 
@@ -216,6 +217,8 @@ func dispatch(args []string, flags map[string]bool) error {
 		return offline.Command(arg(args, 1), flags)
 	case "tools", "ferramentas":
 		return toolsCommand(args[1:], flags)
+	case "templates", "template":
+		return templatesCommand(args[1:])
 	case "claude", "skills":
 		return claudeCommand(args[1:], flags)
 	case "system", "sistema", "sys":

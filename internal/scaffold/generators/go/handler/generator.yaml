@@ -1,3 +1,0 @@
-description: Handler HTTP
-aliases: [controller, api]
-next: "Registre com: mux.HandleFunc(\"GET /{{.EntityPluralKebab}}\", handlers.List{{.EntityPlural}})"

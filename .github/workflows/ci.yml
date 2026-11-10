@@ -13,6 +13,9 @@ on:
         type: boolean
         default: false
 
+env:
+  ROMANCTL_TEMPLATES: ${{ github.workspace }}/templates
+
 jobs:
   test:
     strategy:
@@ -94,6 +97,8 @@ jobs:
           done
           ./romanctl status
           ./romanctl stop all
+      - name: Testa cada template na própria pasta
+        run: scripts/templates.sh inplace ./romanctl
       - name: Gera cada template com todos os serviços e roda os testes dele
         run: scripts/templates.sh test ./romanctl
 

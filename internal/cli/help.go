@@ -210,6 +210,15 @@ var commands = []command{
 	{path: "offline test", aliases: []string{"testar"}, usage: "romanctl offline test",
 		summary: text{"Cria e compila cada tipo de projeto com a rede bloqueada", "Creates and builds each project type with the network blocked"}},
 
+	{path: "templates", aliases: []string{"template"}, usage: "romanctl templates [status|update] [--ref <tag ou branch>]",
+		summary:  text{"Mostra e atualiza os templates de projeto e os geradores", "Shows and updates the project templates and generators"},
+		details:  text{"Os templates ficam fora do binário, em ~/.local/share/romanctl/templates, e vêm da pasta templates do repositório, na tag da versão instalada. ROMANCTL_TEMPLATES aponta para outra pasta.", "Templates live outside the binary, in ~/.local/share/romanctl/templates, and come from the templates folder of the repository, at the tag of the installed version. ROMANCTL_TEMPLATES points to another folder."},
+		options:  []helpOption{{"--ref <ref>", text{"baixa de uma tag ou branch, como refs/heads/main", "downloads from a tag or branch, such as refs/heads/main"}}, optJSON},
+		examples: []string{"romanctl templates", "romanctl templates update", "romanctl templates update --ref refs/heads/main"}},
+	{path: "templates status", usage: "romanctl templates status",
+		summary: text{"Mostra onde estão os templates e de que versão vieram", "Shows where the templates are and which version they came from"}, options: []helpOption{optJSON}},
+	{path: "templates update", aliases: []string{"atualizar"}, usage: "romanctl templates update [--ref <ref>]",
+		summary: text{"Baixa os templates da versão instalada", "Downloads the templates of the installed version"}, options: []helpOption{optJSON}},
 	{path: "claude", aliases: []string{"skills"}, usage: "romanctl claude [status|install|uninstall]",
 		summary:  text{"Instala as skills que ensinam o Claude Code a usar o romanctl", "Installs the skills that teach Claude Code to use romanctl"},
 		details:  text{"As skills vão para ~/.claude/skills (ou $CLAUDE_CONFIG_DIR/skills). O romanctl só troca ou apaga as pastas que ele mesmo criou.", "The skills go to ~/.claude/skills (or $CLAUDE_CONFIG_DIR/skills). romanctl only replaces or deletes the folders it created itself."},
@@ -377,7 +386,7 @@ var usageGroups = []struct {
 	paths []string
 }{
 	{text{"Ferramentas", "Tools"}, []string{"tools"}},
-	{text{"Projetos", "Projects"}, []string{"new", "add", "up", "down", "run", "publish", "list", "code", "open", "rm", "catalog", "types"}},
+	{text{"Projetos", "Projects"}, []string{"new", "add", "up", "down", "run", "publish", "list", "code", "open", "rm", "catalog", "types", "templates"}},
 	{text{"Serviços", "Services"}, []string{"status", "start", "stop", "restart", "restore", "logs", "install"}},
 	{text{"Sistema", "System"}, []string{"system", "platform", "doctor", "offline"}},
 	{text{"Outros", "Other"}, []string{"claude", "ui", "menu", "config", "self-update", "help", "version"}},

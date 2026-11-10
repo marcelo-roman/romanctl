@@ -217,8 +217,21 @@ var en = map[string]string{
 	"Projeto %s criado com o template %s (%d arquivos)":                                                    "Project %s created with template %s (%d files)",
 	"   Pasta:   %s\n   Rodar:   romanctl run %s\n   Testar:  cd %s && %s\n   Abrir:   romanctl code %s\n": "   Folder:  %s\n   Run:     romanctl run %s\n   Test:    cd %s && %s\n   Open:    romanctl code %s\n",
 	"%s não está rodando. Antes de rodar o projeto: romanctl start %s":                                     "%s is not running. Before running the project: romanctl start %s",
-	"Template inválido %s: %v":                                                                             "Invalid template %s: %v",
-	"arquitetura desconhecida %q (conhecidas: %s)":                                                         "unknown architecture %q (known: %s)",
+	"Baixando os templates...":                                                                             "Downloading the templates...",
+	"Não consegui baixar os templates: %v":                                                                 "Could not download the templates: %v",
+	"Os templates ainda não foram baixados. Com internet, rode: romanctl templates update":                 "The templates have not been downloaded yet. With internet, run: romanctl templates update",
+	"Templates em %s\n": "Templates in %s\n",
+	"Versão: %s\n":      "Version: %s\n",
+	"%d templates de projeto. Para ver: romanctl catalog\n":                    "%d project templates. To see them: romanctl catalog\n",
+	"A versão %s ainda não tem templates publicados; vieram os da main":        "Version %s has no published templates yet; the ones from main were used",
+	"Templates atualizados (%s) em %s":                                         "Templates updated (%s) in %s",
+	"use: romanctl templates [status|update] [--ref <tag ou branch>] [--json]": "usage: romanctl templates [status|update] [--ref <tag or branch>] [--json]",
+	"ROMANCTL_TEMPLATES aponta para %s; os templates de lá não são baixados":   "ROMANCTL_TEMPLATES points to %s; templates there are not downloaded",
+	"%s não tem a pasta templates/projects":                                    "%s has no templates/projects folder",
+	"caminho inválido no arquivo: %s":                                          "invalid path in the archive: %s",
+	"%s falhou depois de gerar: %v":                                            "%s failed after generating: %v",
+	"Template inválido %s: %v":                                                 "Invalid template %s: %v",
+	"arquitetura desconhecida %q (conhecidas: %s)":                             "unknown architecture %q (known: %s)",
 	"  nenhum": "  none",
 	"informe --stack. Combinações disponíveis:\n%s":                                     "specify --stack. Available combinations:\n%s",
 	"informe --arch. Combinações disponíveis:\n%s":                                      "specify --arch. Available combinations:\n%s",
@@ -560,10 +573,12 @@ var en = map[string]string{
 	"Hook React com estado":                                                                                               "React hook with state",
 	"Handler HTTP":                                                                                                        "HTTP handler",
 
-	"{{if .Postgres}}O EnsureCreated não altera um banco que já existe: em desenvolvimento, apague o banco {{.DbName}} para criar a tabela nova, ou adote migrações.{{end}}": "{{if .Postgres}}EnsureCreated does not change an existing database: in development, drop the {{.DbName}} database to create the new table, or adopt migrations.{{end}}",
-	"Levante o evento dentro do agregado: Raise(new {{.Entity}}(Id, now));":                                                                                                  "Raise the event inside the aggregate: Raise(new {{.Entity}}(Id, now));",
-	"Use com: app.use(require('./middleware/{{.EntityCamel}}'));":                                                                                                            "Use with: app.use(require('./middleware/{{.EntityCamel}}'));",
-	"Registre com: mux.HandleFunc(\"GET /{{.EntityPluralKebab}}\", handlers.List{{.EntityPlural}})":                                                                          "Register with: mux.HandleFunc(\"GET /{{.EntityPluralKebab}}\", handlers.List{{.EntityPlural}})",
+	"{{if .Postgres}}O EnsureCreated não altera um banco que já existe: em desenvolvimento, apague o banco sample_app para criar a tabela nova, ou adote migrações.{{end}}": "{{if .Postgres}}EnsureCreated does not change an existing database: in development, drop the sample_app database to create the new table, or adopt migrations.{{end}}",
+	"Levante o evento dentro do agregado: Raise(new SampleItem(Id, now));":                                                                                                  "Raise the event inside the aggregate: Raise(new SampleItem(Id, now));",
+	"Use com: app.use(require('./middleware/sampleItem'));":                                                                                                                 "Use with: app.use(require('./middleware/sampleItem'));",
+	"Registre com: mux.HandleFunc(\"GET /sample-items\", handlers.ListSampleItems)":                                                                                         "Register with: mux.HandleFunc(\"GET /sample-items\", handlers.ListSampleItems)",
+	"Rotas em /sample-items. Rode go test ./... para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}":                             "Routes at /sample-items. Run go test ./... to check.{{if .Postgres}} The sample_items table is created on the next start.{{end}}",
+	"CRUD completo - domínio, caso de uso, repositório, rotas HTTP e testes":                                                                                                "Full CRUD - domain, use case, repository, HTTP routes and tests",
 
 	// ui
 	"falha já informada":           "failure already reported",
@@ -742,7 +757,8 @@ var en = map[string]string{
 	"Modelos de IA locais; pacote grande":                                                                     "Local AI models; large package",
 
 	// Modelos do manifesto de templates
-	"API .NET com Clean Architecture, DDD e CQRS, com despachante próprio": ".NET API with Clean Architecture, DDD and CQRS, with its own dispatcher",
+	"API .NET com Clean Architecture, DDD e CQRS, com despachante próprio":  ".NET API with Clean Architecture, DDD and CQRS, with its own dispatcher",
+	"API Go com arquitetura hexagonal e DDD, com HTTP da biblioteca padrão": "Go API with hexagonal architecture and DDD, using the standard library for HTTP",
 
 	// Painel e origem das ferramentas
 	"Máquina:": "Machine:", "Projetos:": "Projects:", "Serviços:": "Services:", "Ferramentas:": "Tools:",

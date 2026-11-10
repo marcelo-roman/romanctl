@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
-  <ItemGroup>
-    <ProjectReference Include="../{{.Name}}.Application/{{.Name}}.Application.csproj" />
-    <ProjectReference Include="../{{.Name}}.Infrastructure/{{.Name}}.Infrastructure.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
-  </ItemGroup>
-</Project>

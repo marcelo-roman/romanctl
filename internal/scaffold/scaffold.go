@@ -21,51 +21,27 @@ import (
 	"unicode"
 )
 
+// templateData é o que os textos de template.yaml e generator.yaml enxergam, como next.
 type templateData struct {
-	Name        string // PascalCase: namespaces, classes e projetos .NET
-	Lower       string // o nome como foi digitado
-	Snake       string // snake_case: pacotes Python e bancos
-	Kebab       string // kebab-case: pacotes npm, imagens e serviços
-	Camel       string // camelCase
-	DbName      string // nome válido para banco de dados
-	Module      string // módulo Go
-	Package     string // pacote Java e Kotlin
-	PackagePath string // o pacote em pastas: com/example/loja
-	Postgres    bool
-	Services    map[string]bool
+	Name     string
+	Lower    string
+	DbName   string
+	Postgres bool
+	Services map[string]bool
 }
 
-const packagePrefix = "com.example."
-
 func newTemplateData(name string, withs []string) templateData {
-	pascal := projects.DotnetName(name)
-	snake := strings.NewReplacer("-", "_", ".", "_").Replace(name)
-	pkg := packagePrefix + strings.ReplaceAll(snake, "_", "")
 	d := templateData{
-		Name:        pascal,
-		Lower:       name,
-		Snake:       snake,
-		Kebab:       strings.NewReplacer("_", "-", ".", "-").Replace(name),
-		DbName:      snake,
-		Module:      name,
-		Package:     pkg,
-		PackagePath: strings.ReplaceAll(pkg, ".", "/"),
-		Services:    map[string]bool{},
-	}
-	if pascal != "" {
-		d.Camel = strings.ToLower(pascal[:1]) + pascal[1:]
+		Name:     projects.DotnetName(name),
+		Lower:    name,
+		DbName:   strings.Join(words(name), "_"),
+		Services: map[string]bool{},
 	}
 	for _, s := range withs {
 		d.Services[s] = true
 	}
 	d.Postgres = d.Services["postgres"]
 	return d
-}
-
-// pathReplacer troca os marcadores dos caminhos, como __Name__ e __PackagePath__.
-func (d templateData) pathReplacer() *strings.Replacer {
-	return strings.NewReplacer("__Name__", d.Name, "__Lower__", d.Lower, "__Snake__", d.Snake, "__Kebab__", d.Kebab,
-		"__Camel__", d.Camel, "__PackagePath__", d.PackagePath)
 }
 
 type generatedFile struct {
@@ -80,11 +56,6 @@ func conditionHolds(when string, withs map[string]bool) bool {
 	return withs[when]
 }
 
-func renderString(name, text string, data templateData) ([]byte, error) {
-	out, err := renderAny(name, text, data)
-	return []byte(out), err
-}
-
 func renderAny(name, text string, data any) (string, error) {
 	tpl, err := template.New(name).Option("missingkey=error").Parse(text)
 	if err != nil {
@@ -97,33 +68,88 @@ func renderAny(name, text string, data any) (string, error) {
 	return out.String(), nil
 }
 
-func renderTemplate(t *Template, data templateData) ([]generatedFile, error) {
-	var files []generatedFile
-	paths := data.pathReplacer()
-	err := fs.WalkDir(t.files, ".", func(p string, d fs.DirEntry, err error) error {
+// buildOutputs são pastas que os testes do template na própria pasta deixam para trás.
+var buildOutputs = map[string]bool{".git": true, "node_modules": true, "bin": true, "obj": true, "target": true,
+	".venv": true, "__pycache__": true, ".pytest_cache": true, ".mypy_cache": true, ".ruff_cache": true, "dist": true,
+	".next": true, ".gradle": true, "build": true, "coverage": true, ".turbo": true}
+
+var localFiles = map[string]bool{".env": true, "coverage.out": true, ".DS_Store": true}
+
+func under(p, dir string) bool { return p == dir || strings.HasPrefix(p, dir+"/") }
+
+// walkSource lê os arquivos de uma pasta do template, sem os artefatos de build.
+func walkSource(fsys fs.FS, root string, visit func(rel string, b []byte) error) error {
+	return fs.WalkDir(fsys, root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return err
-		}
-		if d.IsDir() || p == "template.yaml" {
-			return nil
-		}
-		for _, c := range t.Conditional {
-			if (p == c.Path || strings.HasPrefix(p, c.Path+"/")) && !conditionHolds(c.When, data.Services) {
+			if os.IsNotExist(err) {
 				return nil
 			}
+			return err
 		}
-		b, err := fs.ReadFile(t.files, p)
+		if d.IsDir() {
+			if p != root && buildOutputs[d.Name()] {
+				return fs.SkipDir
+			}
+			return nil
+		}
+		if localFiles[d.Name()] || !d.Type().IsRegular() {
+			return nil
+		}
+		b, err := fs.ReadFile(fsys, p)
 		if err != nil {
 			return err
 		}
-		content, err := renderString(p, string(b), data)
-		if err != nil {
-			return i18n.Errorf("template %s: %w", p, err)
+		rel := p
+		if root != "." {
+			rel = strings.TrimPrefix(p, root+"/")
 		}
-		files = append(files, generatedFile{paths.Replace(p), content})
-		return nil
+		return visit(rel, b)
 	})
-	return files, err
+}
+
+func excluded(conditional []conditionalPath, p string, withs map[string]bool) bool {
+	for _, c := range conditional {
+		if under(p, c.Path) && !conditionHolds(c.When, withs) {
+			return true
+		}
+	}
+	return false
+}
+
+// renderTemplate copia a raiz do template, aplica as variantes que valem e troca o nome de exemplo.
+func renderTemplate(t *Template, name string, withs map[string]bool) ([]generatedFile, error) {
+	files := map[string][]byte{}
+	var order []string
+	add := func(rel string, b []byte) error {
+		if _, seen := files[rel]; !seen {
+			order = append(order, rel)
+		}
+		files[rel] = b
+		return nil
+	}
+	err := walkSource(t.files, ".", func(p string, b []byte) error {
+		if p == "template.yaml" || under(p, variantsDir) || excluded(t.Conditional, p, withs) {
+			return nil
+		}
+		return add(p, b)
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, o := range t.Overlays {
+		if !conditionHolds(o.When, withs) {
+			continue
+		}
+		if err := walkSource(t.files, o.From, add); err != nil {
+			return nil, err
+		}
+	}
+	r := projectReplacer(name)
+	out := make([]generatedFile, 0, len(order))
+	for _, rel := range order {
+		out = append(out, generatedFile{r.Replace(rel), replaceContent(r, files[rel])})
+	}
+	return out, nil
 }
 
 func validateScaffold(t *Template, name string, withs []string) error {
@@ -160,17 +186,10 @@ type Options struct {
 	Git, DryRun, Offline bool
 }
 
-func buildManifest(t *Template, name string, withs []string, data templateData) (manifest.Project, error) {
-	run, err := renderString("run", t.Run, data)
-	if err != nil {
-		return manifest.Project{}, err
-	}
-	test, err := renderString("test", t.Test, data)
-	if err != nil {
-		return manifest.Project{}, err
-	}
+func buildManifest(t *Template, name string, withs []string) manifest.Project {
+	r := projectReplacer(name)
 	m := manifest.Project{Name: name, Stack: t.Stack, Template: t.ID, Arch: t.Arch, Services: withs,
-		Run: string(run), Test: string(test), URL: t.URL, Requires: t.Requires, Publish: manifest.Publish{Kind: t.Publish.Kind}}
+		Run: r.Replace(t.Run), Test: r.Replace(t.Test), URL: t.URL, Requires: t.Requires, Publish: manifest.Publish{Kind: t.Publish.Kind}}
 	for _, s := range withs {
 		if vars, ok := t.Env[s]; ok {
 			if m.Env == nil {
@@ -180,30 +199,22 @@ func buildManifest(t *Template, name string, withs []string, data templateData) 
 		}
 	}
 	for key, value := range t.Publish.Vars {
-		rendered, err := renderString("publish."+key, value, data)
-		if err != nil {
-			return manifest.Project{}, err
-		}
 		if m.Publish.Vars == nil {
 			m.Publish.Vars = map[string]string{}
 		}
-		m.Publish.Vars[key] = string(rendered)
+		m.Publish.Vars[key] = r.Replace(value)
 	}
-	return m, nil
+	return m
 }
 
 // writeScaffold grava numa pasta temporária e só depois move, para nunca deixar
 // um projeto pela metade.
 func WriteScaffold(t *Template, name, dest string, withs []string) (ScaffoldResult, error) {
-	data := newTemplateData(name, withs)
-	files, err := renderTemplate(t, data)
+	files, err := renderTemplate(t, name, newTemplateData(name, withs).Services)
 	if err != nil {
 		return ScaffoldResult{}, err
 	}
-	project, err := buildManifest(t, name, withs, data)
-	if err != nil {
-		return ScaffoldResult{}, err
-	}
+	project := buildManifest(t, name, withs)
 	manifestYAML, err := yaml.Marshal(project)
 	if err != nil {
 		return ScaffoldResult{}, err

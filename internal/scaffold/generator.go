@@ -1,7 +1,6 @@
 package scaffold
 
 import (
-	"embed"
 	"io/fs"
 	"os"
 	"path"
@@ -18,11 +17,9 @@ import (
 	"romanctl/internal/i18n"
 	"romanctl/internal/manifest"
 	"romanctl/internal/projects"
+	"romanctl/internal/sys"
 	"romanctl/internal/ui"
 )
-
-//go:embed all:generators
-var embeddedGenerators embed.FS
 
 type requirement struct {
 	Path string `yaml:"path"`
@@ -30,6 +27,7 @@ type requirement struct {
 }
 
 type patch struct {
+	When   string `yaml:"when"`
 	File   string `yaml:"file"`
 	Before string `yaml:"before"`
 	SkipIf string `yaml:"skipIf"`
@@ -47,6 +45,7 @@ type Generator struct {
 	Requires    []requirement     `yaml:"requires" json:"-"`
 	Conditional []conditionalPath `yaml:"conditional" json:"-"`
 	Patches     []patch           `yaml:"patches" json:"-"`
+	After       []string          `yaml:"after" json:"-"`
 	Next        string            `yaml:"next" json:"-"`
 	files       fs.FS
 }
@@ -57,6 +56,7 @@ func userGeneratorsDir() string {
 
 // LoadGenerators lê os geradores de um alvo; os do usuário têm prioridade.
 func LoadGenerators(target string) []*Generator {
+	ensureInstalled()
 	found := map[string]*Generator{}
 	load := func(root fs.FS) {
 		manifests, _ := fs.Glob(root, target+"/*/generator.yaml")
@@ -78,9 +78,7 @@ func LoadGenerators(target string) []*Generator {
 			found[g.Kind] = &g
 		}
 	}
-	if sub, err := fs.Sub(embeddedGenerators, "generators"); err == nil {
-		load(sub)
-	}
+	load(os.DirFS(generatorsDir()))
 	load(os.DirFS(userGeneratorsDir()))
 	list := make([]*Generator, 0, len(found))
 	for _, g := range found {
@@ -92,11 +90,8 @@ func LoadGenerators(target string) []*Generator {
 
 // AllTargets lista os alvos com geradores, para o catálogo.
 func AllTargets() []string {
-	sub, err := fs.Sub(embeddedGenerators, "generators")
-	if err != nil {
-		return nil
-	}
-	entries, _ := fs.ReadDir(sub, ".")
+	ensureInstalled()
+	entries, _ := os.ReadDir(generatorsDir())
 	var out []string
 	for _, e := range entries {
 		if e.IsDir() {
@@ -182,49 +177,55 @@ func Plural(s string) string {
 	return s + "s"
 }
 
-// addData é o que os arquivos de um gerador enxergam.
+// addData é o que os textos do generator.yaml enxergam, como next.
 type addData struct {
 	templateData
-	Entity, EntityCamel, EntityKebab, EntitySnake      string
-	EntityPlural, EntityPluralKebab, EntityPluralSnake string
-	In, InCamel, InPlural                              string
-	Jsx, Js                                            string
+	Entity, EntityPlural, EntitySnake, EntityPluralSnake, EntityKebab, EntityPluralKebab string
+	In                                                                                   string
+	names                                                                                *strings.Replacer
+	jsExt                                                                                bool
 }
 
 func projectIdentity(projectPath string) (name string, services []string) {
 	base := filepath.Base(projectPath)
 	if m, ok := manifest.Read(projectPath); ok {
-		return projects.DotnetName(m.Name), m.Services
+		return m.Name, m.Services
 	}
 	if files, _ := filepath.Glob(filepath.Join(projectPath, "*.csproj")); len(files) > 0 {
 		return strings.TrimSuffix(filepath.Base(files[0]), ".csproj"), nil
 	}
-	return projects.DotnetName(base), nil
+	return base, nil
 }
 
 func newAddData(projectPath, entity, in string) addData {
 	name, services := projectIdentity(projectPath)
-	base := newTemplateData(filepath.Base(projectPath), services)
-	base.Name = name
+	base := newTemplateData(name, services)
 	plural := Plural(entity)
-	d := addData{templateData: base, Entity: entity, EntityCamel: camel(entity),
-		EntityKebab: separated(entity, "-"), EntitySnake: separated(entity, "_"),
-		EntityPlural: plural, EntityPluralKebab: separated(plural, "-"), EntityPluralSnake: separated(plural, "_"),
-		In: in, InCamel: camel(in), Jsx: "jsx", Js: "js"}
-	if in != "" {
-		d.InPlural = Plural(in)
-	}
-	if _, err := os.Stat(filepath.Join(projectPath, "tsconfig.json")); err == nil {
-		d.Jsx, d.Js = "tsx", "ts"
+	d := addData{templateData: base, Entity: entity, EntityPlural: plural, In: in,
+		EntitySnake: separated(entity, "_"), EntityPluralSnake: separated(plural, "_"),
+		EntityKebab: separated(entity, "-"), EntityPluralKebab: separated(plural, "-"),
+		names: entityReplacer(name, entity, in)}
+	if _, err := os.Stat(filepath.Join(projectPath, "tsconfig.json")); err != nil {
+		d.jsExt = true
 	}
 	return d
 }
 
+// expand troca os nomes de exemplo. Num projeto React sem TypeScript, .tsx e .ts viram .jsx e .js.
+func (d addData) expand(s string) string { return d.names.Replace(s) }
+
 func (d addData) expandPath(p string) string {
-	return strings.NewReplacer("__EntityPluralKebab__", d.EntityPluralKebab, "__EntityPlural__", d.EntityPlural,
-		"__EntityKebab__", d.EntityKebab, "__EntitySnake__", d.EntitySnake, "__EntityCamel__", d.EntityCamel,
-		"__Entity__", d.Entity, "__InPlural__", d.InPlural, "__In__", d.In, "__Name__", d.Name,
-		"__jsx__", d.Jsx, "__js__", d.Js).Replace(p)
+	p = d.expand(p)
+	if !d.jsExt {
+		return p
+	}
+	if base, ok := strings.CutSuffix(p, ".tsx"); ok {
+		return base + ".jsx"
+	}
+	if base, ok := strings.CutSuffix(p, ".ts"); ok {
+		return base + ".js"
+	}
+	return p
 }
 
 func renderData(name, text string, data addData) (string, error) {
@@ -307,7 +308,13 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 	var files []generatedFile
 	var patches []plannedPatch
 	var requires []requirement
+	var after []string
 	for _, step := range chain {
+		for _, command := range step.After {
+			if !slices.Contains(after, command) {
+				after = append(after, command)
+			}
+		}
 		rendered, err := renderGenerator(step, data)
 		if err != nil {
 			return result, err
@@ -315,14 +322,12 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 		files = append(files, rendered...)
 		requires = append(requires, step.Requires...)
 		for _, p := range step.Patches {
-			planned, err := planPatch(p, data)
-			if err != nil {
-				return result, err
+			if planned, ok := planPatch(p, data); ok {
+				patches = append(patches, planned)
 			}
-			patches = append(patches, planned)
 		}
 		if step.Next != "" {
-			text, err := renderData("next", i18n.T(step.Next), data)
+			text, err := renderData("next", data.expand(i18n.T(step.Next)), data)
 			if err != nil {
 				return result, err
 			}
@@ -343,7 +348,7 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 			continue
 		}
 		if _, err := os.Stat(filepath.Join(projectPath, filepath.FromSlash(p))); err != nil {
-			hint, _ := renderData("hint", r.Hint, data)
+			hint := data.expand(r.Hint)
 			return result, ui.Usagef("falta %s; rode antes: %s", p, hint)
 		}
 	}
@@ -378,6 +383,11 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 				return result, err
 			}
 		}
+		for _, command := range after {
+			if err := sys.Quiet(projectPath, nil, "sh", "-c", command); err != nil {
+				ui.Warnf("%s falhou depois de gerar: %v", command, err)
+			}
+		}
 	}
 	result.OK = true
 	return result, nil
@@ -399,60 +409,33 @@ func kinds(list []*Generator) string {
 }
 
 func renderGenerator(g *Generator, data addData) ([]generatedFile, error) {
-	var files []generatedFile
 	if g.files == nil {
 		return nil, nil
 	}
-	err := fs.WalkDir(g.files, ".", func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			if os.IsNotExist(err) {
-				return nil
-			}
-			return err
-		}
-		if d.IsDir() {
+	var files []generatedFile
+	err := walkSource(g.files, ".", func(p string, b []byte) error {
+		if excluded(g.Conditional, p, data.Services) {
 			return nil
 		}
-		for _, c := range g.Conditional {
-			if (p == c.Path || strings.HasPrefix(p, c.Path+"/")) && !conditionHolds(c.When, data.Services) {
-				return nil
-			}
-		}
-		b, err := fs.ReadFile(g.files, p)
-		if err != nil {
-			return err
-		}
-		content, err := renderData(p, string(b), data)
-		if err != nil {
-			return i18n.Errorf("gerador %s, arquivo %s: %w", g.Kind, p, err)
-		}
-		// .tmpl evita que o Go trate os arquivos do gerador como código deste módulo.
-		files = append(files, generatedFile{strings.TrimSuffix(data.expandPath(p), ".tmpl"), []byte(content)})
+		files = append(files, generatedFile{data.expandPath(p), replaceContent(data.names, b)})
 		return nil
 	})
 	return files, err
 }
 
-func planPatch(p patch, data addData) (plannedPatch, error) {
-	text, err := renderData("patch", p.Text, data)
-	if err != nil {
-		return plannedPatch{}, err
+func planPatch(p patch, data addData) (plannedPatch, bool) {
+	if p.When != "" && !conditionHolds(p.When, data.Services) {
+		return plannedPatch{}, false
 	}
-	file, err := renderData("patch-file", p.File, data)
-	if err != nil {
-		return plannedPatch{}, err
-	}
-	planned := plannedPatch{file: file, before: p.Before, skipIf: p.SkipIf}
-	for _, line := range strings.Split(text, "\n") {
+	planned := plannedPatch{file: data.expand(p.File), before: p.Before, skipIf: data.expand(p.SkipIf)}
+	for _, line := range strings.Split(data.expand(p.Text), "\n") {
 		if line = strings.TrimSpace(line); line != "" {
 			planned.lines = append(planned.lines, line)
 		}
 	}
-	return planned, nil
+	return planned, true
 }
 
-// applyPatch insere as linhas antes do marcador, com a mesma indentação. Sem o marcador,
-// não mexe no arquivo e devolve o que a pessoa precisa fazer à mão.
 func applyPatch(projectPath string, p plannedPatch, dryRun bool) (changed bool, manual []string, err error) {
 	dest := filepath.Join(projectPath, filepath.FromSlash(p.file))
 	b, readErr := os.ReadFile(dest)

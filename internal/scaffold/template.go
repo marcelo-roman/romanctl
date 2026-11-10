@@ -1,7 +1,6 @@
 package scaffold
 
 import (
-	"embed"
 	"gopkg.in/yaml.v3"
 	"io/fs"
 	"os"
@@ -15,9 +14,6 @@ import (
 	"sort"
 	"strings"
 )
-
-//go:embed all:templates
-var embeddedTemplates embed.FS
 
 // Vocabulário reconhecido, mesmo quando ainda não há template para a combinação.
 var knownArch = []string{"bff", "clean", "cqrs", "ddd", "event-driven", "event-sourcing", "feature-sliced", "hexagonal",
@@ -44,6 +40,14 @@ type conditionalPath struct {
 	When string `yaml:"when"`
 }
 
+// overlay é uma pasta, normalmente em _variants, cujos arquivos substituem os da raiz quando When vale.
+type overlay struct {
+	From string `yaml:"from"`
+	When string `yaml:"when"`
+}
+
+const variantsDir = "_variants"
+
 // Template é uma pasta com template.yaml e os arquivos a gerar.
 type Template struct {
 	ID          string            `yaml:"id" json:"id"`
@@ -59,6 +63,7 @@ type Template struct {
 	Env         manifest.Env      `yaml:"env" json:"env,omitempty"`
 	Publish     manifest.Publish  `yaml:"publish" json:"publish,omitempty"`
 	Conditional []conditionalPath `yaml:"conditional" json:"-"`
+	Overlays    []overlay         `yaml:"overlays" json:"-"`
 	Source      string            `yaml:"-" json:"source"`
 	files       fs.FS
 }
@@ -67,8 +72,9 @@ func (t *Template) Key() string { return t.Stack + "/" + t.ID }
 
 func userTemplatesDir() string { return filepath.Join(config.Home, ".config", "romanctl", "templates") }
 
-// loadTemplates lê os templates embutidos; os do usuário têm prioridade.
+// LoadTemplates lê os templates do romanctl; os do usuário têm prioridade.
 func LoadTemplates() []*Template {
+	ensureInstalled()
 	found := map[string]*Template{}
 	load := func(root fs.FS, source string) {
 		manifests, _ := fs.Glob(root, "*/*/template.yaml")
@@ -93,9 +99,7 @@ func LoadTemplates() []*Template {
 			found[t.Key()] = &t
 		}
 	}
-	if sub, err := fs.Sub(embeddedTemplates, "templates"); err == nil {
-		load(sub, "embutido")
-	}
+	load(os.DirFS(projectsDir()), "romanctl")
 	load(os.DirFS(userTemplatesDir()), "usuario")
 
 	list := make([]*Template, 0, len(found))

@@ -1,0 +1,21 @@
+id: hexagonal-ddd
+stack: go
+arch: [ddd, hexagonal]
+description: API Go com arquitetura hexagonal e DDD, com HTTP da biblioteca padrão
+services: [postgres]
+requires: [go]
+setup:
+  - go mod tidy
+run: go run ./cmd/api
+test: go test ./...
+url: http://localhost:8090
+publish:
+  kind: go
+  vars:
+    Main: ./cmd/api
+conditional:
+  - path: internal/adapters/postgres
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"

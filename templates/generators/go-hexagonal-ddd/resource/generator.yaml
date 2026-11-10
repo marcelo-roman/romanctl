@@ -1,0 +1,36 @@
+description: CRUD completo - domínio, caso de uso, repositório, rotas HTTP e testes
+aliases: [crud, scaffold]
+conditional:
+  - path: internal/adapters/postgres
+    when: postgres
+patches:
+  - file: internal/adapters/httpapi/server.go
+    before: "// romanctl:imports"
+    text: '"sample-app/internal/application/sampleitems"'
+  - file: internal/adapters/httpapi/server.go
+    before: "// romanctl:services"
+    text: "SampleItems *sampleitems.Service"
+  - file: internal/adapters/httpapi/server.go
+    before: "// romanctl:routes"
+    text: "registerSampleItems(mux, s.SampleItems)"
+  - file: cmd/api/main.go
+    before: "// romanctl:imports"
+    text: '"sample-app/internal/application/sampleitems"'
+  - when: postgres
+    file: cmd/api/main.go
+    before: "// romanctl:services"
+    text: |
+      SampleItems: sampleitems.NewService(postgres.NewSampleItemRepository(db), now),
+  - when: "!postgres"
+    file: cmd/api/main.go
+    before: "// romanctl:services"
+    text: |
+      SampleItems: sampleitems.NewService(memory.NewSampleItemRepository(), now),
+  - when: postgres
+    file: internal/adapters/postgres/schema.sql
+    before: "-- romanctl:tables"
+    text: |
+      CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
+after:
+  - gofmt -w cmd internal
+next: "Rotas em /sample-items. Rode go test ./... para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}"

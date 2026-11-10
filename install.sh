@@ -75,6 +75,7 @@ chmod 755 "$tmp/$asset"
 mv "$tmp/$asset" "$dir/romanctl"
 say "Instalado em $dir/romanctl"
 "$dir/romanctl" version
+"$dir/romanctl" templates update >/dev/null 2>&1 || say "Os templates ficam para depois: romanctl templates update"
 
 case ":$PATH:" in
   *":$dir:"*) ;;

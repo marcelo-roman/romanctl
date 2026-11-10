@@ -1,0 +1,7 @@
+description: Evento de domínio e um handler que registra no log (use --in)
+needsIn: true
+aliases: [evento]
+requires:
+  - path: src/SampleApp.Domain/SampleParents/SampleParentId.cs
+    hint: romanctl add domain SampleParent
+next: "Levante o evento dentro do agregado: Raise(new SampleItem(Id, now));"

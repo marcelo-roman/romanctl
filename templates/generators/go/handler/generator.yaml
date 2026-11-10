@@ -1,0 +1,3 @@
+description: Handler HTTP
+aliases: [controller, api]
+next: "Registre com: mux.HandleFunc(\"GET /sample-items\", handlers.ListSampleItems)"

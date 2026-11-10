@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"romanctl/internal/i18n"
 	"romanctl/internal/ui"
 )
 
@@ -35,6 +36,12 @@ func dotnetProject(t *testing.T, services []string) string {
 	return dest
 }
 
+func en(text string) string {
+	defer i18n.Set(i18n.Lang())
+	i18n.Set(i18n.EN)
+	return i18n.T(text)
+}
+
 func TestTodoGeradorRenderiza(t *testing.T) {
 	for _, target := range AllTargets() {
 		list := LoadGenerators(target)
@@ -45,8 +52,13 @@ func TestTodoGeradorRenderiza(t *testing.T) {
 			if g.Description == "" {
 				t.Errorf("%s/%s sem descrição", target, g.Kind)
 			}
+			for _, text := range []string{g.Description, g.Next} {
+				if text != "" && en(text) == text {
+					t.Errorf("%s/%s sem tradução em en.go: %q", target, g.Kind, text)
+				}
+			}
 			for _, services := range [][]string{nil, {"postgres"}} {
-				d := newAddData(t.TempDir(), "ProductItem", "Order")
+				d := newAddData(filepath.Join(t.TempDir(), "loja"), "ProductItem", "Order")
 				for _, s := range services {
 					d.Services[s] = true
 				}
@@ -56,13 +68,14 @@ func TestTodoGeradorRenderiza(t *testing.T) {
 					t.Errorf("%s/%s: %v", target, g.Kind, err)
 				}
 				for _, f := range files {
-					if strings.Contains(f.Path, "__") {
-						t.Errorf("%s/%s: marcador não trocado em %s", target, g.Kind, f.Path)
+					if leftoverSample.MatchString(f.Path) || leftoverSample.Match(f.Content) || strings.Contains(string(f.Content), "{{.") {
+						t.Errorf("%s/%s: nome de exemplo ou marcador não trocado em %s", target, g.Kind, f.Path)
 					}
 				}
 				for _, p := range g.Patches {
-					if _, err := planPatch(p, d); err != nil {
-						t.Errorf("%s/%s: %v", target, g.Kind, err)
+					planned, ok := planPatch(p, d)
+					if ok && (leftoverSample.MatchString(planned.file) || leftoverSample.MatchString(strings.Join(planned.lines, "\n"))) {
+						t.Errorf("%s/%s: nome de exemplo não trocado no patch de %s", target, g.Kind, planned.file)
 					}
 				}
 			}

@@ -1,0 +1,9 @@
+description: Endpoints HTTP do agregado, com Minimal API
+aliases: [endpoint, endpoints, api]
+requires:
+  - path: src/SampleApp.Application/SampleItems/Commands/CreateSampleItem.cs
+    hint: romanctl add application SampleItem
+patches:
+  - file: src/SampleApp.Api/Program.cs
+    before: "// romanctl:endpoints"
+    text: app.MapSampleItemEndpoints();

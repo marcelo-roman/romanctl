@@ -62,7 +62,7 @@ func Kinds() []string {
 // KindOf diz qual conjunto de CI e Dockerfile serve para o projeto.
 func KindOf(projectPath string) (string, fileData) {
 	base := filepath.Base(projectPath)
-	data := fileData{"Name": projects.DotnetName(base), "Lower": base, "Dll": ""}
+	data := fileData{"Name": projects.DotnetName(base), "Lower": base, "Dll": "", "Main": "."}
 	if m, ok := manifest.Read(projectPath); ok {
 		scaffold.Complete(m)
 		if m.Publish.Kind != "" {

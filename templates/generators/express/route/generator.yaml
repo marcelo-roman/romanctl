@@ -1,0 +1,6 @@
+description: Rotas REST em um router próprio, com dados em memória
+aliases: [controller, router, rota, api]
+patches:
+  - file: index.js
+    before: const PORT
+    text: app.use('/sample-items', require('./routes/sample-items'));

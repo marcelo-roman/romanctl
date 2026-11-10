@@ -1,7 +1,0 @@
-description: Evento de domínio e um handler que registra no log (use --in)
-needsIn: true
-aliases: [evento]
-requires:
-  - path: src/__Name__.Domain/__InPlural__/__In__Id.cs
-    hint: romanctl add domain {{.In}}
-next: "Levante o evento dentro do agregado: Raise(new {{.Entity}}(Id, now));"

@@ -93,10 +93,7 @@ func Complete(m *manifest.Project) {
 	if m.Publish.Kind != "" {
 		return
 	}
-	complete, err := buildManifest(t, m.Name, m.Services, newTemplateData(m.Name, m.Services))
-	if err != nil {
-		return
-	}
+	complete := buildManifest(t, m.Name, m.Services)
 	m.Publish = complete.Publish
 	if m.Env == nil {
 		m.Env = complete.Env

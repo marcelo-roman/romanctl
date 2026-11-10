@@ -1,0 +1,31 @@
+# SampleApp
+
+API .NET com Clean Architecture, DDD e CQRS, gerada pelo `romanctl`.
+
+```bash
+romanctl run sample-app
+dotnet test
+```
+
+Endereço: http://localhost:5080. Documento OpenAPI: `/openapi/v1.json`.
+
+## Camadas
+
+As dependências apontam sempre para dentro. Um teste em `ArchitectureTests` garante isso.
+
+| Projeto | Conteúdo | Depende de |
+|---|---|---|
+| `SampleApp.Domain` | Agregados, objetos de valor, eventos e regras de negócio | nada |
+| `SampleApp.Application` | Comandos, consultas e handlers | Domain |
+| `SampleApp.Infrastructure` | Persistência | Application |
+| `SampleApp.Api` | Endpoints HTTP | Application, Infrastructure |
+
+## CQRS
+
+Comandos alteram estado pelo repositório do agregado. Consultas leem pelo `IOrderReadStore` e
+devolvem DTOs. O `IDispatcher` encontra o handler de cada mensagem pela injeção de dependência.
+
+## Persistência
+
+Em memória: os dados somem quando a API para. Para usar PostgreSQL, gere o projeto com
+`--with postgres`.

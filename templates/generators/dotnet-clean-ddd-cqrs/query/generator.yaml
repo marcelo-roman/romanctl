@@ -1,0 +1,6 @@
+description: Consulta CQRS em um agregado existente (use --in)
+needsIn: true
+aliases: [consulta]
+requires:
+  - path: src/SampleApp.Application/SampleParents/ISampleParentReadStore.cs
+    hint: romanctl add application SampleParent

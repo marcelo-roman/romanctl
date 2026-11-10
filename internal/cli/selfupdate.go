@@ -1,7 +1,10 @@
 package cli
 
 import (
+	"os"
+
 	"romanctl/internal/i18n"
+	"romanctl/internal/scaffold"
 	"romanctl/internal/selfupdate"
 	"romanctl/internal/ui"
 )
@@ -52,9 +55,24 @@ func selfUpdateCommand(flags map[string]bool) error {
 	if err != nil {
 		return err
 	}
+	templatesErr := updateTemplatesFor(want)
 	if ui.JSONOutput {
-		return ui.PrintJSON(map[string]any{"ok": true, "from": version, "to": want, "path": path})
+		return ui.PrintJSON(map[string]any{"ok": true, "from": version, "to": want, "path": path, "templates": templatesErr == nil})
 	}
 	ui.Okf("romanctl atualizado de %s para %s (%s)", version, want, path)
 	return nil
+}
+
+// updateTemplatesFor traz os templates da versão nova, para não ficarem para trás do binário.
+func updateTemplatesFor(v string) error {
+	if os.Getenv("ROMANCTL_TEMPLATES") != "" {
+		return nil
+	}
+	scaffold.Version = v
+	var err error
+	ui.Spin(i18n.T("Baixando os templates..."), func(func(string)) { _, err = scaffold.Update("") })
+	if err != nil {
+		ui.Warnf("Não consegui baixar os templates: %v", err)
+	}
+	return err
 }

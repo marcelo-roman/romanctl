@@ -2,7 +2,8 @@ package scaffold
 
 import (
 	"io/fs"
-	"reflect"
+	"os"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
@@ -15,16 +16,16 @@ import (
 	"romanctl/internal/tools"
 )
 
-var leftoverMarker = regexp.MustCompile(`__[A-Z][A-Za-z]*__`)
+var leftoverSample = regexp.MustCompile(`(?i)sample[-_ ]?(app|items?|parents?)`)
 
-func embeddedOnly(t *testing.T) []*Template {
+func repoTemplates(t *testing.T) []*Template {
 	t.Helper()
 	home := config.Home
 	config.Home = t.TempDir()
 	t.Cleanup(func() { config.Home = home })
 	list := LoadTemplates()
 	if len(list) == 0 {
-		t.Fatal("nenhum template embutido")
+		t.Fatal("nenhum template em " + Root())
 	}
 	return list
 }
@@ -42,7 +43,7 @@ func subsets(items []string) [][]string {
 func TestTodoTemplateEstaCompleto(t *testing.T) {
 	defer i18n.Set(i18n.Lang())
 	i18n.Set(i18n.EN)
-	for _, tpl := range embeddedOnly(t) {
+	for _, tpl := range repoTemplates(t) {
 		t.Run(tpl.Key(), func(t *testing.T) {
 			if tpl.Description == "" || i18n.T(tpl.Description) == tpl.Description {
 				t.Errorf("descrição sem tradução em en.go: %q", tpl.Description)
@@ -80,12 +81,22 @@ func TestTodoTemplateEstaCompleto(t *testing.T) {
 				}
 			}
 			for _, c := range tpl.Conditional {
-				name := strings.TrimPrefix(c.When, "!")
-				if !slices.Contains(tpl.Services, name) {
-					t.Errorf("conditional %s depende de serviço que o template não oferece: %s", c.Path, name)
+				if !slices.Contains(tpl.Services, strings.TrimPrefix(c.When, "!")) {
+					t.Errorf("conditional %s depende de serviço que o template não oferece: %s", c.Path, c.When)
 				}
 				if _, err := fs.Stat(tpl.files, c.Path); err != nil {
 					t.Errorf("conditional aponta para caminho que não existe: %s", c.Path)
+				}
+			}
+			for _, o := range tpl.Overlays {
+				if !under(o.From, variantsDir) {
+					t.Errorf("overlay fora de %s: %s", variantsDir, o.From)
+				}
+				if !slices.Contains(tpl.Services, strings.TrimPrefix(o.When, "!")) {
+					t.Errorf("overlay %s depende de serviço que o template não oferece: %s", o.From, o.When)
+				}
+				if _, err := fs.Stat(tpl.files, o.From); err != nil {
+					t.Errorf("overlay aponta para pasta que não existe: %s", o.From)
 				}
 			}
 		})
@@ -93,21 +104,26 @@ func TestTodoTemplateEstaCompleto(t *testing.T) {
 }
 
 func TestTodoTemplateGeraComQualquerCombinacaoDeServicos(t *testing.T) {
-	for _, tpl := range embeddedOnly(t) {
+	for _, tpl := range repoTemplates(t) {
 		for _, withs := range subsets(tpl.Services) {
 			name := tpl.Key() + "+" + strings.Join(withs, ",")
 			t.Run(name, func(t *testing.T) {
-				r, err := WriteScaffold(tpl, "minha-loja", "", withs)
+				dest := filepath.Join(t.TempDir(), "minha-loja")
+				r, err := WriteScaffold(tpl, "minha-loja", dest, withs)
 				if err != nil {
 					t.Fatal(err)
 				}
 				for _, f := range r.Files {
-					if m := leftoverMarker.FindString(f); m != "" {
-						t.Errorf("marcador %s sobrou em %s", m, f)
+					if leftoverSample.MatchString(f) || strings.HasPrefix(f, variantsDir) {
+						t.Errorf("nome de exemplo ou variante no caminho: %s", f)
 					}
-				}
-				if strings.Contains(r.Manifest.Run, "{{") || strings.Contains(r.Manifest.Test, "{{") {
-					t.Errorf("run ou test sem renderizar: %q %q", r.Manifest.Run, r.Manifest.Test)
+					b, _ := os.ReadFile(filepath.Join(dest, f))
+					if m := leftoverSample.Find(b); m != nil {
+						t.Errorf("%s ainda tem %q", f, m)
+					}
+					if strings.Contains(string(b), "{{.") && f != "romanctl.yaml" {
+						t.Errorf("%s tem marcador de text/template, que os templates não usam mais", f)
+					}
 				}
 				for _, s := range withs {
 					conn, ok := services.FindService(s).Conn("minha_loja")
@@ -129,17 +145,32 @@ func TestTodoTemplateGeraComQualquerCombinacaoDeServicos(t *testing.T) {
 	}
 }
 
-func TestDadosDoNome(t *testing.T) {
-	d := newTemplateData("minha-loja.v2", nil)
-	want := templateData{Name: "MinhaLojaV2", Lower: "minha-loja.v2", Snake: "minha_loja_v2", Kebab: "minha-loja-v2",
-		Camel: "minhaLojaV2", DbName: "minha_loja_v2", Module: "minha-loja.v2", Package: "com.example.minhalojav2",
-		PackagePath: "com/example/minhalojav2"}
-	d.Services = nil
-	if !reflect.DeepEqual(d, want) {
-		t.Fatalf("obtido %+v", d)
+func TestTodaPastaDeTemplateCarrega(t *testing.T) {
+	loaded := map[string]bool{}
+	for _, tpl := range repoTemplates(t) {
+		loaded[tpl.Key()] = true
 	}
-	if got := d.pathReplacer().Replace("src/main/java/__PackagePath__/__Name__App.java"); got != "src/main/java/com/example/minhalojav2/MinhaLojaV2App.java" {
-		t.Fatalf("caminho: %s", got)
+	dirs, _ := filepath.Glob(filepath.Join(Root(), "projects", "*", "*"))
+	for _, dir := range dirs {
+		key := filepath.Base(filepath.Dir(dir)) + "/" + filepath.Base(dir)
+		if !loaded[key] {
+			t.Errorf("%s não carregou: confira o template.yaml", key)
+		}
+	}
+}
+
+func TestGrafiasDoNome(t *testing.T) {
+	r := projectReplacer("minha-loja.v2")
+	in := "SampleApp sampleApp sample_app sample-app SAMPLE_APP Sample App sampleapp com/example/sampleapp"
+	want := "MinhaLojaV2 minhaLojaV2 minha_loja_v2 minha-loja-v2 MINHA_LOJA_V2 Minha Loja V2 minhalojav2 com/example/minhalojav2"
+	if got := r.Replace(in); got != want {
+		t.Fatalf("obtido %q", got)
+	}
+	e := entityReplacer("loja", "ProductCategory", "Order")
+	in = "SampleItems sampleItems sample_items sample-items sampleitems SampleItem sample-item SampleParents SampleParent SampleApp"
+	want = "ProductCategories productCategories product_categories product-categories productcategories ProductCategory product-category Orders Order Loja"
+	if got := e.Replace(in); got != want {
+		t.Fatalf("obtido %q", got)
 	}
 }
 

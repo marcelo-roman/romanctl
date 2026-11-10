@@ -1,6 +1,0 @@
-description: Objeto de valor imutável, com validação (use --in)
-needsIn: true
-aliases: [vo, valueobject, valor]
-requires:
-  - path: src/__Name__.Domain/__InPlural__/__In__Id.cs
-    hint: romanctl add domain {{.In}}

@@ -311,60 +311,88 @@ binário mudar, e o tamanho dos caches do `offline` fica guardado por uma hora.
 
 ```bash
 romanctl new pedidos --stack dotnet --arch clean,ddd,cqrs --with postgres
+romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
 ```
+
+| Stack | Arquitetura | Base | Serviços |
+|---|---|---|---|
+| `dotnet` | `clean`, `ddd`, `cqrs` | Minimal API, EF Core, despachante próprio | `postgres` |
+| `go` | `hexagonal`, `ddd` | `net/http` da biblioteca padrão, pgx | `postgres` |
 
 `romanctl catalog` lista os templates e as arquiteturas conhecidas: `bff`, `clean`, `cqrs`, `ddd`, `event-driven`,
 `event-sourcing`, `feature-sliced`, `hexagonal`, `layered`, `microservices`, `modular-monolith`, `trpc` e
 `vertical-slice`. Apelidos como `ports-and-adapters`, `vsa`, `modulith` e `fsd` também valem.
 
 Depois de gerar, o `new` confere as ferramentas de que o projeto precisa e, em um terminal, oferece instalá-las. Com
-tudo instalado, ele roda o preparo do template, como `dotnet restore` ou `npm install`. Com `--offline`, o preparo
+tudo instalado, ele roda o preparo do template, como `dotnet restore` ou `go mod tidy`. Com `--offline`, o preparo
 fica para depois. Uma falha no preparo não apaga o projeto.
 
-Cada template é uma pasta com um `template.yaml`: os embutidos ficam em `templates/`, e uma pasta em
-`~/.config/romanctl/templates/<stack>/<id>/` tem prioridade sobre eles.
+### Onde ficam
 
-```yaml
-id: clean-ddd-cqrs
-stack: dotnet
-arch: [clean, ddd, cqrs]
-description: API .NET com Clean Architecture, DDD e CQRS
-services: [postgres]                  # o que --with aceita
-requires: [dotnet]                    # ferramentas do romanctl tools
-setup: [dotnet restore]               # roda na pasta do projeto, depois de gerar
-run: dotnet run --project src/{{.Name}}.Api
-test: dotnet test
-url: http://localhost:5080
-env:                                  # variáveis que o up grava no .env, por serviço
-  postgres:
-    ConnectionStrings__Default: Host={{.Host}};Port={{.Port}};Database={{.Database}};Username={{.User}};Password={{.Password}}
-publish:                              # CI e Dockerfile do romanctl publish
-  kind: dotnet-solution
-  vars: {API: "src/{{.Name}}.Api", Dll: "{{.Name}}.Api"}
-conditional:                          # pastas que só existem com ou sem um serviço
-  - path: src/__Name__.Infrastructure/Persistence/EfCore
-    when: postgres
+Os templates não fazem parte do binário. Eles estão na pasta [`templates/`](templates) deste repositório e são
+baixados para `~/.local/share/romanctl/templates`, na tag da versão instalada:
+
+```bash
+romanctl templates                 # onde estão e de que versão vieram
+romanctl templates update          # baixa de novo, da tag da versão instalada
+romanctl templates update --ref refs/heads/main
 ```
 
-Todo arquivo, e também `run`, `test` e `publish.vars`, é processado com `text/template` sobre o nome do projeto:
+O instalador, o `self-update` e o `offline prep` baixam os templates sozinhos, e o primeiro `new` também, se ainda não
+houver nenhum. Para desenvolver um template, aponte `ROMANCTL_TEMPLATES` para a pasta do repositório.
 
-| Campo | `minha-loja` vira | Nos caminhos |
-|---|---|---|
-| `{{.Name}}` | `MinhaLoja` | `__Name__` |
-| `{{.Lower}}` | `minha-loja` | `__Lower__` |
-| `{{.Snake}}`, `{{.DbName}}` | `minha_loja` | `__Snake__` |
-| `{{.Kebab}}` | `minha-loja` | `__Kebab__` |
-| `{{.Camel}}` | `minhaLoja` | `__Camel__` |
-| `{{.Module}}` | `minha-loja` | |
-| `{{.Package}}` | `com.example.minhaloja` | `__PackagePath__` vira `com/example/minhaloja` |
-| `{{.Postgres}}`, `{{.Services.redis}}` | os serviços escolhidos | |
+### Como um template é feito
 
-Os valores de `env` são processados só no `up`, com o endereço do serviço: `{{.Host}}`, `{{.Port}}`, `{{.User}}`,
-`{{.Password}}`, `{{.Database}}` e `{{.URL}}`. Além delas, todo projeto recebe as variáveis padrão de cada serviço,
-como `DATABASE_URL`.
+Cada template é um projeto de verdade, que compila e passa nos testes dentro da própria pasta, com o nome de exemplo
+`sample-app`. Gerar é copiar a pasta e trocar esse nome, em todas as grafias, pelo do projeto:
 
-Cada projeto gerado ganha um `romanctl.yaml` com o que o `run`, o `up`, o `add` e o `publish` usam. Um teste
-gera cada template embutido com todas as combinações de serviços, e o CI gera e testa cada um de verdade.
+| No template | `minha-loja` vira |
+|---|---|
+| `SampleApp` | `MinhaLoja` |
+| `sampleApp` | `minhaLoja` |
+| `sample_app` | `minha_loja` |
+| `sample-app` | `minha-loja` |
+| `SAMPLE_APP` | `MINHA_LOJA` |
+| `Sample App` | `Minha Loja` |
+| `sampleapp` | `minhaloja`, como em `com.example.sampleapp` |
+
+A troca vale para o conteúdo e para os caminhos, como `src/SampleApp.Api`. A pasta do template é a variante com todos
+os serviços. O que muda quando um serviço fica de fora vai em `_variants/`, que nem o Go nem o .NET compilam:
+
+```yaml
+id: hexagonal-ddd
+stack: go
+arch: [ddd, hexagonal]
+description: API Go com arquitetura hexagonal e DDD, com HTTP da biblioteca padrão
+services: [postgres]                  # o que --with aceita
+requires: [go]                        # ferramentas do romanctl tools
+setup: [go mod tidy]                  # roda na pasta do projeto, depois de gerar
+run: go run ./cmd/api
+test: go test ./...
+url: http://localhost:8090
+env:                                  # variáveis extras que o up grava no .env, por serviço
+  postgres:
+    PGHOST: "{{.Host}}"
+publish:                              # CI e Dockerfile do romanctl publish
+  kind: go
+  vars: {Main: ./cmd/api}
+conditional:                          # pastas que só existem com ou sem um serviço
+  - path: internal/adapters/postgres
+    when: postgres
+overlays:                             # arquivos que substituem os da raiz quando o serviço fica de fora
+  - from: _variants/memory
+    when: "!postgres"
+```
+
+`run`, `test` e `publish.vars` também passam pela troca de nomes. Os valores de `env` são montados no `up`, com o
+endereço do serviço: `{{.Host}}`, `{{.Port}}`, `{{.User}}`, `{{.Password}}`, `{{.Database}}` e `{{.URL}}`. Além
+deles, todo projeto recebe as variáveis padrão de cada serviço, como `DATABASE_URL`.
+
+Uma pasta em `~/.config/romanctl/templates/<stack>/<id>/` tem prioridade sobre os templates do romanctl. Cada projeto
+gerado ganha um `romanctl.yaml` com o que o `run`, o `up`, o `add` e o `publish` usam.
+
+Os testes do romanctl geram cada template com todas as combinações de serviços e falham se sobrar um nome de exemplo.
+O CI roda os testes de cada template na própria pasta e também os do projeto gerado, contra um PostgreSQL de verdade.
 
 ## Adicionar ao projeto
 
@@ -388,11 +416,17 @@ romanctl add resource Product --dry-run            # só mostra
 | Express | `route`, `middleware`, `service` |
 | Next.js | `page`, `api`, `component` |
 | React | `component`, `hook`, `page` |
-| Go | `handler`, `service`, `model` |
+| Go hexagonal e DDD | `resource` |
+| Go simples | `handler`, `service`, `model` |
 
 Sem `--force`, nada é sobrescrito. O que precisa de registro em outro arquivo é inserido antes de um marcador,
-como `// romanctl:endpoints`; sem o marcador, o comando mostra o que fazer à mão. Cada gerador é uma pasta em
-`internal/scaffold/generators/<alvo>/<tipo>`, e uma pasta em `~/.config/romanctl/generators` tem prioridade.
+como `// romanctl:endpoints`; sem o marcador, o comando mostra o que fazer à mão.
+
+Cada gerador é uma pasta em [`templates/generators/<alvo>/<tipo>`](templates/generators), com um `generator.yaml` e
+os arquivos em `files/`. Eles usam a entidade de exemplo `SampleItem` (e `SampleItems`, `sample-item`,
+`sample_items`...), o agregado de `--in` `SampleParent` e o projeto `SampleApp`, trocados como nos templates. Um patch
+com `when: postgres` só vale com o serviço, e `after:` roda comandos depois de gravar, como `gofmt -w`. Uma pasta em
+`~/.config/romanctl/generators` tem prioridade.
 
 ## Subir o ambiente
 

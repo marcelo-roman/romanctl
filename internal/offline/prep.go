@@ -55,6 +55,9 @@ func offlinePrep(force bool) error {
 		ui.Okf("Concluído")
 	}
 	step(i18n.T("Templates de projeto"), func() error { return prepTemplates(force) })
+	if os.Getenv("ROMANCTL_TEMPLATES") == "" {
+		step(i18n.T("Templates de arquitetura"), func() error { _, err := scaffold.Update(""); return err })
+	}
 	step(i18n.T("Pacotes npm"), prepNpm)
 	step(i18n.T("Módulos Go"), prepGo)
 	step(i18n.T("Pacotes NuGet"), prepNuget)

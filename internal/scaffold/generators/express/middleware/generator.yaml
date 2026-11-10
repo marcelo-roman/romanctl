@@ -1,3 +1,0 @@
-description: Middleware do Express
-aliases: [mw]
-next: "Use com: app.use(require('./middleware/{{.EntityCamel}}'));"
