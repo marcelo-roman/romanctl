@@ -19,7 +19,11 @@ type catalogOutput struct {
 	Generators map[string][]*Generator `json:"generators"`
 }
 
-func Catalog() error {
+// CatalogInfo é o que romanctl catalog --json mostra.
+type CatalogInfo = catalogOutput
+
+// CatalogData monta o catálogo: templates, tipos simples, serviços e geradores.
+func CatalogData() CatalogInfo {
 	templates := LoadTemplates()
 	out := catalogOutput{Arch: knownArch, Templates: templates}
 	for _, t := range templates {
@@ -37,6 +41,12 @@ func Catalog() error {
 	for _, target := range AllTargets() {
 		out.Generators[target] = LoadGenerators(target)
 	}
+	return out
+}
+
+func Catalog() error {
+	out := CatalogData()
+	templates := out.Templates
 	if ui.JSONOutput {
 		return ui.PrintJSON(out)
 	}

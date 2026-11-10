@@ -211,6 +211,13 @@ var commands = []command{
 	{path: "offline test", aliases: []string{"testar"}, usage: "romanctl offline test",
 		summary: text{"Cria e compila cada tipo de projeto com a rede bloqueada", "Creates and builds each project type with the network blocked"}},
 
+	{path: "web-ui", aliases: []string{"webui", "web"}, usage: "romanctl web-ui [--port N] [--open]",
+		summary: text{"Abre a interface web do romanctl no navegador, em localhost", "Opens the romanctl web interface in the browser, on localhost"},
+		details: text{"Serve só em 127.0.0.1 e exige um token que vai na página, então outros sites não chamam a API. Projetos, serviços, ferramentas e templates, com as ações rodando o próprio romanctl.", "Listens only on 127.0.0.1 and requires a token embedded in the page, so other sites cannot call the API. Projects, services, tools and templates, with actions that run romanctl itself."},
+		options: []helpOption{
+			{"--port N", text{"porta; o padrão é 7777", "port; the default is 7777"}},
+			{"--open", text{"abre o navegador", "opens the browser"}}},
+		examples: []string{"romanctl web-ui", "romanctl web-ui --port 8888 --open"}},
 	{path: "templates", aliases: []string{"template"}, usage: "romanctl templates [status|update] [--ref <tag ou branch>]",
 		summary:  text{"Mostra e atualiza os templates de projeto e os geradores", "Shows and updates the project templates and generators"},
 		details:  text{"Os templates ficam fora do binário, em ~/.local/share/romanctl/templates, e vêm da pasta templates do repositório, na tag da versão instalada. ROMANCTL_TEMPLATES aponta para outra pasta.", "Templates live outside the binary, in ~/.local/share/romanctl/templates, and come from the templates folder of the repository, at the tag of the installed version. ROMANCTL_TEMPLATES points to another folder."},
@@ -390,7 +397,7 @@ var usageGroups = []struct {
 	{text{"Projetos", "Projects"}, []string{"new", "add", "up", "down", "run", "publish", "list", "code", "open", "rm", "catalog", "types", "templates"}},
 	{text{"Serviços", "Services"}, []string{"status", "start", "stop", "restart", "restore", "logs", "install"}},
 	{text{"Sistema", "System"}, []string{"system", "platform", "doctor", "offline"}},
-	{text{"Outros", "Other"}, []string{"claude", "ui", "menu", "config", "self-update", "help", "version"}},
+	{text{"Outros", "Other"}, []string{"web-ui", "claude", "ui", "menu", "config", "self-update", "help", "version"}},
 }
 
 func init() { i18n.Add(map[string]string{helpPT: helpEN}) }

@@ -87,7 +87,7 @@ func Main() {
 	}
 }
 
-var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "seconds": true, "interval": true, "lang": true, "project": true, "in": true, "description": true, "filter": true, "category": true, "version": true, "ref": true, "plural": true}
+var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "seconds": true, "interval": true, "lang": true, "project": true, "in": true, "description": true, "filter": true, "category": true, "version": true, "ref": true, "plural": true, "port": true}
 
 var flagVals = map[string]string{}
 
@@ -220,6 +220,8 @@ func dispatch(args []string, flags map[string]bool) error {
 		return offline.Command(arg(args, 1), flags)
 	case "tools", "ferramentas":
 		return toolsCommand(args[1:], flags)
+	case "web-ui", "webui", "web":
+		return webUICommand(flags)
 	case "templates", "template":
 		return templatesCommand(args[1:])
 	case "claude", "skills":

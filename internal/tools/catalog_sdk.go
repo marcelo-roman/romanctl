@@ -24,7 +24,7 @@ func catalogSDK() []*Tool {
 			Warning:     i18n.T("apaga também os pacotes globais do npm (mongosh, pnpm etc.); projetos Node, React e Next param de rodar"),
 			RemovePaths: []string{opt("node"), "node", "npm", "npx", "corepack", "mongosh"}},
 		{Key: "go", Name: "Go", Group: GroupSDK, Description: i18n.T("Última versão estável"), Aliases: []string{"golang"},
-			Version: []string{"go", "version"}, Install: installGo, Brew: []string{"go"}, Warning: i18n.T("sem o Go não dá para recompilar o romanctl"),
+			Version: []string{"go", "version"}, VersionLine: "go version", Install: installGo, Brew: []string{"go"}, Warning: i18n.T("sem o Go não dá para recompilar o romanctl"),
 			RemovePaths: []string{goDir(), "go", "gofmt"}},
 		dotnetTool("dotnet", ".NET 10", "SDK LTS", "10", "dotnet-sdk-10.0", "dotnet-sdk", "dotnet10-sdk", "dotnet-sdk").aka(".net", "net", "dotnet-10", "dotnet10").
 			warn(i18n.T("projetos .NET 10 e o template clean-ddd-cqrs param de compilar")),

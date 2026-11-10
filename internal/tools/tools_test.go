@@ -94,6 +94,9 @@ func TestLinhaDaVersao(t *testing.T) {
 	if got := versionLine(gradle, "Gradle "); got != "Gradle 9.2.0" {
 		t.Fatalf("%q", got)
 	}
+	if got := versionLine("go: downloading go1.27.3 (linux/amd64)\ngo version go1.27.3 linux/amd64", "go version"); got != "go version go1.27.3 linux/amd64" {
+		t.Fatalf("%q", got)
+	}
 	if got := firstLine("info: kotlinc-jvm 2.4.21 (JRE 21)"); got != "kotlinc-jvm 2.4.21 (JRE 21)" {
 		t.Fatalf("%q", got)
 	}
