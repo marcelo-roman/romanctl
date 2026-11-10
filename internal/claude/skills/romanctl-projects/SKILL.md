@@ -16,7 +16,7 @@ romanctl list --json          # projetos que já existem
 ```
 
 Escolha o template pelo que o usuário descreveu e diga qual escolheu. Se nada servir
-(mobile, Python, Java, PHP...), siga "Quando o romanctl não cobre o pedido" da skill
+(mobile, desktop, uma linguagem ou arquitetura sem template...), siga "Quando o romanctl não cobre o pedido" da skill
 `romanctl`.
 
 ## Criar

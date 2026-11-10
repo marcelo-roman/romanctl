@@ -1,6 +1,6 @@
 ---
 name: romanctl
-description: Regras para operar esta máquina pelo romanctl, a CLI que centraliza instalação de ferramentas, criação e execução de projetos (web, .NET, Go), serviços em Docker (Postgres, Redis, Kafka...), geração de código, publicação no GitHub e monitoramento da máquina. Use antes de instalar qualquer programa, criar ou rodar um projeto, subir um banco, ver CPU/memória/bateria ou publicar um repositório.
+description: Regras para operar esta máquina pelo romanctl, a CLI que centraliza instalação de ferramentas, criação e execução de projetos (web, .NET, Go, Node, Python, Java, Kotlin, PHP, Rust), serviços em Docker (Postgres, Redis, Kafka...), geração de código, publicação no GitHub e monitoramento da máquina. Use antes de instalar qualquer programa, criar ou rodar um projeto, subir um banco, ver CPU/memória/bateria ou publicar um repositório.
 ---
 
 # romanctl
@@ -49,8 +49,9 @@ O Claude roda sem terminal interativo. Então:
 
 ## Quando o romanctl não cobre o pedido
 
-Hoje ele não tem template de mobile (Expo, Flutter, React Native), nem de Python, Java ou
-PHP. Se o pedido cair fora do que `romanctl catalog` e `romanctl types` mostram:
+Hoje ele não tem template de mobile (Expo, Flutter, React Native), de desktop, nem de outras
+linguagens além de .NET, Go, Node, React, Python, Java, Kotlin, PHP e Rust. Se o pedido cair fora
+do que `romanctl catalog` e `romanctl types` mostram:
 
 1. Diga ao usuário que o romanctl ainda não faz aquilo.
 2. Ofereça fazer manualmente desta vez **ou** acrescentar o suporte ao próprio romanctl.
