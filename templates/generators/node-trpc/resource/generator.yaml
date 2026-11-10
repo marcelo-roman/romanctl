@@ -1,0 +1,61 @@
+description: CRUD completo em tRPC - repositórios em memória e PostgreSQL, serviço com as regras, procedimentos com zod, página Next.js e testes
+aliases: [crud, scaffold]
+conditional:
+  - path: packages/db/src/postgres
+    when: postgres
+  - path: packages/db/test/postgres
+    when: postgres
+patches:
+  - file: packages/db/src/repositories.ts
+    before: "// romanctl:imports"
+    text: "import type { SampleItemRepository } from './sample-items/sample-item-repository';"
+  - file: packages/db/src/repositories.ts
+    before: "// romanctl:repositories"
+    text: "sampleItems: SampleItemRepository;"
+  - file: packages/db/src/memory/memory-repositories.ts
+    before: "// romanctl:imports"
+    text: "import { MemorySampleItemRepository } from './memory-sample-item-repository';"
+  - file: packages/db/src/memory/memory-repositories.ts
+    before: "// romanctl:repositories"
+    text: "sampleItems: new MemorySampleItemRepository(),"
+  - file: packages/db/src/index.ts
+    before: "// romanctl:exports"
+    text: |
+      export type { SampleItemRecord } from './sample-items/sample-item-record';
+      export type { SampleItemRepository } from './sample-items/sample-item-repository';
+  - when: postgres
+    file: packages/db/src/postgres/postgres-repositories.ts
+    before: "// romanctl:imports"
+    text: "import { PostgresSampleItemRepository } from './postgres-sample-item-repository';"
+  - when: postgres
+    file: packages/db/src/postgres/postgres-repositories.ts
+    before: "// romanctl:repositories"
+    text: "sampleItems: new PostgresSampleItemRepository(database),"
+  - when: postgres
+    file: packages/db/src/postgres/index.ts
+    before: "// romanctl:exports"
+    text: "export { PostgresSampleItemRepository } from './postgres-sample-item-repository';"
+  - when: postgres
+    file: packages/db/src/postgres/schema.ts
+    before: "-- romanctl:tables"
+    text: |
+      CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
+  - file: packages/api/src/context.ts
+    before: "// romanctl:imports"
+    text: "import { SampleItemService } from './services/sample-item-service';"
+  - file: packages/api/src/context.ts
+    before: "// romanctl:services"
+    text: "sampleItems: SampleItemService;"
+  - file: packages/api/src/context.ts
+    before: "// romanctl:context"
+    text: "sampleItems: new SampleItemService(repositories.sampleItems, clock),"
+  - file: packages/api/src/trpc/router.ts
+    before: "// romanctl:imports"
+    text: "import { sampleItemsRouter } from './sample-items-router';"
+  - file: packages/api/src/trpc/router.ts
+    before: "// romanctl:routers"
+    text: "sampleItems: sampleItemsRouter,"
+  - file: apps/web/src/app/layout.tsx
+    before: "romanctl:links"
+    text: '<Link href="/sample-items">Sample Items</Link>'
+next: "Procedimentos em sampleItems, registrados antes de // romanctl:routers em packages/api/src/trpc/router.ts, e página em /sample-items. Rode npm test para conferir.{{if .Postgres}} A tabela sample_items é criada quando o app reiniciar.{{end}}"

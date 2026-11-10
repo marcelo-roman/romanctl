@@ -22,7 +22,7 @@ func TestSensitive(t *testing.T) {
 }
 
 func TestTodoTipoGeraArquivosValidos(t *testing.T) {
-	data := fileData{"Name": "Loja", "Lower": "loja", "API": "src/Loja.Api", "Dll": "Loja.Api", "Main": ".", "Module": "loja", "Bin": "loja", "Dist": "loja"}
+	data := fileData{"Name": "Loja", "Lower": "loja", "API": "src/Loja.Api", "Dll": "Loja.Api", "Main": ".", "Module": "loja", "Bin": "loja", "Dist": "loja", "Web": "apps/web"}
 	for _, kind := range Kinds() {
 		files, err := render(kind, data)
 		if err != nil {

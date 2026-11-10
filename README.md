@@ -324,6 +324,7 @@ romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
 | `kotlin` | `hexagonal`, `ddd` | Ktor, Gradle com wrapper, HikariCP, Konsist | `postgres` |
 | `node` | `clean`, `ddd`, `cqrs` | NestJS com @nestjs/cqrs, TypeScript, pg, Vitest | `postgres` |
 | `node` | `layered` | Fastify, rotas, serviços e repositórios, pg | `postgres` |
+| `node` | `trpc` | Monorepo com Next.js, tRPC, zod e pg | `postgres` |
 | `java` | `hexagonal`, `ddd` | Spring Boot, Maven, JdbcClient, ArchUnit | `postgres` |
 | `python` | `layered` | Django, Django REST Framework, uv | `postgres` |
 | `react` | `feature-sliced` | Front da API de pedidos: Vite, React Router, TanStack Query, lint de camadas FSD | — |
@@ -455,6 +456,7 @@ romanctl add resource Product --dry-run            # só mostra
 | Kotlin hexagonal e DDD | `resource` |
 | Node Clean, DDD e CQRS | `resource` |
 | Node em camadas | `resource` |
+| Node tRPC | `resource` |
 | PHP hexagonal e DDD | `resource` |
 | Python hexagonal e DDD | `resource` |
 | Python em camadas (Django) | `resource` |

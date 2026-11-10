@@ -1,0 +1,26 @@
+{
+  "name": "sample-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "packages/db",
+    "packages/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @sample-app/web",
+    "build": "npm run build -w @sample-app/web",
+    "start": "npm run start -w @sample-app/web",
+    "typecheck": "tsc --noEmit && npm run typecheck --workspaces",
+    "test": "tsc --noEmit && vitest run && npm test --workspaces"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

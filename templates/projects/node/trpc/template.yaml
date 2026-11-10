@@ -1,0 +1,23 @@
+id: trpc
+stack: node
+arch: [trpc]
+description: Monorepo full-stack com Next.js e tRPC (npm workspaces), React Query, zod e pg, em TypeScript
+services: [postgres]
+requires: [node]
+setup:
+  - npm ci
+run: npm run dev
+test: npm test
+url: http://localhost:3200
+publish:
+  kind: node-next-monorepo
+  vars:
+    Web: apps/web
+conditional:
+  - path: packages/db/src/postgres
+    when: postgres
+  - path: packages/db/test/postgres
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"
