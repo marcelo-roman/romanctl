@@ -1,0 +1,25 @@
+id: vertical-slice
+stack: dotnet
+arch: [vertical-slice]
+description: API .NET com Vertical Slice Architecture e Minimal APIs, uma pasta por funcionalidade
+services: [postgres]
+requires: [dotnet]
+setup:
+  - dotnet restore
+run: dotnet run --project src/SampleApp.Api
+test: dotnet test
+url: http://localhost:5081
+env:
+  postgres:
+    ConnectionStrings__Default: Host={{.Host}};Port={{.Port}};Database={{.Database}};Username={{.User}};Password={{.Password}}
+publish:
+  kind: dotnet-solution
+  vars:
+    API: src/SampleApp.Api
+    Dll: SampleApp.Api
+conditional:
+  - path: tests/SampleApp.Tests/Postgres
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"

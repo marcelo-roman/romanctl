@@ -317,6 +317,7 @@ romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
 | Stack | Arquitetura | Base | Serviços |
 |---|---|---|---|
 | `dotnet` | `clean`, `ddd`, `cqrs` | Minimal API, EF Core, despachante próprio | `postgres` |
+| `dotnet` | `vertical-slice` | Minimal API, uma pasta por funcionalidade, EF Core | `postgres` |
 | `go` | `hexagonal`, `ddd` | `net/http` da biblioteca padrão, pgx | `postgres` |
 
 `romanctl catalog` lista os templates e as arquiteturas conhecidas: `bff`, `clean`, `cqrs`, `ddd`, `event-driven`,
@@ -416,6 +417,7 @@ romanctl add resource Product --dry-run            # só mostra
 | Express | `route`, `middleware`, `service` |
 | Next.js | `page`, `api`, `component` |
 | React | `component`, `hook`, `page` |
+| .NET Vertical Slice | `resource` |
 | Go hexagonal e DDD | `resource` |
 | Go simples | `handler`, `service`, `model` |
 

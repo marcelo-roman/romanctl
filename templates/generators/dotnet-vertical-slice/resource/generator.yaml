@@ -1,0 +1,15 @@
+description: Funcionalidade completa - domínio, mapeamento do EF Core, fatias de criar, renomear, consultar, listar e remover, e testes
+aliases: [crud, scaffold, feature]
+patches:
+  - file: src/SampleApp.Api/Data/AppDbContext.cs
+    before: "// romanctl:dbsets"
+    text: public DbSet<Domain.SampleItems.SampleItem> SampleItems => Set<Domain.SampleItems.SampleItem>();
+  - file: src/SampleApp.Api/Endpoints.cs
+    before: "// romanctl:endpoints"
+    text: |
+      Features.SampleItems.CreateSampleItem.MapEndpoint(app);
+      Features.SampleItems.RenameSampleItem.MapEndpoint(app);
+      Features.SampleItems.GetSampleItem.MapEndpoint(app);
+      Features.SampleItems.ListSampleItems.MapEndpoint(app);
+      Features.SampleItems.DeleteSampleItem.MapEndpoint(app);
+next: "Rotas em /sample-items, registradas em Endpoints.cs. Rode dotnet test para conferir.{{if .Postgres}} O EnsureCreated não altera um banco que já existe: em desenvolvimento, apague o banco sample_app para criar a tabela sample_items, ou adote migrações.{{end}}"
