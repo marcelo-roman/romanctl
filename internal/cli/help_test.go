@@ -149,3 +149,25 @@ func TestTextoSegueOIdioma(t *testing.T) {
 		t.Fatal(x.String())
 	}
 }
+
+func TestListaDeComandosTemTodosEmSecoes(t *testing.T) {
+	opts := commandOptions()
+	if len(opts) != len(commands) {
+		var missing []string
+		for _, c := range commands {
+			found := false
+			for _, o := range opts {
+				found = found || o.Value == c.path
+			}
+			if !found {
+				missing = append(missing, c.path)
+			}
+		}
+		t.Fatalf("%d de %d comandos; faltam %v", len(opts), len(commands), missing)
+	}
+	for _, o := range opts {
+		if o.Section == "" {
+			t.Errorf("%s sem seção", o.Value)
+		}
+	}
+}

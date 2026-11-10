@@ -2,15 +2,12 @@
 package tui
 
 import (
-	"fmt"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 
 	"romanctl/internal/i18n"
@@ -68,14 +65,25 @@ type action struct {
 	exec    bool                      // precisa do terminal: o painel sai da frente
 	confirm string                    // pergunta antes, com y/n
 	when    func(r Row) bool
+
+	question string // pergunta já pronta, quando o texto depende da linha
+	version  string // versão escolhida na lista de versões
 }
+
+// engineGroup marca a linha do Docker: ligar e desligar o daemon pede sudo, então a ação toma o
+// terminal, e parar avisa que derruba todos os containers da máquina.
+const engineGroup = "engine"
+
+const engineWarning = "Parar o Docker derruba todos os containers da máquina, não só os do romanctl. Parar %s?"
 
 var actions = map[string][]action{
 	viewServices: {
-		{key: "s", label: "iniciar", args: func(k string) []string { return []string{"start", k} }, when: not("rodando", "nao-instalado")},
-		{key: "x", label: "parar", args: func(k string) []string { return []string{"stop", k} }, when: is("rodando")},
-		{key: "r", label: "reiniciar", args: func(k string) []string { return []string{"restart", k} }, when: is("rodando")},
-		{key: "i", label: "instalar", args: func(k string) []string { return []string{"install", k} }, when: is("nao-instalado")},
+		{key: "s", label: "iniciar", args: func(k string) []string { return []string{"start", k} }, when: both(container, not("rodando", "nao-instalado"))},
+		{key: "x", label: "parar", args: func(k string) []string { return []string{"stop", k} }, when: both(container, is("rodando"))},
+		{key: "r", label: "reiniciar", args: func(k string) []string { return []string{"restart", k} }, when: both(container, is("rodando"))},
+		{key: "s", label: "iniciar", args: func(k string) []string { return []string{"start", k} }, exec: true, when: both(engine, not("rodando", "nao-instalado"))},
+		{key: "x", label: "parar", args: func(k string) []string { return []string{"stop", k, "--yes"} }, exec: true, when: both(engine, is("rodando")), confirm: engineWarning},
+		{key: "r", label: "reiniciar", args: func(k string) []string { return []string{"restart", k, "--yes"} }, exec: true, when: both(engine, is("rodando")), confirm: engineWarning},
 	},
 	viewProjects: {
 		{key: "u", label: "subir (up -d)", args: func(k string) []string { return []string{"up", k, "-d"} }, when: not("rodando")},
@@ -88,8 +96,8 @@ var actions = map[string][]action{
 		{key: "ctrl+d", label: "remover", args: func(k string) []string { return []string{"rm", k, "--yes"} }, confirm: "Remover o projeto %s e todos os arquivos dele?"},
 	},
 	viewTools: {
-		{key: "i", label: "instalar", args: func(k string) []string { return []string{"tools", "install", k, "--yes"} }, when: is("disponivel")},
-		{key: "r", label: "reinstalar", args: func(k string) []string { return []string{"tools", "install", k, "--yes", "--force"} }, when: is("instalado")},
+		{key: "i", label: "instalar", args: func(k string) []string { return []string{"tools", "install", k, "--yes"} }, when: is("disponivel"), confirm: "Instalar %s?"},
+		{key: "r", label: "reinstalar", args: func(k string) []string { return []string{"tools", "install", k, "--yes", "--force"} }, when: is("instalado"), confirm: "Reinstalar %s?"},
 		{key: "ctrl+d", label: "remover", args: func(k string) []string { return []string{"tools", "uninstall", k, "--yes"} }, when: is("instalado"), confirm: "Remover a ferramenta %s?"},
 	},
 }
@@ -97,7 +105,13 @@ var actions = map[string][]action{
 // Ações que valem para a tela, sem precisar de uma linha selecionada.
 var globalActions = map[string][]action{
 	viewProjects: {{key: "n", label: "novo projeto", args: func(string) []string { return []string{"new"} }, exec: true}},
+	viewServices: {{key: "n", label: "instalar serviço", args: func(string) []string { return []string{"install"} }, exec: true}},
 }
+
+func engine(r Row) bool    { return r.Group == engineGroup }
+func container(r Row) bool { return r.Group != engineGroup }
+
+func both(a, b func(Row) bool) func(Row) bool { return func(r Row) bool { return a(r) && b(r) } }
 
 func is(states ...string) func(Row) bool {
 	return func(r Row) bool { return slices.Contains(states, r.Status) }
@@ -118,11 +132,13 @@ const (
 	modeLogs
 	modeActions
 	modeConfirm
+	modeVersions
 )
 
 // Model é o estado do painel.
 type Model struct {
 	backend Backend
+	version string
 	view    string
 	mode    mode
 	width   int
@@ -152,6 +168,18 @@ type Model struct {
 
 	pendingCategory string
 
+	upstream  map[string]tools.Upstream
+	latest    map[string]tools.Upstream
+	asked     map[string]bool
+	versions  map[string][]tools.Version
+	verErr    map[string]string
+	verKey    string
+	verPos    int
+	fetching  map[string]bool
+	watched   string
+	detailTop int
+	readme    map[string][]string
+
 	pending *action
 	pendKey string
 	menuPos int
@@ -162,7 +190,9 @@ type Model struct {
 // New cria o painel.
 func New(b Backend) *Model {
 	return &Model{backend: b, view: viewProjects, width: 100, height: 30,
-		rows: map[string][]Row{}, loaded: map[string]bool{}, cursor: map[string]int{}, offset: map[string]int{}, running: map[string]string{}}
+		rows: map[string][]Row{}, loaded: map[string]bool{}, cursor: map[string]int{}, offset: map[string]int{}, running: map[string]string{},
+		upstream: map[string]tools.Upstream{}, fetching: map[string]bool{}, readme: map[string][]string{},
+		latest: map[string]tools.Upstream{}, asked: map[string]bool{}, versions: map[string][]tools.Version{}, verErr: map[string]string{}}
 }
 
 // ---------------------------------------------------------------- mensagens
@@ -181,6 +211,76 @@ type doneMsg struct {
 	output    string
 }
 type execDoneMsg struct{ err error }
+type upstreamMsg struct {
+	key string
+	up  tools.Upstream
+}
+type settleMsg struct{ key string }
+type latestMsg struct {
+	key string
+	up  tools.Upstream
+}
+type versionsMsg struct {
+	key  string
+	list []tools.Version
+	err  error
+}
+
+// fetchLatest pede a última versão de cada ferramenta da lista, uma vez por sessão; o backend
+// limita quantas vão à rede ao mesmo tempo e guarda o resultado por algumas horas.
+func (m *Model) fetchLatest() tea.Cmd {
+	var cmds []tea.Cmd
+	b := m.backend
+	for _, r := range m.rows[viewTools] {
+		if m.asked[r.Key] {
+			continue
+		}
+		m.asked[r.Key] = true
+		key := r.Key
+		cmds = append(cmds, func() tea.Msg { return latestMsg{key, b.Latest(key)} })
+	}
+	return tea.Batch(cmds...)
+}
+
+func (m *Model) openVersions(r Row) tea.Cmd {
+	m.mode, m.verKey, m.verPos = modeVersions, r.Key, 0
+	if _, ok := m.versions[r.Key]; ok {
+		return nil
+	}
+	if _, failed := m.verErr[r.Key]; failed {
+		return nil
+	}
+	b, key := m.backend, r.Key
+	return func() tea.Msg {
+		list, err := b.Versions(key)
+		return versionsMsg{key, list, err}
+	}
+}
+
+// fetchUpstream consulta a origem da ferramenta uma vez por sessão, em segundo plano.
+func (m *Model) fetchUpstream(key string) tea.Cmd {
+	if _, ok := m.upstream[key]; ok || m.fetching[key] || key == "" {
+		return nil
+	}
+	m.fetching[key] = true
+	b := m.backend
+	return func() tea.Msg { return upstreamMsg{key, b.Upstream(key)} }
+}
+
+// watchSelection espera o cursor parar numa ferramenta antes de consultar a rede: descer a
+// lista com j não pode disparar uma consulta por linha.
+func (m *Model) watchSelection() tea.Cmd {
+	if m.view != viewTools {
+		return nil
+	}
+	r, ok := m.selected()
+	if !ok || r.Key == m.watched {
+		return nil
+	}
+	m.watched = r.Key
+	key := r.Key
+	return tea.Tick(400*time.Millisecond, func(time.Time) tea.Msg { return settleMsg{key} })
+}
 
 func (m *Model) load(view string) tea.Cmd {
 	b := m.backend
@@ -208,7 +308,7 @@ func spinTick() tea.Cmd {
 // Init carrega a primeira tela e liga a atualização automática.
 func (m *Model) Init() tea.Cmd {
 	m.loading = true
-	return tea.Batch(m.load(m.view), tick(), spinTick())
+	return tea.Batch(m.load(m.view), m.load(viewServices), m.load(viewSystem), tick(), spinTick())
 }
 
 // ---------------------------------------------------------------- filtro e seleção
@@ -352,6 +452,10 @@ func (m *Model) start(a action, r Row) tea.Cmd {
 	}
 	label := i18n.T(a.label) + " " + r.Key
 	m.running[id] = i18n.T(a.label)
+	if a.version != "" {
+		label = i18n.Sprintf("instalar %s %s", r.Key, a.version)
+		m.running[id] = i18n.Sprintf("instalando %s", a.version)
+	}
 	b := m.backend
 	return func() tea.Msg {
 		c := b.Command(args...)
@@ -387,6 +491,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pendingCategory = ""
 		}
 		m.clampCursor()
+		if msg.view == viewTools {
+			return m, tea.Batch(m.watchSelection(), m.fetchLatest())
+		}
+		return m, m.watchSelection()
 	case systemMsg:
 		m.system = &msg.snap
 		m.loaded[viewSystem] = true
@@ -402,6 +510,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tickMsg:
 		cmds := []tea.Cmd{tick()}
+		if m.view != viewSystem {
+			cmds = append(cmds, m.load(viewSystem))
+		}
 		switch {
 		case m.mode == modeLogs:
 			cmds = append(cmds, m.loadLogs())
@@ -420,11 +531,38 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.setFlash(msg.label+": "+i18n.T("concluído"), false)
 		}
-		return m, m.load(strings.SplitN(msg.id, "/", 2)[0])
+		view := strings.SplitN(msg.id, "/", 2)[0]
+		cmds := []tea.Cmd{m.load(view)}
+		if view == viewProjects {
+			cmds = append(cmds, m.load(viewServices))
+		}
+		return m, tea.Batch(cmds...)
 	case execDoneMsg:
+		if msg.err != nil {
+			m.setFlash(msg.err.Error(), true)
+		}
 		return m, m.load(m.view)
+	case upstreamMsg:
+		delete(m.fetching, msg.key)
+		m.upstream[msg.key] = msg.up
+		if msg.up.Latest != "" {
+			m.latest[msg.key] = msg.up
+		}
+	case latestMsg:
+		m.latest[msg.key] = msg.up
+	case versionsMsg:
+		if msg.err != nil {
+			m.verErr[msg.key] = msg.err.Error()
+		} else {
+			m.versions[msg.key] = msg.list
+		}
+	case settleMsg:
+		if r, ok := m.selected(); ok && m.view == viewTools && r.Key == msg.key {
+			return m, m.fetchUpstream(msg.key)
+		}
 	case tea.KeyMsg:
-		return m.handleKey(msg)
+		model, cmd := m.handleKey(msg)
+		return model, tea.Batch(cmd, m.watchSelection())
 	}
 	return m, nil
 }
@@ -450,15 +588,19 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.keyFilter(msg)
 	case modeCommand:
 		return m.keyCommand(msg)
-	case modeHelp, modeDetail:
-		if key == "esc" || key == "q" || key == "?" || key == "enter" || key == "d" {
+	case modeHelp:
+		if key == "esc" || key == "q" || key == "?" || key == "enter" {
 			m.mode = modeTable
 		}
 		return m, nil
+	case modeDetail:
+		return m.keyDetail(key)
 	case modeLogs:
 		return m.keyLogs(key)
 	case modeActions:
 		return m.keyActions(key)
+	case modeVersions:
+		return m.keyVersions(key)
 	case modeConfirm:
 		return m.keyConfirm(key)
 	}
@@ -567,14 +709,20 @@ func (m *Model) keyTable(key string) (tea.Model, tea.Cmd) {
 		m.setFlash(i18n.T("Atualizando..."), false)
 		return m, m.load(m.view)
 	case "d":
-		if _, ok := m.selected(); ok {
-			m.mode = modeDetail
+		if r, ok := m.selected(); ok {
+			m.mode, m.detailTop = modeDetail, 0
+			if m.view == viewTools {
+				return m, m.fetchUpstream(r.Key)
+			}
 		}
 	case "l":
 		if r, ok := m.selected(); ok && (m.view == viewServices || m.view == viewProjects) {
 			return m, m.openLogs(r)
 		}
 	case "enter":
+		if r, ok := m.selected(); ok && m.view == viewTools {
+			return m, m.openVersions(r)
+		}
 		if r, ok := m.selected(); ok {
 			if list := m.rowActions(r); len(list) > 0 {
 				m.menu, m.menuPos, m.mode = list, 0, modeActions
@@ -601,6 +749,9 @@ func (m *Model) trigger(a action, r Row) tea.Cmd {
 	if a.confirm != "" {
 		copied := a
 		m.pending, m.pendKey, m.mode = &copied, r.Key, modeConfirm
+		if m.view == viewTools {
+			return m.fetchUpstream(r.Key)
+		}
 		return nil
 	}
 	m.mode = modeTable
@@ -631,6 +782,37 @@ func (m *Model) keyActions(key string) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m *Model) keyVersions(key string) (tea.Model, tea.Cmd) {
+	list := m.versions[m.verKey]
+	switch key {
+	case "esc", "q":
+		m.mode = modeTable
+	case "j", "down":
+		m.verPos = min(m.verPos+1, max(0, len(list)-1))
+	case "k", "up":
+		m.verPos = max(m.verPos-1, 0)
+	case "g", "home":
+		m.verPos = 0
+	case "G", "end":
+		m.verPos = max(0, len(list)-1)
+	case "enter":
+		r, ok := m.selected()
+		if !ok || m.verPos >= len(list) {
+			return m, nil
+		}
+		return m, m.trigger(installAction(list[m.verPos], r), r)
+	}
+	return m, nil
+}
+
+// installAction instala a versão escolhida na lista. Trocar a versão de algo instalado é
+// reinstalar, e o romanctl entende isso sozinho quando a versão pedida é outra.
+func installAction(v tools.Version, r Row) action {
+	return action{key: "enter", label: "instalar " + v.Label, version: v.Label, confirm: "Instalar %s?",
+		question: i18n.Sprintf("Instalar %s %s?", r.Key, v.Label),
+		args:     func(k string) []string { return []string{"tools", "install", k, "--version", v.ID, "--yes"} }}
+}
+
 func (m *Model) keyConfirm(key string) (tea.Model, tea.Cmd) {
 	switch key {
 	case "y", "s", "Y", "S":
@@ -640,6 +822,27 @@ func (m *Model) keyConfirm(key string) (tea.Model, tea.Cmd) {
 		return m, m.start(a, r)
 	case "n", "N", "esc", "q", "enter":
 		m.pending, m.mode = nil, modeTable
+	}
+	return m, nil
+}
+
+func (m *Model) keyDetail(key string) (tea.Model, tea.Cmd) {
+	last := max(0, len(m.detailLines())-m.bodyHeight())
+	switch key {
+	case "esc", "q", "enter", "d", "?":
+		m.mode = modeTable
+	case "j", "down":
+		m.detailTop = min(m.detailTop+1, last)
+	case "k", "up":
+		m.detailTop = max(m.detailTop-1, 0)
+	case "pgdown", " ", "ctrl+f":
+		m.detailTop = min(m.detailTop+m.bodyHeight(), last)
+	case "pgup", "ctrl+b":
+		m.detailTop = max(m.detailTop-m.bodyHeight(), 0)
+	case "g", "home":
+		m.detailTop = 0
+	case "G", "end":
+		m.detailTop = last
 	}
 	return m, nil
 }
@@ -677,432 +880,4 @@ func (m *Model) keyLogs(key string) (tea.Model, tea.Cmd) {
 		m.logTop, m.follow = last, true
 	}
 	return m, nil
-}
-
-// ---------------------------------------------------------------- desenho
-
-var (
-	sLogo     = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("14"))
-	sTabOn    = lipgloss.NewStyle().Bold(true).Reverse(true).Padding(0, 1)
-	sTabOff   = lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Padding(0, 1)
-	sHead     = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("14"))
-	sSelected = lipgloss.NewStyle().Reverse(true)
-	sKey      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("11"))
-	sDim      = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-	sOK       = lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
-	sBad      = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
-	sBusy     = lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
-	sBar      = lipgloss.NewStyle().Background(lipgloss.Color("237"))
-)
-
-func statusStyle(status string) lipgloss.Style {
-	switch status {
-	case "rodando", "instalado":
-		return sOK
-	case "caiu":
-		return sBad
-	case "preparado":
-		return sBusy
-	}
-	return sDim
-}
-
-func (m *Model) bodyHeight() int { return max(3, m.height-4) }
-
-func (m *Model) tableHeight() int { return max(1, m.bodyHeight()-1) }
-
-// View desenha a tela: cabeçalho, abas, corpo, barra de comando e rodapé.
-func (m *Model) View() string {
-	if m.quit {
-		return ""
-	}
-	lines := []string{m.headerLine(), m.tabsLine()}
-	lines = append(lines, m.body()...)
-	lines = append(lines, m.promptLine(), m.footerLine())
-	for i, l := range lines {
-		lines[i] = ansi.Truncate(l, m.width, "")
-	}
-	return strings.Join(lines, "\n")
-}
-
-func (m *Model) headerLine() string {
-	right := sDim.Render(m.backend.Header())
-	left := sLogo.Render("romanctl")
-	gap := max(1, m.width-lipgloss.Width(left)-lipgloss.Width(right))
-	return left + strings.Repeat(" ", gap) + right
-}
-
-func (m *Model) tabsLine() string {
-	var tabs []string
-	for i, v := range viewOrder {
-		label := fmt.Sprintf("%d %s", i+1, viewTitle(v))
-		if v == m.view {
-			tabs = append(tabs, sTabOn.Render(label))
-		} else {
-			tabs = append(tabs, sTabOff.Render(label))
-		}
-	}
-	return strings.Join(tabs, "")
-}
-
-func (m *Model) body() []string {
-	height := m.bodyHeight()
-	var out []string
-	switch m.mode {
-	case modeHelp:
-		out = m.helpLines()
-	case modeDetail:
-		out = m.detailLines()
-	case modeLogs:
-		out = m.logWindow()
-	case modeActions:
-		out = m.actionLines()
-	default:
-		if m.view == viewSystem {
-			out = m.systemLines()
-		} else {
-			out = m.tableLines()
-		}
-	}
-	for len(out) < height {
-		out = append(out, "")
-	}
-	return out[:height]
-}
-
-var columns = map[string][]string{
-	viewServices: {"NOME", "SERVIÇO", "ESTADO", "ENDEREÇO"},
-	viewProjects: {"NOME", "TIPO", "ESTADO", "ENDEREÇO", "ALTERADO"},
-	viewTools:    {"NOME", "CATEGORIA", "ESTADO", "VERSÃO", "DESCRIÇÃO"},
-}
-
-const statusColumn = 2
-
-func (m *Model) columnWidths(rows []Row) []int {
-	head := columns[m.view]
-	widths := make([]int, len(head))
-	for i, h := range head {
-		widths[i] = lipgloss.Width(i18n.T(h))
-	}
-	for _, r := range rows {
-		for i, c := range r.Columns {
-			if i < len(widths) {
-				widths[i] = max(widths[i], lipgloss.Width(c))
-			}
-		}
-	}
-	// A última coluna fica com o que sobrar; a penúltima não pode empurrá-la para fora.
-	total := m.width - 2
-	for i := 0; i < len(widths)-1; i++ {
-		widths[i] = min(widths[i], max(8, total/3))
-		total -= widths[i] + 2
-	}
-	if total > 0 {
-		widths[len(widths)-1] = min(widths[len(widths)-1], total)
-	}
-	return widths
-}
-
-func pad(s string, w int) string {
-	s = ansi.Truncate(s, w, "~")
-	return s + strings.Repeat(" ", max(0, w-lipgloss.Width(s)))
-}
-
-func (m *Model) tableLines() []string {
-	rows := m.visible()
-	if m.loading && !m.loaded[m.view] {
-		return []string{"", "  " + sBusy.Render(spinnerFrame(m.spin)+" "+i18n.T("Carregando..."))}
-	}
-	widths := m.columnWidths(rows)
-	var heads []string
-	for i, h := range columns[m.view] {
-		heads = append(heads, pad(i18n.T(h), widths[i]))
-	}
-	out := []string{" " + sHead.Render(strings.Join(heads, "  "))}
-	if len(rows) == 0 {
-		text := i18n.T("Nada por aqui.")
-		if m.filter != "" {
-			text = i18n.T("Nada encontrado. Esc limpa o filtro.")
-		} else if m.view == viewProjects {
-			text = i18n.T("Nenhum projeto ainda. Aperte n para criar o primeiro.")
-		}
-		return append(out, "", "  "+sDim.Render(text))
-	}
-	height := m.tableHeight()
-	cursor := m.cursor[m.view]
-	offset := m.offset[m.view]
-	if cursor < offset {
-		offset = cursor
-	}
-	if cursor >= offset+height {
-		offset = cursor - height + 1
-	}
-	m.offset[m.view] = offset
-	for i := offset; i < min(offset+height, len(rows)); i++ {
-		out = append(out, m.tableRow(rows[i], widths, i == cursor))
-	}
-	return out
-}
-
-func (m *Model) tableRow(r Row, widths []int, selected bool) string {
-	cells := make([]string, len(widths))
-	busy, isBusy := m.running[m.view+"/"+r.Key]
-	for i := range widths {
-		text := ""
-		if i < len(r.Columns) {
-			text = r.Columns[i]
-		}
-		if i == statusColumn && isBusy {
-			text = spinnerFrame(m.spin) + " " + busy
-		}
-		cells[i] = pad(text, widths[i])
-		if !selected {
-			switch {
-			case i == statusColumn && isBusy:
-				cells[i] = sBusy.Render(cells[i])
-			case i == statusColumn:
-				cells[i] = statusStyle(r.Status).Render(cells[i])
-			}
-		}
-	}
-	line := " " + strings.Join(cells, "  ")
-	if selected {
-		return sSelected.Render(pad(line, m.width))
-	}
-	return line
-}
-
-func spinnerFrame(i int) string { return string("|/-\\"[i%4]) }
-
-func gauge(used, total int64, width int) string {
-	if total <= 0 {
-		return strings.Repeat("-", width)
-	}
-	filled := int(float64(used) / float64(total) * float64(width))
-	filled = max(0, min(filled, width))
-	return strings.Repeat("#", filled) + strings.Repeat(".", width-filled)
-}
-
-func gb(n int64) string { return fmt.Sprintf("%.1f GB", float64(n)/(1<<30)) }
-
-func (m *Model) systemLines() []string {
-	if m.system == nil {
-		return []string{"", "  " + sBusy.Render(spinnerFrame(m.spin)+" "+i18n.T("Medindo..."))}
-	}
-	s := m.system
-	bar := max(10, min(m.width-46, 40))
-	row := func(label string, used, total int64, tail string) string {
-		return fmt.Sprintf(" %-10s [%s] %s", label, gauge(used, total, bar), tail)
-	}
-	out := []string{sHead.Render(" " + i18n.T("RECURSOS"))}
-	if s.SystemCPU != nil {
-		out = append(out, row("CPU", int64(*s.SystemCPU), 100, fmt.Sprintf("%.0f%%", *s.SystemCPU)))
-	} else {
-		out = append(out, fmt.Sprintf(" %-10s %s", "CPU", i18n.Sprintf("%.2f núcleos nos seus processos", s.OwnCPUCores)))
-	}
-	used := s.Memory.Total - s.Memory.Available
-	out = append(out, row(i18n.T("Memória"), used, s.Memory.Total, i18n.Sprintf("%s de %s", gb(used), gb(s.Memory.Total))))
-	if s.Memory.SwapTotal > 0 {
-		swap := s.Memory.SwapTotal - s.Memory.SwapFree
-		out = append(out, row("Swap", swap, s.Memory.SwapTotal, i18n.Sprintf("%s de %s", gb(swap), gb(s.Memory.SwapTotal))))
-	}
-	disk := s.Disk.Size - s.Disk.Free
-	out = append(out, row(i18n.T("Disco"), disk, s.Disk.Size, i18n.Sprintf("%s de %s", gb(disk), gb(s.Disk.Size))))
-	if b := s.Battery; b != nil {
-		tail := fmt.Sprintf("%.0f%%", b.Percent)
-		if b.Power > 0 {
-			tail += fmt.Sprintf(", %.1f W", b.Power)
-		}
-		if b.HoursLeft > 0 {
-			tail += fmt.Sprintf(", %dh%02d", int(b.HoursLeft), int(b.HoursLeft*60)%60)
-		}
-		out = append(out, row(i18n.T("Bateria"), int64(b.Percent), 100, tail))
-	}
-	out = append(out, "", sHead.Render(" "+i18n.T("PROCESSOS")))
-	out = append(out, sDim.Render(fmt.Sprintf(" %-8s %6s %8s  %s", "PID", "CPU", "MEM", i18n.T("NOME"))))
-	top := slices.Clone(s.Top)
-	sort.SliceStable(top, func(i, j int) bool { return top[i].CPU > top[j].CPU })
-	for i, p := range top {
-		if i >= max(3, m.bodyHeight()-len(out)) {
-			break
-		}
-		out = append(out, fmt.Sprintf(" %-8d %5.1f%% %5.0f MB  %s", p.PID, p.CPU, float64(p.Memory)/(1<<20), p.Name))
-	}
-	return out
-}
-
-func (m *Model) detailLines() []string {
-	r, ok := m.selected()
-	if !ok {
-		return nil
-	}
-	out := []string{sHead.Render(" " + r.Key), ""}
-	for _, d := range r.Detail {
-		if d[1] != "" {
-			out = append(out, fmt.Sprintf(" %-14s %s", d[0]+":", d[1]))
-		}
-	}
-	out = append(out, "", sDim.Render(" "+i18n.T("O que dá para fazer:")))
-	for _, a := range m.rowActions(r) {
-		out = append(out, " "+sKey.Render(fmt.Sprintf("%-7s", keyName(a.key)))+" "+i18n.T(a.label))
-	}
-	return out
-}
-
-func (m *Model) actionLines() []string {
-	r, _ := m.selected()
-	out := []string{sHead.Render(" " + i18n.Sprintf("Ações para %s", r.Key)), ""}
-	for i, a := range m.menu {
-		line := fmt.Sprintf(" %-7s %s", keyName(a.key), i18n.T(a.label))
-		if i == m.menuPos {
-			out = append(out, sSelected.Render(pad(line, min(m.width, 44))))
-		} else {
-			out = append(out, " "+sKey.Render(fmt.Sprintf("%-7s", keyName(a.key)))+" "+i18n.T(a.label))
-		}
-	}
-	return out
-}
-
-func (m *Model) logWindow() []string {
-	lines := m.logLines()
-	height := m.bodyHeight()
-	top := max(0, min(m.logTop, max(0, len(lines)-height)))
-	out := make([]string, 0, height)
-	for i := top; i < min(top+height, len(lines)); i++ {
-		out = append(out, lines[i])
-	}
-	return out
-}
-
-func keyName(k string) string {
-	if k == "ctrl+d" {
-		return "Ctrl+D"
-	}
-	return k
-}
-
-func (m *Model) helpLines() []string {
-	section := func(title string, items ...[2]string) []string {
-		out := []string{sHead.Render(" " + title)}
-		for _, it := range items {
-			out = append(out, " "+sKey.Render(fmt.Sprintf("%-14s", it[0]))+" "+it[1])
-		}
-		return append(out, "")
-	}
-	out := section(i18n.T("NAVEGAR"),
-		[2]string{"Tab, 1-4", i18n.T("trocar de tela")},
-		[2]string{i18n.T("setas, j/k"), i18n.T("mover na lista")},
-		[2]string{"g / G", i18n.T("início e fim da lista")},
-		[2]string{"Enter", i18n.T("ver as ações do item")},
-		[2]string{"d", i18n.T("detalhes do item")},
-		[2]string{"l", i18n.T("logs do item")},
-		[2]string{"Esc", i18n.T("voltar e limpar o filtro")},
-		[2]string{"q", i18n.T("sair")})
-	out = append(out, section(i18n.T("BUSCAR"),
-		[2]string{"/", i18n.T("filtrar a lista")},
-		[2]string{"< >", i18n.T("trocar de categoria, em Ferramentas")},
-		[2]string{":", i18n.T("ir direto: :tools, :svc, :prj, :sys, :db, :k8s")},
-		[2]string{"Ctrl+R", i18n.T("atualizar agora")})...)
-	var items [][2]string
-	for _, a := range globalActions[m.view] {
-		items = append(items, [2]string{keyName(a.key), i18n.T(a.label)})
-	}
-	for _, a := range actions[m.view] {
-		items = append(items, [2]string{keyName(a.key), i18n.T(a.label)})
-	}
-	if len(items) > 0 {
-		out = append(out, section(strings.ToUpper(viewTitle(m.view)), items...)...)
-	}
-	return out
-}
-
-func (m *Model) promptLine() string {
-	switch m.mode {
-	case modeCommand:
-		hint := ""
-		if c := completeCommand(m.command); c != "" && c != strings.ToLower(m.command) {
-			hint = sDim.Render(c[len(m.command):])
-		}
-		return sKey.Render(":") + m.command + hint + sSelected.Render(" ")
-	case modeFilter:
-		return sKey.Render("/") + m.filter + sSelected.Render(" ")
-	case modeConfirm:
-		return sBad.Render(i18n.Sprintf(m.pending.confirm, m.pendKey)) + " " + sKey.Render(i18n.T("[y/N]"))
-	}
-	if m.flash != "" && time.Since(m.flashAt) < 8*time.Second {
-		if m.flashErr {
-			return sBad.Render(m.flash)
-		}
-		return sOK.Render(m.flash)
-	}
-	return m.statusSummary()
-}
-
-func (m *Model) statusSummary() string {
-	if m.view == viewSystem {
-		return ""
-	}
-	rows := m.visible()
-	text := fmt.Sprintf("%s  %d/%d", viewTitle(m.view), len(rows), len(m.rows[m.view]))
-	if m.view == viewTools {
-		cats := m.categories()
-		if m.category > 0 && m.category <= len(cats) {
-			text += "  " + i18n.T("categoria:") + " " + tools.GroupTitle(cats[m.category-1])
-		}
-	}
-	if m.filter != "" {
-		text += "  " + i18n.T("filtro:") + " " + m.filter
-	}
-	return sDim.Render(text)
-}
-
-// footerLine mostra só as teclas que fazem sentido agora, como no k9s.
-func (m *Model) footerLine() string {
-	type hint struct{ key, label string }
-	var hints []hint
-	switch m.mode {
-	case modeFilter:
-		hints = []hint{{"Enter", i18n.T("aplicar")}, {"Esc", i18n.T("limpar")}}
-	case modeCommand:
-		hints = []hint{{"Tab", i18n.T("completar")}, {"Enter", i18n.T("ir")}, {"Esc", i18n.T("cancelar")}}
-	case modeHelp, modeDetail:
-		hints = []hint{{"Esc", i18n.T("voltar")}}
-	case modeLogs:
-		state := i18n.T("seguir")
-		hints = []hint{{"j/k", i18n.T("rolar")}, {"f", state}, {"g", i18n.T("início")}, {"Esc", i18n.T("voltar")}}
-	case modeActions:
-		hints = []hint{{"Enter", i18n.T("escolher")}, {"Esc", i18n.T("voltar")}}
-	case modeConfirm:
-		hints = []hint{{"y", i18n.T("sim")}, {"n", i18n.T("não")}}
-	default:
-		for _, a := range globalActions[m.view] {
-			hints = append(hints, hint{keyName(a.key), i18n.T(a.label)})
-		}
-		if r, ok := m.selected(); ok {
-			for _, a := range m.rowActions(r) {
-				hints = append(hints, hint{keyName(a.key), i18n.T(a.label)})
-			}
-			hints = append(hints, hint{"d", i18n.T("detalhes")})
-			if m.view != viewTools {
-				hints = append(hints, hint{"l", i18n.T("logs")})
-			}
-		}
-		if m.view == viewTools {
-			hints = append(hints, hint{"< >", i18n.T("categoria")})
-		}
-		hints = append(hints, hint{"/", i18n.T("filtrar")}, hint{":", i18n.T("ir para")}, hint{"?", i18n.T("ajuda")}, hint{"q", i18n.T("sair")})
-	}
-	parts := make([]string, len(hints))
-	for i, h := range hints {
-		parts[i] = sKey.Render(h.key) + " " + h.label
-	}
-	return strings.Join(parts, "  ")
-}
-
-// Run abre o painel. Enquanto ele está na tela, nada mais escreve no terminal.
-func Run() error {
-	ui.SetSilent(true)
-	defer ui.SetSilent(false)
-	_, err := tea.NewProgram(New(newRealBackend()), tea.WithAltScreen()).Run()
-	return err
 }

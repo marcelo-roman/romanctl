@@ -3,6 +3,8 @@ package services
 import (
 	"net"
 	"romanctl/internal/i18n"
+	"strings"
+	"sync"
 	"time"
 
 	"romanctl/internal/platform"
@@ -36,6 +38,61 @@ func containerEngine() string {
 
 func containerName(key string) string { return "romanctl-" + key }
 
+// engineState é uma leitura do motor: o painel e o status perguntam por vários serviços de uma
+// vez, e cada pergunta separada ao Docker custava uma chamada.
+type engineState struct {
+	at         time.Time
+	up         bool              // o daemon respondeu
+	images     map[string]bool   // repositório:tag baixados
+	containers map[string]string // nome → estado (running, exited...)
+}
+
+var (
+	engineMu   sync.Mutex
+	engineSeen engineState
+)
+
+const engineTTL = time.Second
+
+func readEngine() engineState {
+	engineMu.Lock()
+	defer engineMu.Unlock()
+	if time.Since(engineSeen.at) < engineTTL {
+		return engineSeen
+	}
+	st := engineState{at: time.Now(), images: map[string]bool{}, containers: map[string]string{}}
+	if out, err := engineOutput("ps", "-a", "--format", "{{.Names}}\t{{.State}}"); err == nil {
+		st.up = true
+		for _, line := range strings.Split(out, "\n") {
+			if name, state, ok := strings.Cut(strings.TrimSpace(line), "\t"); ok {
+				st.containers[name] = state
+			}
+		}
+		if out, err := engineOutput("image", "ls", "--format", "{{.Repository}}:{{.Tag}}"); err == nil {
+			for _, line := range strings.Fields(out) {
+				st.images[line] = true
+			}
+		}
+	}
+	engineSeen = st
+	return st
+}
+
+// forgetEngine faz a próxima pergunta ler o motor de novo, depois de mudar algo nele.
+func forgetEngine() {
+	engineMu.Lock()
+	engineSeen = engineState{}
+	engineMu.Unlock()
+}
+
+// imageRef completa a referência como o Docker lista: "redis" vira "redis:latest".
+func imageRef(image string) string {
+	if strings.Contains(image[strings.LastIndex(image, "/")+1:], ":") {
+		return image
+	}
+	return image + ":latest"
+}
+
 func engineOutput(args ...string) (string, error) {
 	engine := containerEngine()
 	if engine == "" {
@@ -68,6 +125,9 @@ func runArgs(c containerSpec) []string {
 	return append(args, c.Args...)
 }
 
+// createArgs são os mesmos de runArgs, para criar o container sem ligá-lo.
+func createArgs(c containerSpec) []string { return append([]string{"create"}, runArgs(c)[2:]...) }
+
 func supportedArch(c containerSpec, arch string) bool {
 	if len(c.Arches) == 0 {
 		return true
@@ -90,19 +150,28 @@ func containerService(c containerSpec) *Service {
 		s.Unsupported = i18n.Sprintf("a imagem %s não existe para %s", c.Image, platform.Current.Arch)
 	}
 	s.LogCmd = func() []string { return []string{containerEngine(), "logs", "-f", "--tail", "50", name} }
-	s.Installed = func() bool { return s.Unsupported == "" && containerEngine() != "" }
+	s.LogTail = func() []string { return []string{containerEngine(), "logs", "--tail", "300", name} }
+	// Instalado é o container do romanctl existir. Ter o Docker não basta, e nem a imagem: ela
+	// pode ter sido baixada por outro projeto da máquina.
+	s.Installed = func() bool {
+		if s.Unsupported != "" || containerEngine() == "" {
+			return false
+		}
+		_, created := readEngine().containers[name]
+		return created
+	}
 	s.Running = func() bool {
 		if containerEngine() == "" {
 			return false
 		}
-		out, err := engineOutput("inspect", "-f", "{{.State.Running}}", name)
-		return err == nil && out == "true"
+		return readEngine().containers[name] == "running"
 	}
 	s.start = func() error {
-		_, inspectErr := engineOutput("inspect", name)
+		defer forgetEngine()
+		_, created := readEngine().containers[name]
 		var out string
 		var err error
-		if inspectErr == nil {
+		if created {
 			out, err = engineOutput("start", name)
 		} else {
 			out, err = engineOutput(runArgs(c)...)
@@ -113,6 +182,7 @@ func containerService(c containerSpec) *Service {
 		return waitPort(hostPort(c.Ports[0]), 90*time.Second)
 	}
 	s.stop = func() error {
+		defer forgetEngine()
 		if out, err := engineOutput("stop", name); err != nil {
 			return i18n.Errorf("%v: %s", err, sys.Tail(out, 4))
 		}
@@ -122,14 +192,17 @@ func containerService(c containerSpec) *Service {
 		if s.Unsupported != "" {
 			return i18n.Errorf("%s", s.Unsupported)
 		}
-		if out, err := engineOutput("pull", c.Image); err != nil {
+		defer forgetEngine()
+		if !readEngine().images[imageRef(c.Image)] {
+			if out, err := engineOutput("pull", c.Image); err != nil {
+				return i18n.Errorf("%v: %s", err, sys.Tail(out, 4))
+			}
+		}
+		// Cria o container parado: é ele que marca o serviço como instalado nesta máquina.
+		if out, err := engineOutput(createArgs(c)...); err != nil {
 			return i18n.Errorf("%v: %s", err, sys.Tail(out, 4))
 		}
 		return nil
-	}
-	s.alreadyInstalled = func() bool {
-		_, err := engineOutput("image", "inspect", c.Image)
-		return err == nil
 	}
 	return s
 }

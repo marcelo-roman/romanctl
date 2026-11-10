@@ -1,7 +1,9 @@
 package tui
 
 import (
+	"errors"
 	"os/exec"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -9,28 +11,46 @@ import (
 	"github.com/charmbracelet/x/ansi"
 
 	"romanctl/internal/sysinfo"
+	"romanctl/internal/tools"
 )
 
-type fakeBackend struct{ commands [][]string }
+type fakeBackend struct {
+	commands  [][]string
+	upstreams []string
+}
 
 func (f *fakeBackend) Header() string { return "linux/arm64" }
 func (f *fakeBackend) Services() []Row {
 	return []Row{{Key: "postgres", Status: "parado", Columns: []string{"postgres", "PostgreSQL", "parado", "pg://"}},
 		{Key: "redis", Status: "rodando", Columns: []string{"redis", "Redis", "rodando", "redis://"}},
-		{Key: "kafka", Status: "nao-instalado", Columns: []string{"kafka", "Kafka", "não instalado", ""}}}
+		{Key: "kafka", Status: "nao-instalado", Columns: []string{"kafka", "Kafka", "não instalado", ""}},
+		{Key: "docker", Status: "rodando", Group: engineGroup, Columns: []string{"docker", "Docker", "rodando", "unix:///var/run/docker.sock"}}}
 }
 func (f *fakeBackend) Projects() []Row {
 	return []Row{{Key: "loja", Status: "parado", Columns: []string{"loja", "dotnet", "parado", "http://x", "01/01"}, Detail: [][2]string{{"Pasta", "/p/loja"}}},
 		{Key: "site", Status: "rodando", Columns: []string{"site", "next", "rodando", "http://y", "01/01"}}}
 }
 func (f *fakeBackend) Tools() []Row {
-	return []Row{{Key: "kubectl", Status: "instalado", Group: "k8s", Columns: []string{"kubectl", "k8s", "instalado", "v1", "CLI"}},
-		{Key: "helm", Status: "disponivel", Group: "k8s", Columns: []string{"helm", "k8s", "disponível", "", "Pacotes"}},
-		{Key: "psql", Status: "disponivel", Group: "db", Columns: []string{"psql", "db", "disponível", "", "Cliente"}}}
+	return []Row{{Key: "kubectl", Status: "instalado", Group: "k8s", Columns: []string{"kubectl", "k8s", "instalado", "v1.0.0", "", "CLI"}},
+		{Key: "helm", Status: "disponivel", Group: "k8s", Columns: []string{"helm", "k8s", "disponível", "", "", "Pacotes"}},
+		{Key: "psql", Status: "disponivel", Group: "db", Columns: []string{"psql", "db", "disponível", "", "", "Cliente"}}}
 }
 func (f *fakeBackend) System() sysinfo.Snapshot {
 	return sysinfo.Snapshot{Memory: sysinfo.Memory{Total: 1 << 33, Available: 1 << 32}, Disk: sysinfo.Disk{Size: 1 << 34, Free: 1 << 33},
 		Battery: &sysinfo.Battery{Percent: 80, Power: 3.5, HoursLeft: 2.5}, Top: []sysinfo.Proc{{PID: 7, Name: "claude", CPU: 12, Memory: 1 << 28}}}
+}
+func (f *fakeBackend) Upstream(key string) tools.Upstream {
+	f.upstreams = append(f.upstreams, key)
+	return tools.Upstream{Latest: "2.0.0", Source: "GitHub releases", URL: "https://github.com/x/" + key, Readme: "# " + key + "\n\nGuia de uso do " + key + "."}
+}
+func (f *fakeBackend) Latest(key string) tools.Upstream {
+	return tools.Upstream{Latest: "2.0.0", Source: "GitHub releases"}
+}
+func (f *fakeBackend) Versions(key string) ([]tools.Version, error) {
+	if key == "psql" {
+		return nil, errors.New("o apt instala só a versão atual do repositório")
+	}
+	return []tools.Version{{ID: "v2.0.0", Label: "2.0.0"}, {ID: "v1.9.0", Label: "1.9.0"}, {ID: "v1.0.0", Label: "1.0.0"}}, nil
 }
 func (f *fakeBackend) Logs(view, key string) string { return "linha 1\nlinha 2\n" + key }
 func (f *fakeBackend) Command(args ...string) *exec.Cmd {
@@ -228,12 +248,12 @@ func TestAcoesDependemDoEstado(t *testing.T) {
 	key(m, "2")
 	load(m, viewServices)
 	view := screen(m)
-	if !strings.Contains(view, "s iniciar") || strings.Contains(view, "x parar") {
+	if !hasHint(view, "s", "iniciar") || hasHint(view, "x", "parar") {
 		t.Fatalf("parado:\n%s", view)
 	}
 	key(m, "down")
 	view = screen(m)
-	if !strings.Contains(view, "x parar") || strings.Contains(view, "s iniciar") {
+	if !hasHint(view, "x", "parar") || hasHint(view, "s", "iniciar") {
 		t.Fatalf("rodando:\n%s", view)
 	}
 	cmd := key(m, "s")
@@ -386,7 +406,7 @@ func TestSemIcones(t *testing.T) {
 		key(m, v)
 		load(m, m.view)
 		for _, r := range screen(m) {
-			if r >= 0x2190 && r != 0x2190 && r != 0x2192 {
+			if r >= 0x2190 && r != 0x2190 && r != 0x2192 && !isBoxDrawing(r) {
 				t.Errorf("tela %s tem o símbolo %q", v, r)
 			}
 		}
@@ -401,5 +421,161 @@ func TestCtrlCSaiDeQualquerLugar(t *testing.T) {
 		if cmd := key(m, "ctrl+c"); cmd == nil || !m.quit {
 			t.Errorf("%v: não saiu", keys)
 		}
+	}
+}
+
+// A moldura não é ícone: o desenho de caixa existe em qualquer terminal.
+func isBoxDrawing(r rune) bool { return r >= 0x2500 && r <= 0x257F }
+
+func hasHint(view, key, label string) bool {
+	return regexp.MustCompile(`<` + regexp.QuoteMeta(key) + `>\s+` + regexp.QuoteMeta(label) + `\b`).MatchString(view)
+}
+
+func toolsView(t *testing.T) (*Model, *fakeBackend) {
+	m, f := setup(t)
+	key(m, "3")
+	load(m, viewTools)
+	return m, f
+}
+
+func TestVersaoDisponivelNaLista(t *testing.T) {
+	m, f := toolsView(t)
+	cmd := m.fetchUpstream("kubectl")
+	m.Update(cmd())
+	if len(f.upstreams) != 1 || !regexp.MustCompile(`kubectl\s+k8s\s+instalado\s+v1\.0\.0\s+2\.0\.0`).MatchString(screen(m)) {
+		t.Fatal(screen(m))
+	}
+	if m.fetchUpstream("kubectl") != nil {
+		t.Fatal("consultou duas vezes a mesma ferramenta")
+	}
+}
+
+func TestListaMostraSempreAUltima(t *testing.T) {
+	m, _ := toolsView(t)
+	if !strings.Contains(screen(m), "ÚLTIMA") || !strings.Contains(screen(m), "...") {
+		t.Fatal(screen(m))
+	}
+	cmd := m.fetchLatest()
+	if cmd != nil {
+		t.Fatal("a lista já pediu as últimas ao carregar; não pede de novo")
+	}
+	for _, r := range m.rows[viewTools] {
+		m.Update(latestMsg{r.Key, tools.Upstream{Latest: "2.0.0"}})
+	}
+	if strings.Contains(screen(m), "...") || strings.Count(screen(m), "2.0.0") < 3 {
+		t.Fatal(screen(m))
+	}
+}
+
+func TestEnterEscolheOutraVersao(t *testing.T) {
+	m, f := toolsView(t)
+	cmd := key(m, "enter")
+	if m.mode != modeVersions || cmd == nil {
+		t.Fatal("Enter em Ferramentas abre as versões")
+	}
+	m.Update(cmd())
+	view := screen(m)
+	for _, want := range []string{"versões(kubectl)", "2.0.0", "última", "1.0.0", "instalada"} {
+		if !strings.Contains(view, want) {
+			t.Errorf("faltou %q:\n%s", want, view)
+		}
+	}
+	key(m, "down", "enter")
+	if m.mode != modeConfirm || !strings.Contains(screen(m), "Instalar kubectl 1.9.0?") {
+		t.Fatal(screen(m))
+	}
+	run := key(m, "y")
+	run()
+	if got := strings.Join(f.commands[0], " "); got != "tools install kubectl --version v1.9.0 --yes" {
+		t.Fatal(got)
+	}
+}
+
+func TestFerramentaSemOutrasVersoes(t *testing.T) {
+	m, _ := toolsView(t)
+	key(m, "G")
+	cmd := key(m, "enter")
+	m.Update(cmd())
+	if !strings.Contains(screen(m), "só a versão atual") {
+		t.Fatal(screen(m))
+	}
+	if key(m, "enter"); m.mode != modeVersions {
+		t.Fatal("sem versões, Enter não faz nada")
+	}
+	key(m, "esc")
+	if m.mode != modeTable {
+		t.Fatal(m.mode)
+	}
+}
+
+func TestSoConsultaQuandoOCursorPara(t *testing.T) {
+	m, f := toolsView(t)
+	key(m, "down", "down")
+	if len(f.upstreams) != 0 {
+		t.Fatal("mover o cursor não pode ir à rede")
+	}
+	m.Update(settleMsg{"helm"})
+	if len(f.upstreams) != 0 {
+		t.Fatal("helm já não está selecionado")
+	}
+	cmd := func() tea.Cmd { _, c := m.Update(settleMsg{"psql"}); return c }()
+	if cmd == nil {
+		t.Fatal("psql está selecionado e deveria ser consultado")
+	}
+}
+
+func TestInstalarMostraVersaoEOrigem(t *testing.T) {
+	m, f := toolsView(t)
+	key(m, "down")
+	cmd := key(m, "i")
+	if m.mode != modeConfirm || cmd == nil {
+		t.Fatal("instalar pede confirmação e consulta a versão")
+	}
+	m.Update(cmd())
+	view := screen(m)
+	for _, want := range []string{"Instalar helm?", "2.0.0", "GitHub releases"} {
+		if !strings.Contains(view, want) {
+			t.Errorf("faltou %q:\n%s", want, view)
+		}
+	}
+	run := key(m, "y")
+	run()
+	if got := strings.Join(f.commands[0], " "); got != "tools install helm --yes" {
+		t.Fatal(got)
+	}
+}
+
+func TestDetalhesDaFerramentaTemReadme(t *testing.T) {
+	m, _ := toolsView(t)
+	cmd := key(m, "d")
+	m.Update(cmd())
+	view := screen(m)
+	for _, want := range []string{"README", "Guia de uso do kubectl", "github.com/x/kubectl", "atualização disponível"} {
+		if !strings.Contains(view, want) {
+			t.Errorf("faltou %q:\n%s", want, view)
+		}
+	}
+}
+
+func TestPararODockerAvisaEUsaOTerminal(t *testing.T) {
+	m, f := setup(t)
+	key(m, "2")
+	load(m, viewServices)
+	key(m, "G")
+	if r, _ := m.selected(); r.Key != "docker" {
+		t.Fatal(r.Key)
+	}
+	if !hasHint(screen(m), "x", "parar") {
+		t.Fatal(screen(m))
+	}
+	if cmd := key(m, "x"); cmd != nil || m.mode != modeConfirm {
+		t.Fatal("parar o Docker precisa de confirmação")
+	}
+	if !strings.Contains(screen(m), "todos os containers") {
+		t.Fatal(screen(m))
+	}
+	cmd := key(m, "y")
+	if cmd == nil || len(f.commands) != 1 || strings.Join(f.commands[0], " ") != "stop docker --yes" {
+		t.Fatalf("deveria tomar o terminal com stop docker --yes: %v", f.commands)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"romanctl/internal/i18n"
+	"slices"
 	"sort"
 	"strings"
 
@@ -13,8 +14,12 @@ import (
 	"romanctl/internal/ui"
 )
 
-func installKubectl() error {
-	version, err := fetchText("https://dl.k8s.io/release/stable.txt")
+func kubectlLatest() (string, error) { return fetchText("https://dl.k8s.io/release/stable.txt") }
+
+func installKubectl() error { return installKubectlAt("") }
+
+func installKubectlAt(want string) error {
+	version, err := orLatest(want, kubectlLatest)
 	if err != nil {
 		return err
 	}
@@ -26,8 +31,10 @@ func installKubectl() error {
 	return installFromURL(url, sum, []string{"kubectl"})
 }
 
-func installHelm() error {
-	tag, err := githubLatestTag("helm/helm")
+func installHelm() error { return installHelmAt("") }
+
+func installHelmAt(want string) error {
+	tag, err := resolveTag("helm/helm", want)
 	if err != nil {
 		return err
 	}
@@ -83,9 +90,11 @@ func installDockerCLI() error {
 	return installFromURL(base+latest, "", []string{"docker"})
 }
 
-func installLima() error {
+func installLima() error { return installLimaAt("") }
+
+func installLimaAt(want string) error {
 	const repo = "lima-vm/lima"
-	tag, err := githubLatestTag(repo)
+	tag, err := resolveTag(repo, want)
 	if err != nil {
 		return err
 	}
@@ -98,14 +107,16 @@ func installLima() error {
 	return installToOpt(base+asset, sum, opt("lima"), 0, "bin/limactl", "bin/lima")
 }
 
-func installOllama() error {
+func installOllama() error { return installOllamaAt("") }
+
+func installOllamaAt(want string) error {
 	if !sys.Have("zstd") {
 		if err := pkgInstall([]string{"zstd"}); err != nil {
 			return err
 		}
 	}
 	const repo = "ollama/ollama"
-	tag, err := githubLatestTag(repo)
+	tag, err := resolveTag(repo, want)
 	if err != nil {
 		return err
 	}
@@ -119,23 +130,28 @@ func installOllama() error {
 	return installToOpt(base+asset, sum, opt("ollama"), 0, "bin/ollama")
 }
 
-func installNode() error {
+func nodeLTS() (string, error) {
 	var releases []struct {
 		Version string `json:"version"`
 		LTS     any    `json:"lts"`
 	}
 	if err := fetchJSON("https://nodejs.org/dist/index.json", &releases); err != nil {
-		return err
+		return "", err
 	}
-	version := ""
 	for _, r := range releases {
 		if r.LTS != false {
-			version = r.Version
-			break
+			return r.Version, nil
 		}
 	}
-	if version == "" {
-		return i18n.Errorf("não achei uma versão LTS do Node")
+	return "", i18n.Errorf("não achei uma versão LTS do Node")
+}
+
+func installNode() error { return installNodeAt("") }
+
+func installNodeAt(want string) error {
+	version, err := orLatest(want, nodeLTS)
+	if err != nil {
+		return err
 	}
 	base := "https://nodejs.org/dist/" + version + "/"
 	name := "node-" + version + "-linux-" + platform.Current.X64() + ".tar.xz"
@@ -160,23 +176,63 @@ func installNode() error {
 	return link(dest+"/bin/node", dest+"/bin/npm", dest+"/bin/npx", dest+"/bin/corepack")
 }
 
-func installGo() error {
-	var releases []struct {
-		Files []struct {
-			Filename string `json:"filename"`
-			OS       string `json:"os"`
-			Arch     string `json:"arch"`
-			Kind     string `json:"kind"`
-			Sha256   string `json:"sha256"`
-		} `json:"files"`
-	}
+type goRelease struct {
+	Version string `json:"version"`
+	Files   []struct {
+		Filename string `json:"filename"`
+		OS       string `json:"os"`
+		Arch     string `json:"arch"`
+		Kind     string `json:"kind"`
+		Sha256   string `json:"sha256"`
+	} `json:"files"`
+}
+
+func goReleases() ([]goRelease, error) {
+	var releases []goRelease
 	if err := fetchJSON("https://go.dev/dl/?mode=json", &releases); err != nil {
-		return err
+		return nil, err
 	}
 	if len(releases) == 0 {
-		return i18n.Errorf("lista de versões do Go vazia")
+		return nil, i18n.Errorf("lista de versões do Go vazia")
 	}
-	for _, f := range releases[0].Files {
+	return releases, nil
+}
+
+func goAllReleases() ([]goRelease, error) {
+	var releases []goRelease
+	if err := fetchJSON("https://go.dev/dl/?mode=json&include=all", &releases); err != nil {
+		return nil, err
+	}
+	return releases, nil
+}
+
+func goLatest() (string, error) {
+	releases, err := goReleases()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimPrefix(releases[0].Version, "go"), nil
+}
+
+func installGo() error { return installGoAt("") }
+
+func installGoAt(want string) error {
+	releases, err := goReleases()
+	if want != "" {
+		releases, err = goAllReleases()
+	}
+	if err != nil {
+		return err
+	}
+	release := releases[0]
+	if want != "" {
+		i := slices.IndexFunc(releases, func(r goRelease) bool { return r.Version == "go"+strings.TrimPrefix(want, "go") })
+		if i < 0 {
+			return i18n.Errorf("o Go %s não está na lista de versões", want)
+		}
+		release = releases[i]
+	}
+	for _, f := range release.Files {
 		if f.OS == "linux" && f.Arch == arch && f.Kind == "archive" {
 			return installToOpt("https://go.dev/dl/"+f.Filename, f.Sha256, goDir(), 1, "bin/go", "bin/gofmt")
 		}
@@ -191,10 +247,10 @@ func goDir() string {
 	return opt("go")
 }
 
-func installZig() error {
+func zigIndex() (map[string]map[string]any, string, error) {
 	var index map[string]map[string]any
 	if err := fetchJSON("https://ziglang.org/download/index.json", &index); err != nil {
-		return err
+		return nil, "", err
 	}
 	var versions []string
 	for v := range index {
@@ -204,11 +260,29 @@ func installZig() error {
 	}
 	sort.Slice(versions, func(i, j int) bool { return semverLess(versions[i], versions[j]) })
 	if len(versions) == 0 {
-		return i18n.Errorf("lista de versões do Zig vazia")
+		return nil, "", i18n.Errorf("lista de versões do Zig vazia")
 	}
-	target, ok := index[versions[len(versions)-1]][platform.Current.UArch()+"-linux"].(map[string]any)
+	return index, versions[len(versions)-1], nil
+}
+
+func zigLatest() (string, error) {
+	_, version, err := zigIndex()
+	return version, err
+}
+
+func installZig() error { return installZigAt("") }
+
+func installZigAt(want string) error {
+	index, version, err := zigIndex()
+	if want != "" {
+		version = want
+	}
+	if err != nil {
+		return err
+	}
+	target, ok := index[version][platform.Current.UArch()+"-linux"].(map[string]any)
 	if !ok {
-		return i18n.Errorf("Zig %s não tem versão para %s-linux", versions[len(versions)-1], platform.Current.UArch())
+		return i18n.Errorf("Zig %s não tem versão para %s-linux", version, platform.Current.UArch())
 	}
 	url, _ := target["tarball"].(string)
 	sum, _ := target["shasum"].(string)
@@ -237,9 +311,11 @@ func installDart() error {
 	return installToOpt(url, sum, opt("dart-sdk"), 1, "bin/dart")
 }
 
-func installKotlin() error {
+func installKotlin() error { return installKotlinAt("") }
+
+func installKotlinAt(want string) error {
 	const repo = "JetBrains/kotlin"
-	tag, err := githubLatestTag(repo)
+	tag, err := resolveTag(repo, want)
 	if err != nil {
 		return err
 	}
@@ -278,9 +354,11 @@ func installSwift() error {
 	return installToOpt(url, "", opt("swift"), 1, "usr/bin/swift", "usr/bin/swiftc")
 }
 
-func installNeovim() error {
+func installNeovim() error { return installNeovimAt("") }
+
+func installNeovimAt(want string) error {
 	const repo = "neovim/neovim"
-	tag, err := githubLatestTag(repo)
+	tag, err := resolveTag(repo, want)
 	if err != nil {
 		return err
 	}
@@ -356,9 +434,11 @@ func rustPaths() []string {
 	return []string{"cargo", "rustc", "rustup", filepath.Join(h, ".cargo"), filepath.Join(h, ".rustup")}
 }
 
-func installCodeServer() error {
+func installCodeServer() error { return installCodeServerAt("") }
+
+func installCodeServerAt(want string) error {
 	const repo = "coder/code-server"
-	tag, err := githubLatestTag(repo)
+	tag, err := resolveTag(repo, want)
 	if err != nil {
 		return err
 	}

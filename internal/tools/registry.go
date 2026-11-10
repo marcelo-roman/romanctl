@@ -73,6 +73,15 @@ type Tool struct {
 	RemoveNpm   string   // pacote global do npm a remover
 	RemovePaths []string
 	AfterRemove func() error
+	Repo        string // projeto no GitHub: README e página
+	Npm         string // pacote do npm, quando vem de lá
+	PyPI        string // pacote do PyPI, quando vem de lá
+	Release     bool   // o instalador baixa as releases de Repo
+	latest      func() (string, error)
+	versions    func() ([]Version, error) // versões que installAt sabe instalar
+	installAt   func(version string) error
+	venvDest    string // ambiente Python próprio, para instalar pkg==versão
+	venvBins    []string
 }
 
 func (t *Tool) aka(aliases ...string) *Tool { t.Aliases = aliases; return t }
@@ -163,10 +172,12 @@ func (t *Tool) removePkgsFor(manager string) []string {
 }
 
 // runInstall escolhe o caminho de instalação certo para esta máquina.
-func (t *Tool) runInstall() error {
+func (t *Tool) runInstall(version string) error {
 	p := platform.Current
 	var err error
 	switch {
+	case version != "":
+		err = t.installVersion(version)
 	case p.OS == "darwin" && !t.Portable:
 		err = brewInstall(t.Brew, t.Cask)
 	case t.Install != nil:
@@ -326,6 +337,7 @@ type Status struct {
 	Description string `json:"description"`
 	Installed   bool   `json:"installed"`
 	Version     string `json:"version"`
+	Latest      string `json:"latest,omitempty"` // a última conhecida, guardada há menos de 6 horas
 	Unavailable string `json:"unavailable,omitempty"`
 }
 
@@ -357,7 +369,9 @@ collect:
 		select {
 		case r := <-results:
 			t := All[r.index]
-			out[r.index] = Status{t.Key, t.Name, t.Group, i18n.T(t.Description), r.installed, r.version, t.Unavailable()}
+			latest, _ := CachedLatest(t.Key)
+			out[r.index] = Status{Key: t.Key, Name: t.Name, Group: t.Group, Description: i18n.T(t.Description), Installed: r.installed,
+				Version: r.version, Latest: latest.Latest, Unavailable: t.Unavailable()}
 			seen[r.index] = true
 			done++
 			if progress != nil {
@@ -375,7 +389,7 @@ collect:
 				_, err := exec.LookPath(t.Version[0])
 				installed = err == nil
 			}
-			out[i] = Status{t.Key, t.Name, t.Group, i18n.T(t.Description), installed, "?", t.Unavailable()}
+			out[i] = Status{Key: t.Key, Name: t.Name, Group: t.Group, Description: i18n.T(t.Description), Installed: installed, Version: "?", Unavailable: t.Unavailable()}
 		}
 	}
 	cache.save()
@@ -394,17 +408,29 @@ type Result struct {
 }
 
 // InstallOne instala e confirma que a ferramenta realmente roda depois.
-func InstallOne(t *Tool, force bool) Result {
-	if version, ok := t.Detected(); ok && !force {
-		ui.Okf("%s já está instalado: %s", t.Name, version)
-		return Result{Key: t.Key, Action: "skipped", Version: version}
+func InstallOne(t *Tool, force bool) Result { return InstallVersion(t, "", force) }
+
+// InstallVersion instala uma versão escolhida; vazia, a última. Pedir uma versão diferente da
+// instalada já é reinstalar, sem precisar de force.
+func InstallVersion(t *Tool, want string, force bool) Result {
+	installed, ok := t.Detected()
+	if ok && !force && (want == "" || UpToDate(installed, want)) {
+		ui.Okf("%s já está instalado: %s", t.Name, installed)
+		return Result{Key: t.Key, Action: "skipped", Version: installed}
 	}
 	if why := t.Unavailable(); why != "" {
 		ui.Failf("%s: %s", t.Name, why)
 		return Result{Key: t.Key, Action: "unavailable", Error: why}
 	}
+	chosen := ""
+	if want != "" {
+		chosen = t.resolveVersion(want)
+		ui.Infof("%s %s, versão escolhida", t.Name, strings.TrimPrefix(want, "v"))
+	} else if u := t.Upstream(false); u.Latest != "" {
+		ui.Infof("%s %s, via %s", t.Name, u.Latest, u.Source)
+	}
 	var err0 error
-	ui.Spin(i18n.Sprintf("Instalando %s...", t.Name), func(func(string)) { err0 = t.runInstall() })
+	ui.Spin(i18n.Sprintf("Instalando %s...", t.Name), func(func(string)) { err0 = t.runInstall(chosen) })
 	if err := err0; err != nil {
 		ui.Failf("%s: %v", t.Name, err)
 		return Result{Key: t.Key, Action: "failed", Error: err.Error()}
@@ -420,6 +446,9 @@ func InstallOne(t *Tool, force bool) Result {
 		return Result{Key: t.Key, Action: "failed", Error: err}
 	}
 	ui.Okf("%s instalado: %s", t.Name, version)
+	if want != "" && !UpToDate(version, want) {
+		ui.Warnf("pedido %s, mas o binário responde %s: outro %s pode estar antes no PATH", want, version, t.Name)
+	}
 	if t.Next != "" {
 		ui.Infof("Próximo passo: %s", t.Next)
 	}

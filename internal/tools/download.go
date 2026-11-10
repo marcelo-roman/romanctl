@@ -24,8 +24,9 @@ var httpClient = &http.Client{Transport: &http.Transport{
 	TLSHandshakeTimeout:   20 * time.Second,
 }}
 
-// httpGet repete erros temporários do servidor, comuns em downloads do GitHub.
-func httpGet(url string) (*http.Response, error) {
+// httpGet repete erros temporários do servidor, comuns em downloads do GitHub. headers vem em
+// pares de nome e valor.
+func httpGet(url string, headers ...string) (*http.Response, error) {
 	var lastErr error
 	for attempt := 0; attempt < httpAttempts; attempt++ {
 		if attempt > 0 {
@@ -36,6 +37,9 @@ func httpGet(url string) (*http.Response, error) {
 			return nil, err
 		}
 		req.Header.Set("User-Agent", "romanctl")
+		for i := 0; i+1 < len(headers); i += 2 {
+			req.Header.Set(headers[i], headers[i+1])
+		}
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			if strings.Contains(err.Error(), "x509") {
@@ -71,8 +75,10 @@ func fetchText(url string) (string, error) {
 	return strings.TrimSpace(string(b)), err
 }
 
-func fetchJSON(url string, v any) error {
-	resp, err := httpGet(url)
+func fetchJSON(url string, v any) error { return fetchJSONWith(url, v) }
+
+func fetchJSONWith(url string, v any, headers ...string) error {
+	resp, err := httpGet(url, headers...)
 	if err != nil {
 		return err
 	}

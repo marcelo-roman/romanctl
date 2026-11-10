@@ -228,31 +228,34 @@ func pkgTool(key, name, group, desc, bin string, pkgs ...string) *Tool {
 
 func npmTool(key, name, group, desc, pkg string, bins ...string) *Tool {
 	return &Tool{Key: key, Name: name, Group: group, Description: desc, Version: []string{bins[0], "--version"},
-		Portable: true, RemoveNpm: pkg, RemovePaths: bins, Install: func() error {
-			if !sys.Have("npm") {
-				return i18n.Errorf("precisa do Node: romanctl tools install node")
-			}
-			ui.Infof("npm install -g %s", pkg)
-			if err := sys.Quiet("", nil, "npm", "install", "-g", pkg); err != nil {
-				return err
-			}
-			prefix, err := sys.Output("npm", "prefix", "-g")
-			if err != nil {
-				return err
-			}
-			var paths []string
-			for _, b := range bins {
-				paths = append(paths, filepath.Join(prefix, "bin", b))
-			}
-			return link(paths...)
-		}}
+		Portable: true, Npm: pkg, RemoveNpm: pkg, RemovePaths: bins, Install: func() error { return npmInstall(pkg, bins) }}
+}
+
+// npmInstall aceita "pacote" ou "pacote@versão".
+func npmInstall(spec string, bins []string) error {
+	if !sys.Have("npm") {
+		return i18n.Errorf("precisa do Node: romanctl tools install node")
+	}
+	ui.Infof("npm install -g %s", spec)
+	if err := sys.Quiet("", nil, "npm", "install", "-g", spec); err != nil {
+		return err
+	}
+	prefix, err := sys.Output("npm", "prefix", "-g")
+	if err != nil {
+		return err
+	}
+	var paths []string
+	for _, b := range bins {
+		paths = append(paths, filepath.Join(prefix, "bin", b))
+	}
+	return link(paths...)
 }
 
 // venvTool isola cada ferramenta Python no próprio ambiente, sem mexer no Python do sistema.
 func venvTool(key, name, group, desc, pkg string, bins ...string) *Tool {
 	dest := filepath.Join(venvDir, key)
-	return &Tool{Key: key, Name: name, Group: group, Description: desc, Version: []string{bins[0], "--version"}, Portable: true,
-		RemovePaths: append([]string{dest}, bins...), Install: func() error { return installVenv(dest, pkg, bins) }}
+	return &Tool{Key: key, Name: name, Group: group, Description: desc, Version: []string{bins[0], "--version"}, Portable: true, PyPI: pkg,
+		venvDest: dest, venvBins: bins, RemovePaths: append([]string{dest}, bins...), Install: func() error { return installVenv(dest, pkg, bins) }}
 }
 
 func installVenv(dest, pkg string, bins []string) error {
@@ -299,8 +302,11 @@ func releaseTool(key, name, group, desc string, r Release) *Tool {
 		paths = append(paths, dst)
 	}
 	_, first := binNames(r.Bins[0])
-	return &Tool{Key: key, Name: name, Group: group, Description: desc, Version: []string{first, "--version"},
-		Brew: []string{key}, RemovePaths: paths, Install: func() error { return installRelease(r) }}
+	t := &Tool{Key: key, Name: name, Group: group, Description: desc, Version: []string{first, "--version"},
+		Brew: []string{key}, RemovePaths: paths, Release: true, Install: func() error { return installRelease(r) },
+		installAt: func(v string) error { return installReleaseAt(r, v) }}
+	t.versions = func() ([]Version, error) { return githubVersions(r.Repo) }
+	return t.from(r.Repo)
 }
 
 func binNames(spec string) (src, dst string) {
@@ -310,8 +316,10 @@ func binNames(spec string) (src, dst string) {
 	return spec, spec
 }
 
-func installRelease(r Release) error {
-	tag, err := githubLatestTag(r.Repo)
+func installRelease(r Release) error { return installReleaseAt(r, "") }
+
+func installReleaseAt(r Release, want string) error {
+	tag, err := resolveTag(r.Repo, want)
 	if err != nil {
 		return err
 	}
@@ -419,20 +427,29 @@ func installToOpt(url, sum, dest string, strip int, bins ...string) error {
 
 // hashicorpTool cobre os produtos da HashiCorp, que seguem o mesmo padrão de download.
 func hashicorpTool(key, name, group, desc string) *Tool {
-	return &Tool{Key: key, Name: name, Group: group, Description: desc, Version: []string{key, "version"},
-		Brew: []string{"hashicorp/tap/" + key}, RemovePaths: []string{key}, Install: func() error {
-			var check struct {
-				Version string `json:"current_version"`
-			}
-			if err := fetchJSON("https://checkpoint-api.hashicorp.com/v1/check/"+key, &check); err != nil {
-				return err
-			}
-			base := "https://releases.hashicorp.com/" + key + "/" + check.Version + "/"
-			asset := key + "_" + check.Version + "_linux_" + arch + ".zip"
-			sum, err := sumFromFile(base+key+"_"+check.Version+"_SHA256SUMS", asset)
-			if err != nil {
-				return err
-			}
-			return installFromURL(base+asset, sum, []string{key})
-		}}
+	latest := func() (string, error) { return hashicorpLatest(key) }
+	install := func(want string) error {
+		version, err := orLatest(want, latest)
+		if err != nil {
+			return err
+		}
+		base := "https://releases.hashicorp.com/" + key + "/" + version + "/"
+		asset := key + "_" + version + "_linux_" + arch + ".zip"
+		sum, err := sumFromFile(base+key+"_"+version+"_SHA256SUMS", asset)
+		if err != nil {
+			return err
+		}
+		return installFromURL(base+asset, sum, []string{key})
+	}
+	return &Tool{Key: key, Name: name, Group: group, Description: desc, Version: []string{key, "version"}, Repo: "hashicorp/" + key, latest: latest,
+		Brew: []string{"hashicorp/tap/" + key}, RemovePaths: []string{key}, Install: func() error { return install("") }, installAt: install,
+		versions: func() ([]Version, error) { return hashicorpVersions(key) }}
+}
+
+func hashicorpLatest(key string) (string, error) {
+	var check struct {
+		Version string `json:"current_version"`
+	}
+	err := fetchJSON("https://checkpoint-api.hashicorp.com/v1/check/"+key, &check)
+	return check.Version, err
 }

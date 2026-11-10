@@ -23,7 +23,7 @@ inglês, conforme o idioma do sistema.
 curl -fsSL https://raw.githubusercontent.com/marcelo-roman/romanctl/main/install.sh | sh
 ```
 
-Pronto. Depois, rode `romanctl` para abrir o painel.
+Pronto. Depois, rode `romanctl` para ver a lista de comandos, ou `romanctl ui` para abrir o painel.
 
 ### O que o instalador faz
 
@@ -141,13 +141,14 @@ Os containers dos serviços se chamam `romanctl-<serviço>`, e os dados ficam em
 
 ## Primeiros passos
 
-**1. Abra o painel** e explore com o teclado:
+**1. Veja os comandos** e rode o que quiser pela lista:
 
 ```bash
-romanctl
+romanctl         # lista de comandos: digite para filtrar, Enter roda e pergunta o que faltar
+romanctl ui      # painel de tela cheia
 ```
 
-`Tab` troca de tela, `/` filtra, `Enter` mostra o que dá para fazer com o item, e `?` mostra todas as teclas.
+No painel, `Tab` troca de tela, `/` filtra, `Enter` mostra o que dá para fazer com o item, e `?` mostra todas as teclas.
 
 **2. Instale as ferramentas** de que você precisa:
 
@@ -185,8 +186,9 @@ Qualquer comando sem argumentos pergunta o que falta. Para ajuda, use `romanctl 
 
 | Comando | Para quê |
 |---|---|
-| `romanctl` | Abre o painel |
-| `tools list`, `tools install`, `tools uninstall`, `tools categories` | Ferramentas |
+| `romanctl` | Lista os comandos: digite para filtrar, Enter roda e pergunta o que faltar |
+| `ui` | Abre o painel |
+| `tools list`, `tools info`, `tools install`, `tools uninstall`, `tools categories` | Ferramentas |
 | `new`, `add`, `catalog`, `types` | Criar projetos e gerar código |
 | `up`, `down`, `run`, `logs` | Rodar projetos com o ambiente |
 | `code`, `open`, `list`, `rm` | Abrir, listar e remover projetos |
@@ -194,6 +196,7 @@ Qualquer comando sem argumentos pergunta o que falta. Para ajuda, use `romanctl 
 | `status`, `start`, `stop`, `restart`, `install`, `restore` | Serviços |
 | `system`, `platform`, `doctor` | CPU, memória, bateria e diagnóstico |
 | `offline` | Preparar para trabalhar sem internet |
+| `claude` | Skills para o Claude Code operar a máquina pelo romanctl |
 | `config lang`, `self-update`, `menu` | Idioma, atualização e menu em lista |
 
 Os projetos ficam em `~/projetos`; para usar outra pasta, defina `ROMANCTL_PROJETOS`. `--json` funciona nos comandos
@@ -204,22 +207,29 @@ de consulta, para scripts. Sem terminal, nada é perguntado. Os códigos de saí
 
 ## Painel
 
-`romanctl` sem argumentos abre um painel de tela cheia, nos moldes do k9s, com telas de projetos, serviços, ferramentas
+`romanctl ui` abre um painel de tela cheia, nos moldes do k9s, com telas de projetos, serviços, ferramentas
 e sistema, que se atualizam sozinhas.
+
+No alto ficam a máquina, a versão, quantos projetos e serviços estão no ar, CPU e memória; ao lado, as teclas que valem
+agora. A lista vem numa moldura com o nome da tela, o filtro e a contagem no título, cada linha pintada pelo estado, e
+embaixo a trilha de onde você está. Em terminal pequeno, o cabeçalho vira uma linha e as teclas descem para o rodapé.
 
 | Tecla | O que faz |
 |---|---|
 | `Tab`, `1` a `4` | Troca de tela |
 | `:` | Vai direto: `:tools`, `:svc`, `:prj`, `:sys`, ou uma categoria como `:db` e `:k8s` |
 | `/` | Filtra a lista |
-| `Enter` | Mostra as ações do item |
-| `d`, `l` | Detalhes e logs do item |
+| `Enter` | Mostra as ações do item; em Ferramentas, as versões disponíveis |
+| `d`, `l` | Detalhes e logs do item; em Ferramentas, os detalhes trazem o README, com `j`/`k` para rolar |
 | `<` `>` | Troca de categoria, em Ferramentas |
 | `?` | Mostra todas as teclas da tela atual |
 | `Esc`, `q` | Volta e sai |
 
-O rodapé mostra só as teclas que valem para o item selecionado. Ações longas rodam em segundo plano, com o andamento na
-própria linha, e remover sempre pede confirmação. `romanctl menu` abre a versão em lista, mais simples.
+O cabeçalho mostra só as teclas que valem para o item selecionado. Ações longas rodam em segundo plano, com o andamento na
+própria linha, e remover sempre pede confirmação.
+
+Em Ferramentas, quando o cursor para numa linha, o painel consulta a versão que a instalação traria e mostra na coluna
+VERSÃO, como `1.29 → 1.31`. Instalar e reinstalar pedem confirmação, com a versão e a origem. `romanctl menu` abre a versão em lista, mais simples.
 
 ## Idioma
 
@@ -242,6 +252,9 @@ As mensagens em português são as chaves de `internal/i18n/en.go`, e um teste f
 ```bash
 romanctl tools list                 # só o que roda nesta máquina
 romanctl tools list --all           # inclui o resto, com o motivo
+romanctl tools info k9s             # instalada, disponível, origem, página e README
+romanctl tools versions helm        # versões instaláveis, da mais nova para a mais antiga
+romanctl tools install helm --version 3.18.4
 romanctl tools install kubectl gh aws az docker
 romanctl tools install k8s          # lista o grupo, com a opção Todos
 romanctl tools install k8s --yes    # instala o grupo inteiro
@@ -256,6 +269,17 @@ Downloads são conferidos com o SHA-256 do fornecedor quando ele publica um. Dep
 ferramenta é executada para confirmar que roda.
 
 Sem terminal, ou com `--json`, um grupo é instalado inteiro, porque não há quem responda ao menu.
+
+A lista de ferramentas mostra sempre a última versão de cada uma, guardada por 6 horas para não ir à rede toda vez. No
+painel, `Enter` numa ferramenta abre as versões disponíveis e instala a escolhida; em `romanctl tools list`, a opção é
+"Escolher outra versão". As versões vêm da mesma origem do instalador (releases do GitHub, HashiCorp, npm, PyPI, `apt-cache
+madison`, `dnf --showduplicates`, e as listas oficiais do Node, Go e Zig), sem pré-releases. Com o Homebrew e com os
+instaladores próprios de aws, gcloud, dart, swift, rust e docker-cli, só existe a última.
+
+`tools info` e a instalação mostram a versão que vai chegar, consultada na mesma origem que o instalador usa: releases do
+GitHub, `apt-cache policy` e equivalentes, Homebrew, npm, PyPI ou o instalador oficial (dl.k8s.io, nodejs.org, go.dev,
+HashiCorp). O README vem do GitHub, ou da descrição no PyPI, e é renderizado no terminal; fora de um terminal, sai o
+markdown cru.
 
 A listagem, as listas de seleção e os grupos mostram só o que roda na máquina, conforme o sistema, a
 arquitetura, o gerenciador de pacotes, a libc e as capacidades detectadas: containers (namespaces e cgroups,
@@ -356,6 +380,14 @@ cancelam a publicação, assim como segredos encontrados pelo `gitleaks`, se ele
 Fora do proot, os serviços rodam em Docker ou Podman, com portas só em `127.0.0.1` e dados em volumes
 nomeados. O code-server roda como processo local.
 
+`romanctl status` e o painel mostram só o que está instalado: o Docker, quando existe, e os serviços cujo container
+`romanctl-<serviço>` existe. Ter o Docker não instala nada, e nem uma imagem baixada por outro projeto: `romanctl install
+<serviço>` baixa a imagem, se faltar, e cria o container parado. O resto aparece numa linha, ou com `romanctl status --all`.
+
+O Docker aparece como serviço porque os demais dependem dele. Ligar e desligar o daemon usa o systemd (ou `service`) com
+`sudo`; parar pede confirmação, porque derruba todos os containers da máquina, e `stop all` nunca o inclui. Com o Docker
+Desktop, o daemon é ligado e desligado pelo próprio Docker Desktop.
+
 | Serviço | Endereço |
 |---|---|
 | `code` | `http://127.0.0.1:8080` |
@@ -411,9 +443,23 @@ morto. Esse teste não substitui o modo avião.
 
 ## Automação
 
-`--json` funciona em `status`, `list`, `catalog`, `new`, `add`, `publish`, `tools`, `system`, `platform` e `config`, e as mensagens de progresso vão
+`--json` funciona em `status`, `list`, `catalog`, `new`, `add`, `publish`, `tools`, `system`, `platform`, `claude` e `config`, e as mensagens de progresso vão
 para o stderr. Códigos de saída: 0 sucesso, 1 falha ao
 executar, 2 uso incorreto. Sem terminal, os comandos nunca abrem menu: informe tudo por argumentos.
+
+## Claude Code
+
+```bash
+romanctl claude install      # grava as skills em ~/.claude/skills
+romanctl claude status       # instalada, desatualizada, ausente ou alheia
+romanctl claude uninstall
+```
+
+As skills vêm dentro do binário, em `internal/claude/skills`, e ensinam o Claude Code a fazer tudo pelo romanctl: uma
+geral, com as regras de uso sem terminal, e uma por área (ferramentas, projetos, ambiente, geradores, serviços,
+sistema, publicação e manutenção). O romanctl marca as pastas que cria com um arquivo `.romanctl` e só troca ou apaga
+essas; uma skill com o mesmo nome feita à mão só é trocada com `--force`. Depois de um `self-update`, rode
+`romanctl claude install` de novo.
 
 ## Termux e proot
 
@@ -434,7 +480,9 @@ executar, 2 uso incorreto. Sem terminal, os comandos nunca abrem menu: informe t
 |---|---|
 | `cmd/romanctl` | Ponto de entrada |
 | `internal/cli` | Comandos e menus |
-| `internal/tools` | Registro e instalação de ferramentas |
+| `internal/tools` | Registro e instalação de ferramentas, e a versão e o README de cada uma |
+| `internal/tui` | O painel |
+| `internal/claude` | As skills do Claude Code e a instalação delas |
 | `internal/services` | code-server, PostgreSQL, MongoDB, Redis e `restore` |
 | `internal/projects` | Criar, listar, rodar e remover projetos simples |
 | `internal/scaffold` | Templates de arquitetura, em `internal/scaffold/templates` |

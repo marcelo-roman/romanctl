@@ -14,6 +14,9 @@ var errBack = errors.New("voltar")
 
 var errCancel = errors.New("cancelado")
 
+// ErrCanceled é a resposta "não" de quem confirma: cancela sem ser falha.
+var ErrCanceled = errCancel
+
 func IsAbort(err error) bool { return errors.Is(err, errBack) || errors.Is(err, errCancel) }
 
 var NavHint = i18n.T("Esc/← volta · Ctrl+C cancela")

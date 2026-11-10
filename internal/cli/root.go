@@ -54,9 +54,9 @@ func Main() {
 	if flagError != nil {
 		err = flagError
 	} else if len(args) == 0 {
-		// Sem terminal não há painel: mostra a ajuda, em vez de falhar.
+		// Sem terminal não há lista: mostra a ajuda, em vez de falhar.
 		if ui.Interactive() {
-			err = tui.Run()
+			err = commandMenu()
 		} else {
 			usage()
 		}
@@ -88,7 +88,7 @@ var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "sec
 var flagVals = map[string]string{}
 
 var boolFlags = map[string]bool{"json": true, "y": true, "yes": true, "force": true, "app": true,
-	"open": true, "all": true, "public": true, "no-ci": true, "list": true, "plain": true, "d": true, "detach": true, "check": true, "no-run": true, "keep-services": true, "sem-git": true, "offline": true, "dry-run": true, "h": true, "help": true}
+	"open": true, "all": true, "public": true, "no-ci": true, "list": true, "plain": true, "d": true, "detach": true, "check": true, "no-run": true, "keep-services": true, "sem-git": true, "offline": true, "dry-run": true, "no-readme": true, "h": true, "help": true}
 
 var flagError error
 
@@ -133,16 +133,22 @@ func dispatch(args []string, flags map[string]bool) error {
 		fmt.Println("romanctl", version)
 	case "status", "st":
 		if ui.JSONOutput {
-			return ui.PrintJSON(services.StatusJSON())
+			return ui.PrintJSON(services.StatusJSON(flags["all"]))
 		}
-		services.PrintStatus()
+		services.PrintStatus(flags["all"])
 	case "catalog", "catalogo":
 		return scaffold.Catalog()
 	case "start", "iniciar":
 		return serviceCommand("start", arg(args, 1), (*services.Service).Start)
 	case "stop", "parar":
+		if err := confirmWarning(arg(args, 1), flags); err != nil {
+			return err
+		}
 		return serviceCommand("stop", arg(args, 1), (*services.Service).Stop)
 	case "restart", "reiniciar":
+		if err := confirmWarning(arg(args, 1), flags); err != nil {
+			return err
+		}
 		return serviceCommand("restart", arg(args, 1), func(s *services.Service) error {
 			if err := s.Stop(); err != nil {
 				return err
@@ -210,6 +216,8 @@ func dispatch(args []string, flags map[string]bool) error {
 		return offline.Command(arg(args, 1), flags)
 	case "tools", "ferramentas":
 		return toolsCommand(args[1:], flags)
+	case "claude", "skills":
+		return claudeCommand(args[1:], flags)
 	case "system", "sistema", "sys":
 		return systemCommand(args[1:])
 	case "up", "subir":
@@ -220,7 +228,7 @@ func dispatch(args []string, flags map[string]bool) error {
 		if !ui.Interactive() {
 			return ui.Usagef("o painel precisa de um terminal")
 		}
-		return tui.Run()
+		return tui.Run(version)
 	case "menu":
 		return menu()
 	case "self-update", "update", "atualizar":
@@ -252,7 +260,8 @@ func eachService(name string, f func(*services.Service) error) error {
 	if name == "all" || name == "tudo" {
 		var failed bool
 		for _, s := range services.All {
-			if s.Unsupported != "" || !s.Installed() {
+			// O motor fica fora: parar o Docker derrubaria containers que não são do romanctl.
+			if s.Unsupported != "" || s.Engine || !s.Installed() {
 				continue
 			}
 			if err := f(s); err != nil {
@@ -270,4 +279,24 @@ func eachService(name string, f func(*services.Service) error) error {
 		return ui.Usagef("serviço desconhecido %q (veja: romanctl status)", name)
 	}
 	return f(s)
+}
+
+// confirmWarning pede confirmação antes de parar um serviço que leva outras coisas junto, como
+// o Docker. Sem terminal, só segue com --yes.
+func confirmWarning(name string, flags map[string]bool) error {
+	s := services.FindService(name)
+	if s == nil || s.Warning == "" || flags["y"] || flags["yes"] {
+		return nil
+	}
+	if !ui.Interactive() {
+		return ui.Usagef("%s: %s; confirme com --yes", s.Name, s.Warning)
+	}
+	ok, err := ui.Confirm(i18n.Sprintf("%s: %s. Continuar?", s.Name, s.Warning))
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ui.ErrCanceled
+	}
+	return nil
 }

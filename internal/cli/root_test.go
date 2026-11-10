@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"romanctl/internal/tools"
 	"romanctl/internal/ui"
+	"strings"
 	"testing"
 )
 
@@ -54,5 +55,18 @@ func TestCategoriaUnicaNaoEntraNaBusca(t *testing.T) {
 	two := []ui.Option{{Value: "a", Category: tools.GroupK8s, Search: "Kubernetes"}, {Value: "b", Category: tools.GroupDB, Search: "Banco"}}
 	if got := toolCategories(two); len(got) != 2 || two[0].Search == "" {
 		t.Fatalf("%v %+v", got, two)
+	}
+}
+
+func TestPararODockerSemTerminalPedeYes(t *testing.T) {
+	err := confirmWarning("docker", map[string]bool{})
+	if err == nil || !ui.IsUsage(err) || !strings.Contains(err.Error(), "--yes") {
+		t.Fatalf("sem terminal e sem --yes, parar o Docker deveria ser recusado: %v", err)
+	}
+	if err := confirmWarning("docker", map[string]bool{"yes": true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := confirmWarning("postgres", map[string]bool{}); err != nil {
+		t.Fatal("serviço sem aviso não pede confirmação")
 	}
 }

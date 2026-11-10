@@ -26,7 +26,7 @@ func menu() error {
 	for {
 		fmt.Print("\033[H\033[2J")
 		fmt.Println(ui.SBoldTxt.Render("romanctl "+version) + "\n")
-		services.PrintStatus()
+		services.PrintStatus(false)
 		fmt.Println()
 
 		picked, err := ui.Pick(ui.PickConfig{Title: i18n.T("O que você quer fazer?"), Initial: choice, NoLeft: true, Options: mainMenu()})
@@ -100,6 +100,9 @@ func menu() error {
 func menuServices(action string) error {
 	var opts []ui.Option
 	for _, s := range services.All {
+		if s.Unsupported != "" || s.Engine && action != "start" {
+			continue
+		}
 		installed := s.Installed()
 		if (action == "install") == installed {
 			continue

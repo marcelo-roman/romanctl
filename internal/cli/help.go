@@ -42,20 +42,23 @@ var (
 )
 
 var commands = []command{
-	{path: "status", aliases: []string{"st"}, usage: "romanctl status [--json]",
-		summary: text{"Mostra o estado de todos os serviços", "Shows the state of all services"},
-		options: []helpOption{optJSON}, examples: []string{"romanctl status"}},
+	{path: "status", aliases: []string{"st"}, usage: "romanctl status [--all] [--json]",
+		summary:  text{"Mostra os serviços instalados e o Docker", "Shows the installed services and Docker"},
+		details:  text{"Um serviço só conta como instalado quando o container dele existe; ter o Docker ou a imagem não basta.", "A service only counts as installed when its container exists; having Docker or the image is not enough."},
+		options:  []helpOption{{"--all", text{"inclui o que dá para instalar", "includes what can be installed"}}, optJSON},
+		examples: []string{"romanctl status", "romanctl status --all"}},
 	{path: "start", aliases: []string{"iniciar"}, usage: "romanctl start [serviço|all]",
 		summary:  text{"Inicia serviços; sem argumento, abre uma lista", "Starts services; without an argument, opens a list"},
 		examples: []string{"romanctl start", "romanctl start postgres", "romanctl start all"}},
-	{path: "stop", aliases: []string{"parar"}, usage: "romanctl stop [serviço|all]",
+	{path: "stop", aliases: []string{"parar"}, usage: "romanctl stop [serviço|all] [--yes]",
+		details:  text{"Parar o docker pede confirmação, porque derruba todos os containers da máquina; all nunca inclui o docker.", "Stopping docker asks for confirmation, because it brings down every container on the machine; all never includes docker."},
 		summary:  text{"Para serviços; sem argumento, abre uma lista", "Stops services; without an argument, opens a list"},
 		examples: []string{"romanctl stop", "romanctl stop all"}},
 	{path: "restart", aliases: []string{"reiniciar"}, usage: "romanctl restart [serviço|all]",
 		summary:  text{"Reinicia serviços; sem argumento, abre uma lista", "Restarts services; without an argument, opens a list"},
 		examples: []string{"romanctl restart postgres"}},
 	{path: "install", aliases: []string{"instalar"}, usage: "romanctl install [serviço]",
-		summary:  text{"Prepara um serviço, baixando a imagem ou o programa", "Prepares a service, downloading the image or program"},
+		summary:  text{"Prepara um serviço: baixa a imagem, se faltar, e cria o container parado", "Prepares a service: downloads the image if missing and creates the stopped container"},
 		details:  text{"Para instalar ferramentas, como kubectl, use: romanctl tools install", "To install tools such as kubectl, use: romanctl tools install"},
 		examples: []string{"romanctl install kafka"}},
 	{path: "logs", aliases: []string{"log"}, usage: "romanctl logs [serviço]",
@@ -141,7 +144,7 @@ var commands = []command{
 			{"--dry-run", text{"mostra o que faria", "shows what it would do"}}, optJSON},
 		examples: []string{"romanctl publish", "romanctl publish loja --description \"Loja\"", "romanctl publish --dry-run"}},
 
-	{path: "tools", aliases: []string{"ferramentas"}, usage: "romanctl tools [list|install|uninstall]",
+	{path: "tools", aliases: []string{"ferramentas"}, usage: "romanctl tools [list|info|versions|install|uninstall]",
 		summary: text{"Instala e remove ferramentas de desenvolvimento", "Installs and removes development tools"},
 		details: text{"Em um terminal, sem subcomando, abre um menu. Sem terminal, lista.", "In a terminal, without a subcommand, it opens a menu. Without a terminal, it lists."}},
 	{path: "tools list", aliases: []string{"ls"}, usage: "romanctl tools list [--category <nomes>] [--all] [--filter <texto>] [--plain] [--json]",
@@ -151,6 +154,16 @@ var commands = []command{
 			{"--category <nomes>", text{"só estas categorias, separadas por vírgula", "only these categories, separated by commas"}},
 			{"--all", text{"inclui o que não roda aqui, com o motivo", "includes what does not run here, with the reason"}}, optFilter, optPlain, optJSON},
 		examples: []string{"romanctl tools list", "romanctl tools list --category \"banco de dados\"", "romanctl tools list --category db,sdk --plain", "romanctl tools list --filter kube"}},
+	{path: "tools info", aliases: []string{"show", "readme"}, usage: "romanctl tools info <nome> [--no-readme] [--json]",
+		summary:  text{"Versão instalada, versão disponível, origem e README de uma ferramenta", "Installed version, available version, source and README of a tool"},
+		details:  text{"A versão disponível vem da mesma origem que a instalação usa: GitHub, gerenciador de pacotes, Homebrew, npm, PyPI ou o instalador oficial.", "The available version comes from the same source the installation uses: GitHub, package manager, Homebrew, npm, PyPI or the official installer."},
+		options:  []helpOption{{"--no-readme", text{"não baixa nem mostra o README", "does not download or show the README"}}, optJSON},
+		examples: []string{"romanctl tools info k9s", "romanctl tools info terraform --no-readme"}},
+	{path: "tools versions", aliases: []string{"versoes", "versões"}, usage: "romanctl tools versions <nome> [--json]",
+		summary:  text{"Lista as versões que dá para instalar, da mais nova para a mais antiga", "Lists the versions that can be installed, newest first"},
+		details:  text{"Vêm da mesma origem do instalador: releases do GitHub, HashiCorp, npm, PyPI, apt ou dnf. Com o Homebrew e alguns instaladores próprios, só a última.", "They come from the installer's own source: GitHub releases, HashiCorp, npm, PyPI, apt or dnf. With Homebrew and some custom installers, only the latest."},
+		options:  []helpOption{optJSON},
+		examples: []string{"romanctl tools versions helm", "romanctl tools install helm --version 3.18.4"}},
 	{path: "tools categories", aliases: []string{"categorias"}, usage: "romanctl tools categories [--json]",
 		summary: text{"Mostra as categorias e quantas ferramentas de cada uma rodam aqui", "Shows the categories and how many tools of each run here"}, options: []helpOption{optJSON}},
 	{path: "tools install", aliases: []string{"instalar", "add"}, usage: "romanctl tools install [nomes|grupos|all]",
@@ -158,8 +171,9 @@ var commands = []command{
 		options: []helpOption{
 			{"-y, --yes", text{"instala o grupo inteiro, sem lista", "installs the whole group, without a list"}},
 			{"--force", text{"reinstala", "reinstalls"}},
+			{"--version <versão>", text{"instala esta versão, mesmo mais antiga; uma ferramenta por vez", "installs this version, even if older; one tool at a time"}},
 			{"--dry-run", text{"mostra o que seria instalado", "shows what would be installed"}}, optJSON},
-		examples: []string{"romanctl tools install", "romanctl tools install k8s", "romanctl tools install kubectl gh", "romanctl tools install sdk --yes"}},
+		examples: []string{"romanctl tools install", "romanctl tools install k8s", "romanctl tools install kubectl gh", "romanctl tools install sdk --yes", "romanctl tools install terraform --version 1.9.8"}},
 	{path: "tools uninstall", aliases: []string{"remove", "rm", "remover", "desinstalar"}, usage: "romanctl tools uninstall [nomes|grupos]",
 		summary: text{"Remove ferramentas, com lista e confirmação", "Removes tools, with a list and confirmation"},
 		options: []helpOption{
@@ -196,8 +210,22 @@ var commands = []command{
 	{path: "offline test", aliases: []string{"testar"}, usage: "romanctl offline test",
 		summary: text{"Cria e compila cada tipo de projeto com a rede bloqueada", "Creates and builds each project type with the network blocked"}},
 
+	{path: "claude", aliases: []string{"skills"}, usage: "romanctl claude [status|install|uninstall]",
+		summary:  text{"Instala as skills que ensinam o Claude Code a usar o romanctl", "Installs the skills that teach Claude Code to use romanctl"},
+		details:  text{"As skills vão para ~/.claude/skills (ou $CLAUDE_CONFIG_DIR/skills). O romanctl só troca ou apaga as pastas que ele mesmo criou.", "The skills go to ~/.claude/skills (or $CLAUDE_CONFIG_DIR/skills). romanctl only replaces or deletes the folders it created itself."},
+		examples: []string{"romanctl claude install", "romanctl claude status"}},
+	{path: "claude status", usage: "romanctl claude status [--json]",
+		summary: text{"Mostra cada skill: instalada, desatualizada, ausente ou alheia", "Shows each skill: installed, outdated, missing or foreign"}, options: []helpOption{optJSON}},
+	{path: "claude install", aliases: []string{"instalar", "update", "atualizar"}, usage: "romanctl claude install [--force] [--dry-run] [--json]",
+		summary: text{"Instala ou atualiza as skills", "Installs or updates the skills"},
+		options: []helpOption{
+			{"--force", text{"troca também as pastas criadas fora do romanctl", "also replaces folders created outside romanctl"}},
+			{"--dry-run", text{"mostra o que faria", "shows what it would do"}}, optJSON}},
+	{path: "claude uninstall", aliases: []string{"remove", "rm", "remover"}, usage: "romanctl claude uninstall [--dry-run] [--json]",
+		summary: text{"Remove as skills que o romanctl instalou", "Removes the skills romanctl installed"},
+		options: []helpOption{{"--dry-run", text{"mostra o que faria", "shows what it would do"}}, optJSON}},
 	{path: "ui", aliases: []string{"painel", "tui"}, usage: "romanctl ui",
-		summary: text{"Abre o painel de tela cheia; é o que romanctl faz sem argumentos", "Opens the full-screen panel; it is what romanctl does without arguments"},
+		summary: text{"Abre o painel de tela cheia, nos moldes do k9s", "Opens the full-screen panel, k9s style"},
 		details: text{"Dentro dele: Tab troca de tela, / filtra, : vai direto, Enter mostra as ações, ? mostra a ajuda.", "Inside it: Tab changes screens, / filters, : jumps, Enter shows the actions, ? shows the help."}},
 	{path: "menu", usage: "romanctl menu",
 		summary: text{"Abre o menu em lista, mais simples que o painel", "Opens the list menu, simpler than the panel"}},
@@ -222,7 +250,7 @@ var commands = []command{
 
 // placeholders traduz os nomes de argumento em uso e opções, na ajuda em inglês.
 var placeholders = strings.NewReplacer("serviços", "services", "serviço", "service", "nomes", "names", "nome", "name",
-	"grupos", "groups", "tipo", "type", "projeto", "project", "pasta", "folder", "agregado", "aggregate",
+	"grupos", "groups", "tipo", "type", "projeto", "project", "pasta", "folder", "versão", "version", "agregado", "aggregate",
 	"texto", "text", "comando", "command", "alvo", "target")
 
 func localized(s string) string {
@@ -326,7 +354,8 @@ func printHelp(words []string) {
 
 const helpPT = `
 Uso: romanctl [comando] [argumentos] [--lang pt|en]
-     romanctl              abre o painel interativo
+     romanctl              abre a lista de comandos: digite para filtrar, Enter roda
+     romanctl ui           abre o painel de tela cheia
      romanctl <comando> --help   mostra a ajuda de qualquer comando ou subcomando
 
 Em um terminal, o que faltar é perguntado, e nas listas basta digitar para filtrar.
@@ -335,7 +364,8 @@ Sem terminal ou com --json, nada é perguntado.
 
 const helpEN = `
 Usage: romanctl [command] [arguments] [--lang pt|en]
-       romanctl            opens the interactive panel
+       romanctl            opens the command list: type to filter, Enter runs
+       romanctl ui         opens the full-screen panel
        romanctl <command> --help   shows the help of any command or subcommand
 
 In a terminal, whatever is missing is asked for, and in lists you just type to filter.
@@ -350,7 +380,7 @@ var usageGroups = []struct {
 	{text{"Projetos", "Projects"}, []string{"new", "add", "up", "down", "run", "publish", "list", "code", "open", "rm", "catalog", "types"}},
 	{text{"Serviços", "Services"}, []string{"status", "start", "stop", "restart", "restore", "logs", "install"}},
 	{text{"Sistema", "System"}, []string{"system", "platform", "doctor", "offline"}},
-	{text{"Outros", "Other"}, []string{"ui", "menu", "config", "self-update", "help", "version"}},
+	{text{"Outros", "Other"}, []string{"claude", "ui", "menu", "config", "self-update", "help", "version"}},
 }
 
 func init() { i18n.Add(map[string]string{helpPT: helpEN}) }

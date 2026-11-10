@@ -18,7 +18,9 @@ func toolsBrowse(showAll bool, categories []string) error {
 	cursor := ""
 	for {
 		var opts []ui.Option
-		for _, s := range loadStatuses() {
+		statuses := loadStatuses()
+		fillLatest(statuses)
+		for _, s := range statuses {
 			if s.Unavailable != "" && !s.Installed && !showAll {
 				continue
 			}
@@ -59,8 +61,9 @@ func toolActions(key string) error {
 	if _, installed := t.Detected(); installed {
 		opts = []ui.Option{ui.Opt(i18n.Sprintf("Remover %s", t.Name), "uninstall"), ui.Opt(i18n.Sprintf("Reinstalar %s", t.Name), "reinstall")}
 	} else {
-		opts = []ui.Option{ui.Opt(i18n.Sprintf("Instalar %s", t.Name), "install")}
+		opts = []ui.Option{ui.Opt(i18n.Sprintf("Instalar %s, última versão", t.Name), "install")}
 	}
+	opts = append(opts, ui.Opt(i18n.T("Escolher outra versão"), "version"))
 	action, err := ui.PickOne(t.Name+" — "+i18n.T(t.Description), opts)
 	if err != nil {
 		return err
@@ -72,6 +75,11 @@ func toolActions(key string) error {
 		err = toolsInstall([]string{key}, installOptions{force: true})
 	case "uninstall":
 		err = toolsUninstall([]string{key}, installOptions{})
+	case "version":
+		var version string
+		if version, err = pickVersion(t); err == nil {
+			err = toolsInstall([]string{key}, installOptions{version: version, yes: true})
+		}
 	}
 	if err != nil && !ui.IsAbort(err) {
 		return err
@@ -170,4 +178,29 @@ func projectActions(name string) error {
 	}
 	pause()
 	return nil
+}
+
+// fillLatest completa a última versão das ferramentas que rodam aqui; consulta a rede só para o
+// que não foi consultado nas últimas horas.
+func fillLatest(statuses []tools.Status) {
+	var keys []string
+	for _, s := range statuses {
+		if s.Latest == "" && (s.Unavailable == "" || s.Installed) {
+			keys = append(keys, s.Key)
+		}
+	}
+	if len(keys) == 0 {
+		return
+	}
+	var latest map[string]tools.Upstream
+	ui.Spin(i18n.T("Consultando as últimas versões..."), func(update func(string)) {
+		latest = tools.RefreshLatest(keys, func(done, total int) {
+			update(i18n.Sprintf("Consultando as últimas versões %d/%d", done, total))
+		})
+	})
+	for i := range statuses {
+		if u, ok := latest[statuses[i].Key]; ok {
+			statuses[i].Latest = u.Latest
+		}
+	}
 }

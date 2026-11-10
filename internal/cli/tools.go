@@ -33,11 +33,15 @@ func toolsCommand(args []string, flags map[string]bool) error {
 	case "categories", "categorias":
 		return toolsCategories()
 	case "install", "instalar", "add":
-		return toolsInstall(rest, installOptions{force: flags["force"], yes: flags["y"] || flags["yes"], dryRun: flags["dry-run"]})
+		return toolsInstall(rest, installOptions{force: flags["force"], yes: flags["y"] || flags["yes"], dryRun: flags["dry-run"], version: flagVals["version"]})
+	case "versions", "versoes", "versões":
+		return toolsVersions(arg(rest, 0))
+	case "info", "show", "readme":
+		return toolsInfo(arg(rest, 0), flags["no-readme"])
 	case "uninstall", "remove", "rm", "remover", "desinstalar":
 		return toolsUninstall(rest, installOptions{yes: flags["y"] || flags["yes"], dryRun: flags["dry-run"]})
 	}
-	return ui.Usagef("use: romanctl tools [list|categories] | install [nomes|grupos|all] [--force] [--yes] [--dry-run] | uninstall [nomes|grupos] [--yes] [--dry-run]")
+	return ui.Usagef("use: romanctl tools [list|categories] | info <nome> [--no-readme] | versions <nome> | install [nomes|grupos|all] [--force] [--yes] [--dry-run] | uninstall [nomes|grupos] [--yes] [--dry-run]")
 }
 
 // toolsList mostra só o que roda nesta máquina; --all inclui o resto, com o motivo.
@@ -172,9 +176,19 @@ func toolsCategories() error {
 
 // toolState descreve a ferramenta em texto, como o [installed] do apt list.
 func toolState(s tools.Status) string {
+	latest := ""
+	switch {
+	case s.Latest == "":
+	case s.Installed && tools.UpToDate(s.Version, s.Latest):
+		latest = "  " + ui.SGray.Render(i18n.T("última"))
+	default:
+		latest = "  " + ui.SYellow.Render(i18n.Sprintf("última %s", s.Latest))
+	}
 	switch {
 	case s.Installed:
-		return ui.SGreen.Render(i18n.T("[instalado]")) + " " + s.Version
+		return ui.SGreen.Render(i18n.T("[instalado]")) + " " + s.Version + latest
+	case s.Latest != "" && s.Unavailable == "":
+		return ui.SGray.Render(s.Description) + latest
 	case s.Unavailable != "":
 		return ui.SGray.Render(i18n.T("[não roda aqui] ") + s.Unavailable)
 	}
@@ -201,13 +215,16 @@ func toolsInstall(names []string, opts installOptions) error {
 	if err != nil {
 		return err
 	}
+	if opts.version != "" && len(selected) != 1 {
+		return ui.Usagef("--version vale para uma ferramenta só: romanctl tools install <nome> --version <versão>")
+	}
 	if opts.dryRun {
 		return printInstallPlan(selected)
 	}
 	results := []tools.Result{}
 	var failed []string
 	for _, t := range selected {
-		r := tools.InstallOne(t, opts.force)
+		r := tools.InstallVersion(t, opts.version, opts.force)
 		results = append(results, r)
 		if r.Action == "failed" || r.Action == "unavailable" {
 			failed = append(failed, t.Key)
@@ -236,7 +253,10 @@ func warnIfNotInPath() {
 	ui.Warnf("Adicione ao PATH do seu shell: export PATH=\"%s:$PATH\"", bin)
 }
 
-type installOptions struct{ force, yes, dryRun bool }
+type installOptions struct {
+	force, yes, dryRun bool
+	version            string // só com uma ferramenta
+}
 
 // expandGroups troca cada grupo pelo que foi marcado na lista; nomes passam direto.
 func expandGroups(names []string, force bool) ([]string, error) {
@@ -412,4 +432,149 @@ func printRemovalPlan(selected []*tools.Tool) error {
 		fmt.Println(line)
 	}
 	return nil
+}
+
+// toolsInfo mostra o que está instalado, o que a instalação traria, de onde, e o README.
+func toolsInfo(name string, noReadme bool) error {
+	t, err := pickTool(name, i18n.T("Ver qual ferramenta?"))
+	if err != nil {
+		return err
+	}
+	installed, ok := t.Detected()
+	var u tools.Upstream
+	ui.Spin(i18n.Sprintf("Consultando %s...", t.Name), func(func(string)) { u = t.Upstream(!noReadme && !ui.JSONOutput) })
+	if ui.JSONOutput {
+		return ui.PrintJSON(map[string]any{"key": t.Key, "name": t.Name, "group": t.Group, "description": i18n.T(t.Description),
+			"installed": ok, "version": installed, "upToDate": ok && tools.UpToDate(installed, u.Latest), "upstream": u, "unavailable": t.Unavailable(), "warning": i18n.T(t.Warning)})
+	}
+	field := func(label, value string) {
+		fmt.Printf("  %s %s\n", ui.SGray.Render(fmt.Sprintf("%-12s", label+":")), value)
+	}
+	fmt.Println(ui.SBoldTxt.Render(t.Name) + "  " + ui.SGray.Render(i18n.T(t.Description)))
+	field(i18n.T("Categoria"), tools.GroupTitle(t.Group))
+	switch {
+	case !ok:
+		field(i18n.T("Instalada"), ui.SGray.Render(i18n.T("não")))
+	case tools.UpToDate(installed, u.Latest):
+		field(i18n.T("Instalada"), installed+" "+ui.SGreen.Render(i18n.T("(atualizada)")))
+	case u.Latest != "":
+		field(i18n.T("Instalada"), installed+" "+ui.SYellow.Render(i18n.T("(atualização disponível)")))
+	default:
+		field(i18n.T("Instalada"), installed)
+	}
+	latest := u.Latest
+	if latest == "" {
+		latest = ui.SGray.Render(i18n.T("não informada"))
+	}
+	field(i18n.T("Disponível"), latest)
+	field(i18n.T("Origem"), u.Source)
+	if u.URL != "" {
+		field(i18n.T("Projeto"), u.URL)
+	}
+	if why := t.Unavailable(); why != "" {
+		field(i18n.T("Aqui"), ui.SRed.Render(why))
+	}
+	if t.Warning != "" {
+		field(i18n.T("Ao remover"), ui.SYellow.Render(i18n.T(t.Warning)))
+	}
+	if u.Readme == "" {
+		return nil
+	}
+	fmt.Println()
+	if !ui.Interactive() {
+		fmt.Println(u.Readme)
+		return nil
+	}
+	fmt.Println(ui.Markdown(u.Readme, min(ui.Width(), 120)-2, ui.DarkBackground()))
+	return nil
+}
+
+// toolsVersions lista as versões que dá para instalar; em um terminal, sem nome, pergunta qual.
+func toolsVersions(name string) error {
+	t, err := pickTool(name, i18n.T("Versões de qual ferramenta?"))
+	if err != nil {
+		return err
+	}
+	var list []tools.Version
+	ui.Spin(i18n.Sprintf("Consultando as versões de %s...", t.Name), func(func(string)) { list, err = t.Versions() })
+	if err != nil {
+		return err
+	}
+	installed, ok := t.Detected()
+	if ui.JSONOutput {
+		return ui.PrintJSON(map[string]any{"key": t.Key, "installed": ok, "version": installed, "versions": list})
+	}
+	for i, v := range list {
+		var notes []string
+		if i == 0 {
+			notes = append(notes, i18n.T("última"))
+		}
+		if ok && tools.UpToDate(installed, v.Label) {
+			notes = append(notes, ui.SGreen.Render(i18n.T("instalada")))
+		}
+		if v.Note != "" {
+			notes = append(notes, v.Note)
+		}
+		fmt.Printf("  %-24s %s\n", v.Label, ui.SGray.Render(strings.Join(notes, " · ")))
+	}
+	fmt.Println(ui.SGray.Render(i18n.Sprintf("\nPara instalar uma delas: romanctl tools install %s --version <versão>", t.Key)))
+	return nil
+}
+
+// pickTool acha a ferramenta pelo nome ou, em um terminal sem nome, mostra a lista.
+func pickTool(name, title string) (*tools.Tool, error) {
+	if name == "" && ui.Interactive() {
+		var opts []ui.Option
+		for _, s := range loadStatuses() {
+			if s.Unavailable == "" || s.Installed {
+				opts = append(opts, toolOption(fmt.Sprintf("%-15s %s", s.Key, ui.SGray.Render(i18n.T(s.Description))), s))
+			}
+		}
+		picked, err := ui.Pick(ui.PickConfig{Title: title, Options: opts, NoLeft: true, Categories: toolCategories(opts)})
+		if err != nil {
+			return nil, err
+		}
+		name = picked[0]
+	}
+	if name == "" {
+		return nil, ui.Usagef("informe a ferramenta (veja: romanctl tools list)")
+	}
+	t := tools.Find(name)
+	if t == nil {
+		return nil, i18n.Errorf("ferramenta desconhecida: %s", name)
+	}
+	return t, nil
+}
+
+// pickVersion mostra as versões numa lista, a última primeiro e a instalada marcada.
+func pickVersion(t *tools.Tool) (string, error) {
+	var list []tools.Version
+	var err error
+	ui.Spin(i18n.Sprintf("Consultando as versões de %s...", t.Name), func(func(string)) { list, err = t.Versions() })
+	if err != nil {
+		return "", err
+	}
+	installed, ok := t.Detected()
+	var opts []ui.Option
+	for i, v := range list {
+		label := v.Label
+		if i == 0 {
+			label += "  " + ui.SGray.Render(i18n.T("última"))
+		}
+		if ok && tools.UpToDate(installed, v.Label) {
+			label += "  " + ui.SGreen.Render(i18n.T("instalada"))
+		}
+		if v.Note != "" {
+			label += "  " + ui.SGray.Render(v.Note)
+		}
+		opts = append(opts, ui.Opt(label, v.ID))
+	}
+	if len(opts) == 0 {
+		return "", i18n.Errorf("nenhuma versão encontrada para %s", t.Name)
+	}
+	picked, err := ui.Pick(ui.PickConfig{Title: i18n.Sprintf("Qual versão de %s?", t.Name), Options: opts, NoLeft: true})
+	if err != nil {
+		return "", err
+	}
+	return picked[0], nil
 }

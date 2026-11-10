@@ -21,14 +21,17 @@ type Service struct {
 	stop      func() error
 	install   func() error
 
-	Unsupported      string          // por que não roda nesta máquina
-	LogCmd           func() []string // comando de logs, quando não há arquivo
-	alreadyInstalled func() bool     // sobrepõe Installed em "install"
+	Unsupported string          // por que não roda nesta máquina
+	LogCmd      func() []string // comando que segue o log, quando não há arquivo
+	LogTail     func() []string // o mesmo, só com as últimas linhas e sem seguir
+	Engine      bool            // é o motor de containers: fica fora de "all"
+	before      func() error    // roda antes do spinner, como a senha do sudo
+	Warning     string          // o que mais para junto; parar pede confirmação
 }
 
 // All lista os serviços: no proot, Postgres, Mongo e Redis rodam como processo local;
 // nas demais máquinas, tudo vai em container.
-var All = append([]*Service{codeServer(), postgres(), mongo(), redis()}, containerOnly()...)
+var All = append([]*Service{dockerEngine(), codeServer(), postgres(), mongo(), redis()}, containerOnly()...)
 
 func FindService(name string) *Service {
 	name = strings.ToLower(name)
@@ -57,6 +60,11 @@ func (s *Service) Start() error {
 		ui.Okf("%s já está rodando → %s", s.Name, s.URL())
 		return nil
 	}
+	if s.before != nil {
+		if err := s.before(); err != nil {
+			return err
+		}
+	}
 	var startErr error
 	ui.Spin(i18n.Sprintf("Iniciando %s...", s.Name), func(func(string)) {
 		if startErr = s.start(); startErr != nil {
@@ -80,6 +88,11 @@ func (s *Service) Stop() error {
 		ui.Infof("%s não estava rodando", s.Name)
 		return nil
 	}
+	if s.before != nil {
+		if err := s.before(); err != nil {
+			return err
+		}
+	}
 	var stopErr error
 	ui.Spin(i18n.Sprintf("Parando %s...", s.Name), func(func(string)) {
 		if stopErr = s.stop(); stopErr != nil {
@@ -98,11 +111,7 @@ func (s *Service) Stop() error {
 }
 
 func (s *Service) Install() error {
-	done := s.Installed
-	if s.alreadyInstalled != nil && s.Installed() {
-		done = s.alreadyInstalled
-	}
-	if s.Unsupported == "" && done() {
+	if s.Unsupported == "" && s.Installed() {
 		ui.Okf("%s já está instalado", s.Name)
 		return nil
 	}

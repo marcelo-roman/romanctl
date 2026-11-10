@@ -37,9 +37,36 @@ type Backend interface {
 	Logs(view, key string) string
 	Command(args ...string) *exec.Cmd
 	Header() string
+	Upstream(key string) tools.Upstream
+	Latest(key string) tools.Upstream
+	Versions(key string) ([]tools.Version, error)
 }
 
 type realBackend struct{ self string }
+
+// latestSlots limita as consultas simultâneas: a lista inteira são umas 170 idas à rede.
+var latestSlots = make(chan struct{}, 8)
+
+func (b *realBackend) Latest(key string) tools.Upstream {
+	t := tools.Find(key)
+	if t == nil {
+		return tools.Upstream{}
+	}
+	if u, ok := tools.CachedLatest(key); ok {
+		return u
+	}
+	latestSlots <- struct{}{}
+	defer func() { <-latestSlots }()
+	return t.Latest()
+}
+
+func (b *realBackend) Versions(key string) ([]tools.Version, error) {
+	t := tools.Find(key)
+	if t == nil {
+		return nil, nil
+	}
+	return t.Versions()
+}
 
 func newRealBackend() *realBackend {
 	self, err := os.Executable()
@@ -54,8 +81,13 @@ func (b *realBackend) Header() string { return platform.Current.Describe() }
 func (b *realBackend) Services() []Row {
 	rows := []Row{}
 	for _, s := range services.All {
-		if s.Unsupported != "" {
+		// Só o que existe aqui: um banco que nunca foi baixado não é serviço desta máquina.
+		if s.Unsupported != "" || !s.Installed() && !state.WantsRunning(s.Key) {
 			continue
+		}
+		group := ""
+		if s.Engine {
+			group = engineGroup
 		}
 		status := "parado"
 		switch {
@@ -66,7 +98,7 @@ func (b *realBackend) Services() []Row {
 		case state.WantsRunning(s.Key):
 			status = "caiu"
 		}
-		rows = append(rows, Row{Key: s.Key, Status: status,
+		rows = append(rows, Row{Key: s.Key, Status: status, Group: group,
 			Columns: []string{s.Key, s.Name, statusText(status), s.URL()},
 			Detail:  [][2]string{{i18n.T("Serviço"), s.Name}, {i18n.T("Chave"), s.Key}, {i18n.T("Estado"), statusText(status)}, {i18n.T("Endereço"), s.URL()}, {i18n.T("Log"), s.LogFile}}})
 	}
@@ -120,7 +152,7 @@ func (b *realBackend) Tools() []Row {
 			status, version = "instalado", s.Version
 		}
 		rows = append(rows, Row{Key: s.Key, Status: status, Group: s.Group,
-			Columns: []string{s.Key, s.Group, statusText(status), version, s.Description},
+			Columns: []string{s.Key, s.Group, statusText(status), version, "", s.Description},
 			Detail: [][2]string{{i18n.T("Ferramenta"), s.Name}, {i18n.T("Categoria"), tools.GroupTitle(s.Group)}, {i18n.T("Estado"), statusText(status)},
 				{i18n.T("Versão"), version}, {i18n.T("Descrição"), s.Description}, {i18n.T("Ao remover"), warningOf(s.Key)}}})
 	}
@@ -134,6 +166,13 @@ func warningOf(key string) string {
 	return "-"
 }
 
+func (b *realBackend) Upstream(key string) tools.Upstream {
+	if t := tools.Find(key); t != nil {
+		return t.Upstream(true)
+	}
+	return tools.Upstream{}
+}
+
 func (b *realBackend) System() sysinfo.Snapshot { return sysinfo.Take(time.Second) }
 
 // Logs lê só o final: o painel atualiza isso de tempos em tempos.
@@ -145,10 +184,12 @@ func (b *realBackend) Logs(view, key string) string {
 		if s == nil {
 			return ""
 		}
-		if s.LogCmd != nil {
-			c := s.LogCmd()
-			cmd = []string{c[0], "logs", "--tail", "300", c[len(c)-1]}
-		} else {
+		switch {
+		case s.LogTail != nil:
+			cmd = s.LogTail()
+		case s.LogFile == "":
+			return i18n.T("Este serviço não tem log para mostrar aqui.")
+		default:
 			cmd = []string{"tail", "-n", "300", s.LogFile}
 		}
 	case viewProjects:

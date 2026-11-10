@@ -10,22 +10,83 @@ import (
 	"romanctl/internal/platform"
 )
 
-// fakeEngine põe no PATH um "docker" que registra os comandos e simula o estado.
+// fakeEngine põe no PATH um "docker" que registra os comandos e simula containers e imagens.
 func fakeEngine(t *testing.T) (logPath string) {
 	t.Helper()
+	forgetEngine()
+	t.Cleanup(forgetEngine)
 	dir := t.TempDir()
 	logPath = filepath.Join(dir, "calls")
-	stateFile := filepath.Join(dir, "state")
+	state := filepath.Join(dir, "containers")
+	images := filepath.Join(dir, "images")
 	script := "#!/bin/sh\necho \"$*\" >> " + logPath + "\ncase \"$1\" in\n" +
-		"inspect) [ -f " + stateFile + " ] || exit 1; cat " + stateFile + ";;\n" +
-		"run|start) echo true > " + stateFile + ";;\n" +
-		"stop) echo false > " + stateFile + ";;\n" +
+		"ps) [ -f " + state + " ] && cat " + state + "; exit 0;;\n" +
+		"image) [ -f " + images + " ] && cat " + images + "; exit 0;;\n" +
+		"pull) echo \"$2\" >> " + images + ";;\n" +
+		"create) printf 'romanctl-x\\tcreated\\n' > " + state + ";;\n" +
+		"run) printf 'romanctl-x\\trunning\\n' > " + state + ";;\n" +
+		"start) printf 'romanctl-x\\trunning\\n' > " + state + ";;\n" +
+		"stop) printf 'romanctl-x\\texited\\n' > " + state + ";;\n" +
 		"esac\n"
 	if err := os.WriteFile(filepath.Join(dir, "docker"), []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", dir+":"+os.Getenv("PATH"))
 	return logPath
+}
+
+func TestTerDockerNaoEhTerOServico(t *testing.T) {
+	fakeEngine(t)
+	saved := platform.Current
+	defer func() { platform.Current = saved }()
+	platform.Current = platform.Info{OS: "linux", Arch: "amd64"}
+	s := containerService(containerSpec{Key: "x", Name: "X", Image: "img:1", Ports: []string{"1:1"}})
+	if s.Installed() {
+		t.Fatal("sem imagem nem container, o serviço não está instalado")
+	}
+	if err := s.install(); err != nil {
+		t.Fatal(err)
+	}
+	if !s.Installed() {
+		t.Fatal("instalar cria o container, e com ele o serviço está instalado")
+	}
+	if s.Running() {
+		t.Fatal("instalar não liga o serviço")
+	}
+}
+
+func TestImagemDeOutroProjetoNaoInstala(t *testing.T) {
+	logPath := fakeEngine(t)
+	saved := platform.Current
+	defer func() { platform.Current = saved }()
+	platform.Current = platform.Info{OS: "linux", Arch: "amd64"}
+	os.WriteFile(filepath.Join(filepath.Dir(logPath), "images"), []byte("img:1\n"), 0o644)
+	s := containerService(containerSpec{Key: "x", Name: "X", Image: "img:1", Ports: []string{"1:1"}})
+	if s.Installed() {
+		t.Fatal("a imagem baixada por outro projeto não faz o serviço instalado")
+	}
+	if err := s.install(); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(logPath); strings.Contains(string(b), "pull") {
+		t.Fatal("a imagem já estava aqui: não precisava baixar de novo")
+	}
+}
+
+func TestCreateUsaOsMesmosArgumentosDoRun(t *testing.T) {
+	c := containerSpec{Key: "x", Image: "img:1", Ports: []string{"1:1"}, Volume: "/d"}
+	if got := strings.Join(createArgs(c), " "); got != "create --name romanctl-x -p 127.0.0.1:1:1 -v romanctl-x:/d img:1" {
+		t.Fatal(got)
+	}
+}
+
+func TestImageRefCompletaATag(t *testing.T) {
+	for in, want := range map[string]string{"redis": "redis:latest", "redis:8": "redis:8",
+		"localhost:5000/app": "localhost:5000/app:latest", "mcr.microsoft.com/mssql/server:2022-latest": "mcr.microsoft.com/mssql/server:2022-latest"} {
+		if got := imageRef(in); got != want {
+			t.Errorf("%s: %s", in, got)
+		}
+	}
 }
 
 func TestRunArgsPublicaSoNoLocalhost(t *testing.T) {
@@ -89,7 +150,7 @@ func TestCicloDeVidaComMotorSimulado(t *testing.T) {
 	var verbs []string
 	for _, c := range calls {
 		verb := strings.Fields(c)[0]
-		if verb != "inspect" {
+		if verb != "ps" && verb != "image" {
 			verbs = append(verbs, verb)
 		}
 	}
