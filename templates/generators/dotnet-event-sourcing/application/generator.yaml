@@ -1,0 +1,13 @@
+description: Comandos, consultas, modelo de leitura e projeção do agregado
+aliases: [app, usecases, projection, projecao]
+requires:
+  - path: src/SampleApp.Domain/SampleItems/SampleItem.cs
+    hint: romanctl add domain SampleItem
+patches:
+  - file: src/SampleApp.Infrastructure/Persistence/InMemory/InMemoryPersistence.cs
+    before: "// romanctl:projections"
+    text: services.AddInMemoryProjection(new SampleApp.Application.SampleItems.SampleItemSummaryProjection());
+  - when: postgres
+    file: src/SampleApp.Infrastructure/DependencyInjection.cs
+    before: "// romanctl:projections"
+    text: options.AddInlineProjection(new SampleApp.Application.SampleItems.SampleItemSummaryProjection());

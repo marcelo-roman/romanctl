@@ -1,0 +1,27 @@
+id: event-sourcing
+stack: dotnet
+arch: [clean, cqrs, ddd, event-sourcing]
+description: API .NET com event sourcing, Clean Architecture, DDD e CQRS, com Marten e projeções
+services: [postgres]
+requires: [dotnet]
+setup:
+  - dotnet restore
+run: dotnet run --project src/SampleApp.Api
+test: dotnet test
+url: http://localhost:5082
+env:
+  postgres:
+    ConnectionStrings__Default: Host={{.Host}};Port={{.Port}};Database={{.Database}};Username={{.User}};Password={{.Password}}
+publish:
+  kind: dotnet-solution
+  vars:
+    API: src/SampleApp.Api
+    Dll: SampleApp.Api
+conditional:
+  - path: src/SampleApp.Infrastructure/Persistence/Postgres
+    when: postgres
+  - path: tests/SampleApp.Tests/Postgres
+    when: postgres
+overlays:
+  - from: _variants/memory
+    when: "!postgres"

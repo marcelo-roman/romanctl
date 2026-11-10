@@ -1,0 +1,12 @@
+description: Testes do agregado em Given/When/Then, da projeção e dos endpoints
+aliases: [tests, teste]
+requires:
+  - path: src/SampleApp.Domain/SampleItems/SampleItem.cs
+    hint: romanctl add domain SampleItem
+  - path: src/SampleApp.Application/SampleItems/SampleItemSummaryProjection.cs
+    hint: romanctl add application SampleItem
+  - path: src/SampleApp.Api/SampleItemEndpoints.cs
+    hint: romanctl add controller SampleItem
+conditional:
+  - path: tests/SampleApp.Tests/Postgres
+    when: postgres

@@ -317,6 +317,7 @@ romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
 | Stack | Arquitetura | Base | Serviços |
 |---|---|---|---|
 | `dotnet` | `clean`, `ddd`, `cqrs` | Minimal API, EF Core, despachante próprio | `postgres` |
+| `dotnet` | `clean`, `ddd`, `cqrs`, `event-sourcing` | Marten no PostgreSQL, projeções, concorrência otimista | `postgres` |
 | `dotnet` | `vertical-slice` | Minimal API, uma pasta por funcionalidade, EF Core | `postgres` |
 | `go` | `hexagonal`, `ddd` | `net/http` da biblioteca padrão, pgx | `postgres` |
 | `node` | `clean`, `ddd`, `cqrs` | NestJS com @nestjs/cqrs, TypeScript, pg, Vitest | `postgres` |
@@ -420,6 +421,7 @@ romanctl add resource Product --dry-run            # só mostra
 | Express | `route`, `middleware`, `service` |
 | Next.js | `page`, `api`, `component` |
 | React | `component`, `hook`, `page` |
+| .NET event sourcing | `resource`, `domain`, `application`, `controller`, `test`, `event` |
 | .NET Vertical Slice | `resource` |
 | Go hexagonal e DDD | `resource` |
 | Java hexagonal e DDD | `resource` |

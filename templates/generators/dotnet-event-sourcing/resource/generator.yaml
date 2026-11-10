@@ -1,0 +1,4 @@
+description: Agregado com event sourcing completo - eventos, comandos, consultas, projeção, endpoints e testes
+aliases: [crud, scaffold]
+includes: [domain, application, controller, test]
+next: "Rotas em /sample-items, com o fluxo de eventos em /sample-items/{id}/events. Rode dotnet test para conferir."

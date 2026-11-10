@@ -1,0 +1,7 @@
+description: Evento de um agregado com event sourcing (use --in)
+needsIn: true
+aliases: [evento]
+requires:
+  - path: src/SampleApp.Domain/SampleParents/SampleParent.cs
+    hint: romanctl add domain SampleParent
+next: "Em SampleParent: levante com Raise(new SampleItem(now)); no When, acrescente case SampleItem e: Apply(e); break; e crie private void Apply(SampleItem domainEvent) com a mudança de estado. Se o modelo de leitura mudar, trate o evento na projeção com Updates<SampleItem>(...)."

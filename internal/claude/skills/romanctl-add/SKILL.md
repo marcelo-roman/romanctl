@@ -1,6 +1,6 @@
 ---
 name: romanctl-add
-description: Gera código dentro de um projeto pelos geradores do romanctl, no padrão do template (resource, command, query, event, value-object, controller, repository, test no .NET Clean/DDD/CQRS; page, component, hook, api no React e Next.js; route, middleware, service no Express; handler, model, service no Go; resource no Go hexagonal). Use quando o usuário pedir uma entidade, um CRUD, um endpoint, uma página ou um componente num projeto criado pelo romanctl.
+description: Gera código dentro de um projeto pelos geradores do romanctl, no padrão do template (resource, command, query, event, value-object, controller, repository, test no .NET Clean/DDD/CQRS; page, component, hook, api no React e Next.js; route, middleware, service no Express; handler, model, service no Go; resource nos templates de Go, Java, Python, Node e .NET vertical slice; resource e event no .NET event sourcing). Use quando o usuário pedir uma entidade, um CRUD, um endpoint, uma página ou um componente num projeto criado pelo romanctl.
 ---
 
 # Geradores de código pelo romanctl
