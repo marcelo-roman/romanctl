@@ -1,0 +1,13 @@
+id: feature-sliced
+stack: react
+arch: [feature-sliced]
+description: Front-end React com Feature-Sliced Design para a API de pedidos, com Vite, TypeScript, React Router e TanStack Query
+services: []
+requires: [node]
+setup:
+  - npm ci
+run: npm run dev
+test: npm test
+url: http://localhost:5173
+publish:
+  kind: react-vite

@@ -326,6 +326,7 @@ romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
 | `node` | `layered` | Fastify, rotas, serviços e repositórios, pg | `postgres` |
 | `java` | `hexagonal`, `ddd` | Spring Boot, Maven, JdbcClient, ArchUnit | `postgres` |
 | `python` | `layered` | Django, Django REST Framework, uv | `postgres` |
+| `react` | `feature-sliced` | Front da API de pedidos: Vite, React Router, TanStack Query, lint de camadas FSD | — |
 | `rust` | `hexagonal`, `ddd` | axum, tokio, sqlx | `postgres` |
 | `php` | `hexagonal`, `ddd` | Symfony 7.4, Doctrine DBAL, PHPUnit | `postgres` |
 | `python` | `hexagonal`, `ddd` | FastAPI, uv, psycopg | `postgres` |
@@ -445,6 +446,7 @@ romanctl add resource Product --dry-run            # só mostra
 | Express | `route`, `middleware`, `service` |
 | Next.js | `page`, `api`, `component` |
 | React | `component`, `hook`, `page` |
+| React feature-sliced | `entity`, `feature`, `page` |
 | .NET event sourcing | `resource`, `domain`, `application`, `controller`, `test`, `event` |
 | .NET monólito modular | `module`, `resource` (com `--in <módulo>`) |
 | .NET Vertical Slice | `resource` |

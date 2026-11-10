@@ -1,0 +1,16 @@
+description: Página FSD, registrada nas rotas e no menu
+aliases: [pagina]
+patches:
+  - file: src/shared/config/paths.ts
+    before: "// romanctl:paths"
+    text: "sampleItem: '/sample-item',"
+  - file: src/app/router/routes.tsx
+    before: "// romanctl:imports"
+    text: "import { SampleItemPage } from '@/pages/sample-item';"
+  - file: src/app/router/routes.tsx
+    before: "// romanctl:routes"
+    text: "{ path: paths.sampleItem, element: <SampleItemPage /> },"
+  - file: src/app/layout/nav-items.ts
+    before: "// romanctl:nav"
+    text: "{ to: paths.sampleItem, label: 'Sample Item' },"
+next: "Página em /sample-item, com a rota em src/app/router/routes.tsx e o link no menu. Rode npm test para conferir."

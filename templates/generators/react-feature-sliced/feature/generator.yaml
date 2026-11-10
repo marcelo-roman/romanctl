@@ -1,0 +1,3 @@
+description: Feature FSD com formulário - ui, model e api, com teste usando MSW
+aliases: [funcionalidade]
+next: "Feature em src/features/sample-item, que envia o formulário para POST /sample-item (ajuste em api/). Use o SampleItemForm numa página ou widget e rode npm test."
