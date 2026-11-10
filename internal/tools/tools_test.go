@@ -89,6 +89,16 @@ func TestFirstLineIgnoraAvisosEEspacos(t *testing.T) {
 	}
 }
 
+func TestLinhaDaVersao(t *testing.T) {
+	gradle := "openjdk version \"21\"\n\n------\nGradle 9.2.0\n------"
+	if got := versionLine(gradle, "Gradle "); got != "Gradle 9.2.0" {
+		t.Fatalf("%q", got)
+	}
+	if got := firstLine("info: kotlinc-jvm 2.4.21 (JRE 21)"); got != "kotlinc-jvm 2.4.21 (JRE 21)" {
+		t.Fatalf("%q", got)
+	}
+}
+
 func TestFirstLineTiraCores(t *testing.T) {
 	if got := firstLine("\x1b[1mApache Maven 3.8.7\x1b[m\nMaven home: /usr"); got != "Apache Maven 3.8.7" {
 		t.Fatalf("%q", got)

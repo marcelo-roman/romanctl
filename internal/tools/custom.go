@@ -3,6 +3,7 @@ package tools
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"romanctl/internal/i18n"
 	"slices"
@@ -312,6 +313,26 @@ func installDart() error {
 }
 
 func installKotlin() error { return installKotlinAt("") }
+
+// installGradle usa a distribuição oficial: o pacote gradle do Ubuntu parou na 4.4.
+func installGradle() error {
+	var current struct {
+		Version     string `json:"version"`
+		DownloadURL string `json:"downloadUrl"`
+		ChecksumURL string `json:"checksumUrl"`
+	}
+	if err := fetchJSON("https://services.gradle.org/versions/current", &current); err != nil {
+		return err
+	}
+	if current.DownloadURL == "" {
+		return i18n.Errorf("não achei a versão atual do Gradle")
+	}
+	sum, err := sumFromFile(current.ChecksumURL, path.Base(current.DownloadURL))
+	if err != nil {
+		return err
+	}
+	return installToOpt(current.DownloadURL, sum, opt("gradle"), 1, "bin/gradle")
+}
 
 func installKotlinAt(want string) error {
 	const repo = "JetBrains/kotlin"

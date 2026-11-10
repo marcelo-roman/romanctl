@@ -230,6 +230,7 @@ var en = map[string]string{
 	"%s não tem a pasta templates/projects":                                    "%s has no templates/projects folder",
 	"caminho inválido no arquivo: %s":                                          "invalid path in the archive: %s",
 	"%s falhou depois de gerar: %v":                                            "%s failed after generating: %v",
+	"não achei a versão atual do Gradle":                                       "could not find the current Gradle version",
 	"Template inválido %s: %v":                                                 "Invalid template %s: %v",
 	"arquitetura desconhecida %q (conhecidas: %s)":                             "unknown architecture %q (known: %s)",
 	"  nenhum": "  none",

@@ -60,6 +60,7 @@ type Tool struct {
 	Description string
 	Aliases     []string
 	Version     []string
+	VersionLine string // a linha da versão começa assim, quando não é a primeira da saída
 	Detect      func() (string, bool)
 	Install     func() error        // instalador próprio, usado no Linux
 	Portable    bool                // Install também vale no macOS (npm, venv etc.)
@@ -308,7 +309,7 @@ func (t *Tool) Detected() (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	return firstLine(out), true
+	return versionLine(out, t.VersionLine), true
 }
 
 // versionOutput roda um comando de versão com prazo. WaitDelay cobre o programa que deixa um
@@ -322,10 +323,22 @@ func versionOutput(command ...string) (string, error) {
 	return string(out), err
 }
 
+func versionLine(out, prefix string) string {
+	if prefix == "" {
+		return firstLine(out)
+	}
+	for _, line := range strings.Split(ansi.Strip(out), "\n") {
+		if line = strings.TrimSpace(line); strings.HasPrefix(line, prefix) {
+			return line
+		}
+	}
+	return firstLine(out)
+}
+
 func firstLine(s string) string {
 	for _, line := range strings.Split(ansi.Strip(s), "\n") {
 		if line = strings.TrimSpace(line); line != "" && !strings.HasPrefix(line, "WARNING") {
-			return strings.Join(strings.Fields(line), " ")
+			return strings.Join(strings.Fields(strings.TrimPrefix(line, "info: ")), " ")
 		}
 	}
 	return ""
