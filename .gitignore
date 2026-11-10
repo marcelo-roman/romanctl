@@ -4,3 +4,4 @@
 *.so
 
 .claude/
+/web/node_modules/

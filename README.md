@@ -196,6 +196,7 @@ Qualquer comando sem argumentos pergunta o que falta. Para ajuda, use `romanctl 
 | `status`, `start`, `stop`, `restart`, `install`, `restore` | Serviços |
 | `system`, `platform`, `doctor` | CPU, memória, bateria e diagnóstico |
 | `offline` | Preparar para trabalhar sem internet |
+| `web-ui` | Interface web em localhost |
 | `claude` | Skills para o Claude Code operar a máquina pelo romanctl |
 | `config lang`, `self-update`, `menu` | Idioma, atualização e menu em lista |
 
@@ -204,6 +205,25 @@ de consulta, para scripts. Sem terminal, nada é perguntado. Os códigos de saí
 0 (sucesso), 1 (falha ao executar) e 2 (uso incorreto).
 
 # Referência
+
+## Interface web
+
+```bash
+romanctl web-ui                  # http://localhost:7777
+romanctl web-ui --port 8888 --open
+```
+
+Uma interface no navegador para o que a CLI faz: painel da máquina, projetos (criar a partir de um template, subir,
+derrubar, logs, gerar código, remover), serviços, ferramentas (instalar, escolher versão, remover), templates e as
+tarefas em andamento, com a saída ao vivo. Cada ação roda o próprio romanctl com `--json`, então o resultado é o mesmo
+da linha de comando. Segue o idioma do romanctl e o tema claro ou escuro do sistema.
+
+O servidor escuta só em `127.0.0.1`, recusa pedidos com outro nome de host e exige um token que vai embutido na
+página, renovado a cada execução: outro site aberto no navegador não consegue chamar a API.
+
+O código fica em [`web/`](web) (React, Vite e TypeScript) e o build vai para `internal/webui/dist`, embutido no
+binário. Depois de mudar a interface, rode `npm run build` em `web/` e commite o `dist`; o CI confere que ele está
+atualizado.
 
 ## Painel
 

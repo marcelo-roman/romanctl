@@ -33,6 +33,7 @@ O Claude roda sem terminal interativo. Então:
 | `romanctl logs <alvo>` (segue o log)   | `timeout 15 romanctl logs <alvo>` ou leia o arquivo de log |
 | `romanctl system watch` sem `--seconds` | `romanctl system watch --seconds 60 --json`            |
 | `romanctl code`, `romanctl open`       | só quando o usuário pedir para abrir algo no navegador  |
+| `romanctl web-ui`                      | só quando o usuário pedir a interface web; prende o terminal, então rode em segundo plano |
 
 ## Mapa das skills
 
