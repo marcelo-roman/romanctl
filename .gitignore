@@ -2,3 +2,5 @@
 /romanctl
 /romanctl-*
 *.so
+
+.claude/
