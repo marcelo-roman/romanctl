@@ -1,0 +1,24 @@
+parameters:
+    env(DATABASE_URL): 'postgres://postgres:postgres@127.0.0.1:5432/sample_app'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    SampleApp\:
+        resource: '../src/'
+        exclude:
+            - '../src/Domain/'
+            - '../src/Kernel.php'
+
+    logger:
+        class: Symfony\Component\HttpKernel\Log\Logger
+        arguments: ['info']
+
+    SampleApp\Adapters\Postgres\Database:
+        arguments:
+            $url: '%env(DATABASE_URL)%'
+
+    SampleApp\Application\Orders\OrderRepository: '@SampleApp\Adapters\Postgres\PostgresOrderRepository'
+    # romanctl:repositories

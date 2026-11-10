@@ -324,6 +324,7 @@ romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
 | `node` | `layered` | Fastify, rotas, serviços e repositórios, pg | `postgres` |
 | `java` | `hexagonal`, `ddd` | Spring Boot, Maven, JdbcClient, ArchUnit | `postgres` |
 | `rust` | `hexagonal`, `ddd` | axum, tokio, sqlx | `postgres` |
+| `php` | `hexagonal`, `ddd` | Symfony 7.4, Doctrine DBAL, PHPUnit | `postgres` |
 | `python` | `hexagonal`, `ddd` | FastAPI, uv, psycopg | `postgres` |
 
 `romanctl catalog` lista os templates e as arquiteturas conhecidas: `bff`, `clean`, `cqrs`, `ddd`, `event-driven`,
@@ -447,6 +448,7 @@ romanctl add resource Product --dry-run            # só mostra
 | Java hexagonal e DDD | `resource` |
 | Node Clean, DDD e CQRS | `resource` |
 | Node em camadas | `resource` |
+| PHP hexagonal e DDD | `resource` |
 | Python hexagonal e DDD | `resource` |
 | Rust hexagonal e DDD | `resource` |
 | Go simples | `handler`, `service`, `model` |

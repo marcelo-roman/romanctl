@@ -42,9 +42,9 @@ func catalogSDK() []*Tool {
 			Install: installKotlin, Brew: []string{"kotlin"}, RemovePaths: []string{opt("kotlin"), "kotlin", "kotlinc"}},
 		pkgTool("scala", "Scala", GroupSDK, i18n.T("Compilador Scala; instala o Java junto"), "scala", "scala").ver("scala", "-version"),
 		pkgTool("clojure", "Clojure", GroupSDK, i18n.T("Linguagem Clojure; instala o Java junto"), "clojure", "clojure").ver("clojure", "--version").on(platform.Dnf).on(platform.Zypper).on(platform.Apk),
-		pkgTool("php", "PHP", GroupSDK, i18n.T("PHP com Composer"), "php", "php-cli", "php-mbstring", "php-xml", "php-curl", "php-zip", "composer").
-			on(platform.Dnf, "php-cli", "php-mbstring", "php-xml", "composer").on(platform.Pacman, "php", "composer").
-			on(platform.Zypper, "php8", "php8-mbstring", "php8-curl", "php-composer2").on(platform.Apk, "php", "php-mbstring", "php-xml", "php-curl", "composer").brew("php", "composer"),
+		pkgTool("php", "PHP", GroupSDK, i18n.T("PHP com Composer"), "php", "php-cli", "php-mbstring", "php-xml", "php-curl", "php-zip", "php-pgsql", "composer").
+			on(platform.Dnf, "php-cli", "php-mbstring", "php-xml", "php-pgsql", "composer").on(platform.Pacman, "php", "php-pgsql", "composer").
+			on(platform.Zypper, "php8", "php8-mbstring", "php8-curl", "php8-pgsql", "php-composer2").on(platform.Apk, "php", "php-mbstring", "php-xml", "php-curl", "php-pdo_pgsql", "composer").brew("php", "composer"),
 		{Key: "rust", Name: "Rust", Group: GroupSDK, Description: i18n.T("Instalado com o rustup"), Aliases: []string{"cargo", "rustc", "rustup"},
 			Version: []string{"rustc", "--version"}, Install: installRust, Brew: []string{"rust"}, RemovePaths: rustPaths()},
 		pkgTool("ruby", "Ruby", GroupSDK, i18n.T("Ruby com gem e bundler"), "ruby", "ruby-full", "ruby-bundler").on(platform.Dnf, "ruby", "rubygem-bundler").on(platform.Pacman, "ruby").on(platform.Zypper, "ruby").on(platform.Apk, "ruby", "ruby-bundler").brew("ruby"),

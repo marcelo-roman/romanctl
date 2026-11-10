@@ -1,0 +1,25 @@
+description: CRUD completo - domínio, caso de uso, repositório, controller Symfony e testes
+aliases: [crud, scaffold]
+conditional:
+  - path: src/Adapters/Postgres
+    when: postgres
+  - path: tests/Postgres
+    when: postgres
+patches:
+  - when: postgres
+    file: config/services.yaml
+    before: "# romanctl:repositories"
+    text: "SampleApp\\Application\\SampleItems\\SampleItemRepository: '@SampleApp\\Adapters\\Postgres\\PostgresSampleItemRepository'"
+  - when: "!postgres"
+    file: config/services.yaml
+    before: "# romanctl:repositories"
+    text: "SampleApp\\Application\\SampleItems\\SampleItemRepository: '@SampleApp\\Adapters\\Memory\\InMemorySampleItemRepository'"
+  - file: config/services_test.yaml
+    before: "# romanctl:repositories"
+    text: "SampleApp\\Application\\SampleItems\\SampleItemRepository: '@SampleApp\\Adapters\\Memory\\InMemorySampleItemRepository'"
+  - when: postgres
+    file: src/Adapters/Postgres/schema.sql
+    before: "-- romanctl:tables"
+    text: |
+      CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
+next: "Rotas em /sample-items, registradas pelos atributos do controller. Rode vendor/bin/phpunit para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima conexão.{{end}}"

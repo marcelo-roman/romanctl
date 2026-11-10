@@ -1,0 +1,14 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    logger:
+        class: Symfony\Component\HttpKernel\Log\Logger
+        arguments: ['error']
+
+    SampleApp\Adapters\Memory\MemoryStore:
+        arguments: [null]
+
+    SampleApp\Application\Orders\OrderRepository: '@SampleApp\Adapters\Memory\InMemoryOrderRepository'
+    # romanctl:repositories

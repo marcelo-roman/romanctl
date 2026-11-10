@@ -1,0 +1,20 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    SampleApp\:
+        resource: '../src/'
+        exclude:
+            - '../src/Domain/'
+            - '../src/Kernel.php'
+
+    logger:
+        class: Symfony\Component\HttpKernel\Log\Logger
+        arguments: ['info']
+
+    SampleApp\Adapters\Memory\MemoryStore:
+        arguments: ['%kernel.cache_dir%/memory']
+
+    SampleApp\Application\Orders\OrderRepository: '@SampleApp\Adapters\Memory\InMemoryOrderRepository'
+    # romanctl:repositories

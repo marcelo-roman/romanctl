@@ -1,0 +1,16 @@
+framework:
+    http_method_override: false
+    handle_all_throwables: true
+    php_errors:
+        log: true
+    router:
+        utf8: true
+
+when@prod:
+    framework:
+        router:
+            strict_requirements: null
+
+when@test:
+    framework:
+        test: true

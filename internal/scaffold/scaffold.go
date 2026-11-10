@@ -84,9 +84,9 @@ func renderAny(name, text string, data any) (string, error) {
 // buildOutputs são pastas que os testes do template na própria pasta deixam para trás.
 var buildOutputs = map[string]bool{".git": true, "node_modules": true, "bin": true, "obj": true, "target": true,
 	".venv": true, "__pycache__": true, ".pytest_cache": true, ".mypy_cache": true, ".ruff_cache": true, "dist": true,
-	".next": true, ".gradle": true, "build": true, "coverage": true, ".turbo": true}
+	".next": true, ".gradle": true, "build": true, "coverage": true, ".turbo": true, "vendor": true, "var": true}
 
-var localFiles = map[string]bool{".env": true, "coverage.out": true, ".DS_Store": true}
+var localFiles = map[string]bool{".env": true, "coverage.out": true, ".DS_Store": true, "db.sqlite3": true}
 
 func under(p, dir string) bool { return p == dir || strings.HasPrefix(p, dir+"/") }
 
