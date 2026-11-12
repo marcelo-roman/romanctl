@@ -1,4 +1,4 @@
-// Package auth faz o login do romanctl no Keycloak (realm romanctl, authorization code com PKCE)
+// Package auth faz o login do romanctl no Keycloak (realm private, authorization code com PKCE)
 // e guarda a sessão. Sem sessão válida a CLI não roda.
 package auth
 
@@ -16,11 +16,11 @@ import (
 )
 
 const (
-	DefaultIssuer   = "https://auth.marceloroman.com.br/realms/romanctl"
+	DefaultIssuer   = "https://auth.marceloroman.com.br/realms/private"
 	DefaultClientID = "romanctl"
 	DefaultAPI      = "https://iam-api.marceloroman.com.br"
-	// DefaultIDP é o realm de usuários das aplicações privadas: o login vai direto para ele.
-	DefaultIDP = "private"
+	// DefaultIDP é o Google Workspace da criarch, o único jeito de entrar no realm private.
+	DefaultIDP = "google"
 	// revalidate é de quanto em quanto tempo a sessão é conferida no Keycloak, quando há rede.
 	revalidate = 12 * time.Hour
 )
@@ -141,14 +141,17 @@ func (s *Session) RefreshExpired(now time.Time) bool {
 }
 
 type claims struct {
-	Username    string `json:"preferred_username"`
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	Expiry      int64  `json:"exp"`
-	RealmAccess struct {
+	Username       string `json:"preferred_username"`
+	Name           string `json:"name"`
+	Email          string `json:"email"`
+	Expiry         int64  `json:"exp"`
+	ResourceAccess map[string]struct {
 		Roles []string `json:"roles"`
-	} `json:"realm_access"`
+	} `json:"resource_access"`
 }
+
+// managerAudience é o client do IAM Manager; os papéis de quem usa o romanctl são client roles dele.
+const managerAudience = "iam-manager-api"
 
 // readClaims lê o corpo do JWT sem conferir a assinatura: o token veio do Keycloak por TLS, e quem
 // confere de verdade é a API.
@@ -185,7 +188,7 @@ func (s *Session) apply(t tokenResponse, now time.Time) error {
 		s.RefreshExpiry = expiry(t.RefreshToken)
 	}
 	s.Username, s.Name, s.Email = c.Username, c.Name, c.Email
-	s.Roles = c.RealmAccess.Roles
+	s.Roles = c.ResourceAccess[managerAudience].Roles
 	s.ValidatedAt = now
 	return nil
 }

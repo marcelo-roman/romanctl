@@ -113,7 +113,7 @@ func iamCommand(args []string, flags map[string]bool) error {
 		return output(me, func() {
 			i18n.Printf("%s (realm %s)\n", me.Username, me.Realm)
 			if len(me.GlobalPermissions) == 0 && len(me.RealmPermissions) == 0 {
-				ui.Warnf("Sem permissão no IAM Manager. Peça a um iam-admin um papel iam-* no realm %s", me.Realm)
+				ui.Warnf("O cliente %s não tem permissão no IAM Manager. Dê papéis a ele em Operadores → Clientes da API", me.Username)
 				return
 			}
 			if len(me.GlobalPermissions) > 0 {
@@ -140,7 +140,7 @@ func iamCommand(args []string, flags map[string]bool) error {
 			table(i18n.T("REALM\tNOME\tESTADO"), rows)
 		})
 	case "realm":
-		return iamRealm(ctx, args[1:], flags)
+		return iamRealm(ctx, args[1:])
 	case "users":
 		if err := need(2, "users <realm> [--search X]"); err != nil {
 			return err
@@ -193,67 +193,48 @@ func iamCommand(args []string, flags map[string]bool) error {
 		})
 	case "api-key":
 		return iamAPIKey(ctx, args[1:], flags)
+	case "credentials", "credential":
+		return iamCredentials(ctx, args[1:], flags)
+	case "api-clients", "clients":
+		return iamAPIClients(ctx)
+	case "api-client", "client":
+		return iamAPIClientCommand(ctx, args[1:], flags)
 	case "operators":
-		q := url.Values{}
-		if r := flagVals["realm"]; r != "" {
-			q.Set("realm", r)
-		}
-		var operators []struct {
-			User       iamUser `json:"user"`
-			Assignment struct {
-				Global    []string          `json:"global"`
-				Inherited []string          `json:"inherited"`
-				Realms    map[string]string `json:"realms"`
-			} `json:"assignment"`
-		}
-		if err := iam.Do(ctx, "GET", "/api/operators?"+q.Encode(), nil, &operators); err != nil {
+		var operators []iamOperator
+		if err := iam.Do(ctx, "GET", "/api/operators", nil, &operators); err != nil {
 			return err
 		}
 		return output(operators, func() {
 			var rows [][]string
 			for _, o := range operators {
 				global := append(append([]string{}, o.Assignment.Global...), o.Assignment.Inherited...)
-				var realms []string
-				for r, role := range o.Assignment.Realms {
-					realms = append(realms, r+"="+role)
-				}
-				rows = append(rows, []string{o.User.Username, strings.Join(global, ","), strings.Join(realms, ","), onOff(o.User.Enabled)})
+				rows = append(rows, []string{o.User.Username, o.User.Email, strings.Join(global, ","), o.Assignment.realmList(), onOff(o.User.Enabled)})
 			}
-			table(i18n.T("USUÁRIO\tGLOBAIS\tPOR REALM\tESTADO"), rows)
+			table(i18n.T("USUÁRIO\tE-MAIL\tGLOBAIS\tPOR REALM\tESTADO"), rows)
 		})
 	case "operator":
-		if arg(args, 1) != "roles" || len(args) < 3 {
-			return ui.Usagef("use: romanctl iam operator roles <usuário> [--realm romanctl] [--global iam-admin,...] [--realms acme=admin]")
+		return iamOperatorCommand(ctx, args[1:])
+	case "apps":
+		if err := need(2, "apps <realm>"); err != nil {
+			return err
 		}
-		realm := flagVals["realm"]
-		lookupRealm := realm
-		if lookupRealm == "" {
-			lookupRealm = "iam-manager"
-		}
-		id, err := userID(ctx, lookupRealm, args[2])
+		apps, err := listApplications(ctx, args[1])
 		if err != nil {
 			return err
 		}
-		assignment := map[string]any{"global": list(flagVals["global"]), "realms": map[string]string{}}
-		for _, pair := range list(flagVals["realms"]) {
-			name, role, ok := strings.Cut(pair, "=")
-			if !ok {
-				return ui.Usagef("use --realms realm=admin|viewer, separados por vírgula")
+		return output(apps, func() {
+			var rows [][]string
+			for _, a := range apps {
+				var clients []string
+				for _, c := range a.Clients {
+					clients = append(clients, c.ClientID)
+				}
+				rows = append(rows, []string{a.ID, a.Name, strings.Join(a.Roles, ","), a.Theme, strings.Join(clients, ",")})
 			}
-			assignment["realms"].(map[string]string)[name] = role
-		}
-		if assignment["global"] == nil {
-			assignment["global"] = []string{}
-		}
-		q := ""
-		if realm != "" {
-			q = "?realm=" + url.QueryEscape(realm)
-		}
-		var result json.RawMessage
-		if err := iam.Do(ctx, "PUT", "/api/operators/"+url.PathEscape(id)+"/roles"+q, assignment, &result); err != nil {
-			return err
-		}
-		return output(result, func() { ui.Okf("Papéis de %s atualizados", args[2]) })
+			table(i18n.T("APLICAÇÃO\tNOME\tROLES\tTEMA\tCLIENTS"), rows)
+		})
+	case "app":
+		return iamApplicationCommand(ctx, args[1:])
 	case "events":
 		if err := need(2, "events <realm> [--limit N]"); err != nil {
 			return err
@@ -343,6 +324,133 @@ func iamCommand(args []string, flags map[string]bool) error {
 	return ui.Usagef("use: romanctl iam <comando> (veja: romanctl help iam)")
 }
 
+type iamOperator struct {
+	User       iamUser       `json:"user"`
+	Assignment iamAssignment `json:"assignment"`
+}
+
+// findOperator aceita o nome de usuário, o e-mail ou o id.
+func findOperator(ctx context.Context, who string) (iamOperator, error) {
+	var operators []iamOperator
+	if err := iam.Do(ctx, "GET", "/api/operators?"+url.Values{"q": {who}}.Encode(), nil, &operators); err != nil {
+		return iamOperator{}, err
+	}
+	for _, o := range operators {
+		if o.User.ID == who || strings.EqualFold(o.User.Username, who) || strings.EqualFold(o.User.Email, who) {
+			return o, nil
+		}
+	}
+	return iamOperator{}, i18n.Errorf("operador %s não encontrado", who)
+}
+
+const operatorUsage = "use: romanctl iam operator add <e-mail> [--first-name X] [--last-name Y] | roles <operador> [--global iam-admin,...] [--realms public=admin]"
+
+func iamOperatorCommand(ctx context.Context, args []string) error {
+	if len(args) < 2 {
+		return ui.Usagef(operatorUsage)
+	}
+	verb, who := args[0], args[1]
+	switch verb {
+	case "add":
+		assignment, err := assignmentFlags(iamAssignment{})
+		if err != nil {
+			return err
+		}
+		body := map[string]any{"email": who, "assignment": assignment}
+		for field, flag := range map[string]string{"firstName": "first-name", "lastName": "last-name"} {
+			if v := flagVals[flag]; v != "" {
+				body[field] = v
+			}
+		}
+		var created iamOperator
+		if err := iam.Do(ctx, "POST", "/api/operators", body, &created); err != nil {
+			return err
+		}
+		return output(created, func() { ui.Okf("Operador %s cadastrado; entra com a conta do Google Workspace", who) })
+	case "roles":
+		operator, err := findOperator(ctx, who)
+		if err != nil {
+			return err
+		}
+		assignment, err := assignmentFlags(operator.Assignment)
+		if err != nil {
+			return err
+		}
+		var updated iamOperator
+		if err := iam.Do(ctx, "PUT", "/api/operators/"+url.PathEscape(operator.User.ID)+"/roles", assignment, &updated); err != nil {
+			return err
+		}
+		return output(updated, func() { ui.Okf("Papéis de %s atualizados", who) })
+	}
+	return ui.Usagef(operatorUsage)
+}
+
+type iamApplication struct {
+	ID       string   `json:"id"`
+	Name     string   `json:"name"`
+	Roles    []string `json:"roles"`
+	Theme    string   `json:"theme,omitempty"`
+	Declared bool     `json:"declared"`
+	Clients  []struct {
+		ClientID string `json:"clientId"`
+		Name     string `json:"name"`
+		Public   bool   `json:"public"`
+		Enabled  bool   `json:"enabled"`
+		Declared bool   `json:"declared"`
+	} `json:"clients"`
+}
+
+func listApplications(ctx context.Context, realm string) ([]iamApplication, error) {
+	var apps []iamApplication
+	err := iam.Do(ctx, "GET", "/api/realms/"+url.PathEscape(realm)+"/applications", nil, &apps)
+	return apps, err
+}
+
+const applicationUsage = "use: romanctl iam app create <realm> <id> --roles a,b [--name X] | role <realm> <app> <role> | theme <realm> <app> [tema]"
+
+func iamApplicationCommand(ctx context.Context, args []string) error {
+	if len(args) < 3 {
+		return ui.Usagef(applicationUsage)
+	}
+	verb, realm, id := args[0], args[1], args[2]
+	base := "/api/realms/" + url.PathEscape(realm) + "/applications"
+	var app iamApplication
+	switch verb {
+	case "create":
+		roles := list(flagVals["roles"])
+		if len(roles) == 0 {
+			return ui.Usagef("informe ao menos uma role com --roles a,b")
+		}
+		body := map[string]any{"id": id, "name": orDefault(flagVals["name"], id), "roles": roles}
+		if err := iam.Do(ctx, "POST", base, body, &app); err != nil {
+			return err
+		}
+		return output(app, func() {
+			ui.Okf("Aplicação %s criada em %s com as roles %s", app.ID, realm, strings.Join(app.Roles, ", "))
+		})
+	case "role":
+		if len(args) < 4 {
+			return ui.Usagef(applicationUsage)
+		}
+		if err := iam.Do(ctx, "POST", base+"/"+url.PathEscape(id)+"/roles", map[string]string{"name": args[3]}, &app); err != nil {
+			return err
+		}
+		return output(app, func() { ui.Okf("Aplicação %s: roles %s", app.ID, strings.Join(app.Roles, ", ")) })
+	case "theme":
+		if err := iam.Do(ctx, "PUT", base+"/"+url.PathEscape(id)+"/theme", map[string]string{"theme": arg(args, 3)}, &app); err != nil {
+			return err
+		}
+		return output(app, func() {
+			if app.Theme == "" {
+				ui.Okf("Aplicação %s usa o tema do realm", app.ID)
+				return
+			}
+			ui.Okf("Aplicação %s usa o tema %s", app.ID, app.Theme)
+		})
+	}
+	return ui.Usagef(applicationUsage)
+}
+
 func limit(def string) string {
 	if v := flagVals["limit"]; v != "" {
 		if _, err := strconv.Atoi(v); err == nil {
@@ -359,50 +467,15 @@ func when(ms int64) string {
 	return time.UnixMilli(ms).Local().Format("02/01 15:04:05")
 }
 
-func iamRealm(ctx context.Context, args []string, flags map[string]bool) error {
-	if len(args) < 2 {
-		return ui.Usagef("use: romanctl iam realm create|enable|disable|delete <nome>")
+func iamRealm(ctx context.Context, args []string) error {
+	if len(args) < 1 {
+		return ui.Usagef("use: romanctl iam realm <realm>")
 	}
-	name := args[1]
-	path := "/api/realms/" + url.PathEscape(name)
-	switch args[0] {
-	case "create":
-		body := map[string]string{"name": name, "displayName": flagVals["display-name"]}
-		var created json.RawMessage
-		if err := iam.Do(ctx, "POST", "/api/realms", body, &created); err != nil {
-			return err
-		}
-		return output(created, func() { ui.Okf("Realm %s criado", name) })
-	case "enable", "disable":
-		var settings map[string]any
-		if err := iam.Do(ctx, "GET", path+"/settings", nil, &settings); err != nil {
-			return err
-		}
-		settings["enabled"] = args[0] == "enable"
-		if smtp, ok := settings["smtp"].(map[string]any); ok {
-			delete(smtp, "password")
-		}
-		var updated json.RawMessage
-		if err := iam.Do(ctx, "PUT", path+"/settings", settings, &updated); err != nil {
-			return err
-		}
-		return output(updated, func() {
-			if args[0] == "enable" {
-				ui.Okf("Realm %s ligado", name)
-			} else {
-				ui.Okf("Realm %s desligado", name)
-			}
-		})
-	case "delete":
-		if err := confirmed(flags, i18n.Sprintf("Excluir o realm %s com todos os usuários?", name)); err != nil {
-			return err
-		}
-		if err := iam.Do(ctx, "DELETE", path, map[string]string{"confirm": name}, nil); err != nil {
-			return err
-		}
-		return output(map[string]any{"ok": true}, func() { ui.Okf("Realm %s excluído", name) })
+	var settings map[string]any
+	if err := iam.Do(ctx, "GET", "/api/realms/"+url.PathEscape(args[0])+"/settings", nil, &settings); err != nil {
+		return err
 	}
-	return ui.Usagef("use: romanctl iam realm create|enable|disable|delete <nome>")
+	return ui.PrintJSON(settings)
 }
 
 // userID aceita o id ou o nome de usuário, que é procurado com correspondência exata.
@@ -441,7 +514,7 @@ func printCredential(c *iamCredential) {
 
 func iamUserCommand(ctx context.Context, args []string, flags map[string]bool) error {
 	if len(args) < 3 {
-		return ui.Usagef("use: romanctl iam user show|create|enable|disable|roles|reset|logout|delete <realm> <usuário>")
+		return ui.Usagef("use: romanctl iam user show|create|enable|disable|roles|access|reset|logout|delete <realm> <usuário>")
 	}
 	verb, realm, who := args[0], args[1], args[2]
 	base := "/api/realms/" + url.PathEscape(realm) + "/users"
@@ -521,6 +594,8 @@ func iamUserCommand(ctx context.Context, args []string, flags map[string]bool) e
 			return err
 		}
 		return output(updated, func() { ui.Okf("Papéis de %s: %s", who, strings.Join(roles, ", ")) })
+	case "access":
+		return userAccess(ctx, path, who, arg(args, 3))
 	case "reset":
 		var c iamCredential
 		if err := iam.Do(ctx, "POST", path+"/credential", map[string]string{"mode": orDefault(flagVals["credential"], "link")}, &c); err != nil {
@@ -541,7 +616,42 @@ func iamUserCommand(ctx context.Context, args []string, flags map[string]bool) e
 		}
 		return output(map[string]any{"ok": true}, func() { ui.Okf("Usuário %s excluído", who) })
 	}
-	return ui.Usagef("use: romanctl iam user show|create|enable|disable|roles|reset|logout|delete <realm> <usuário>")
+	return ui.Usagef("use: romanctl iam user show|create|enable|disable|roles|access|reset|logout|delete <realm> <usuário>")
+}
+
+type iamAccess struct {
+	Application string   `json:"application"`
+	Name        string   `json:"name"`
+	Available   []string `json:"available"`
+	Roles       []string `json:"roles"`
+	Effective   []string `json:"effective"`
+}
+
+// userAccess mostra as roles do usuário em cada aplicação; com app, define as dessa aplicação.
+func userAccess(ctx context.Context, path, who, app string) error {
+	var access []iamAccess
+	if app != "" {
+		if _, ok := flagVals["roles"]; !ok {
+			return ui.Usagef("informe --roles a,b (vazio revoga o acesso)")
+		}
+		roles := list(flagVals["roles"])
+		if roles == nil {
+			roles = []string{}
+		}
+		if err := iam.Do(ctx, "PUT", path+"/access/"+url.PathEscape(app), map[string]any{"roles": roles}, &access); err != nil {
+			return err
+		}
+	} else if err := iam.Do(ctx, "GET", path+"/access", nil, &access); err != nil {
+		return err
+	}
+	return output(access, func() {
+		var rows [][]string
+		for _, a := range access {
+			rows = append(rows, []string{a.Application, strings.Join(a.Roles, ","), strings.Join(a.Effective, ","), strings.Join(a.Available, ",")})
+		}
+		i18n.Printf("Acesso de %s:\n", who)
+		table(i18n.T("APLICAÇÃO\tROLES\tEFETIVAS\tDISPONÍVEIS"), rows)
+	})
 }
 
 func iamAPIKey(ctx context.Context, args []string, flags map[string]bool) error {

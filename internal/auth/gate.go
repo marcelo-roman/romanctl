@@ -11,7 +11,7 @@ import (
 )
 
 // Em pipelines não há navegador: ROMANCTL_CLIENT_ID e ROMANCTL_CLIENT_SECRET fazem o login com
-// client_credentials num client confidencial do mesmo realm (o romanctl-ci).
+// client_credentials num cliente da API do mesmo realm, criado no IAM Manager.
 func serviceCredentials() (id, secret string, ok bool) {
 	id, secret = os.Getenv("ROMANCTL_CLIENT_ID"), os.Getenv("ROMANCTL_CLIENT_SECRET")
 	return id, secret, id != "" && secret != ""

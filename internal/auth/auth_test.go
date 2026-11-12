@@ -35,7 +35,7 @@ type fakeKeycloak struct {
 func newFakeKeycloak(t *testing.T) *fakeKeycloak {
 	k := &fakeKeycloak{}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/realms/romanctl/protocol/openid-connect/auth", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/realms/private/protocol/openid-connect/auth", func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		if q.Get("code_challenge_method") != "S256" || q.Get("client_id") != "romanctl" || !strings.Contains(q.Get("scope"), "offline_access") {
 			http.Error(w, "bad request", 400)
@@ -46,13 +46,13 @@ func newFakeKeycloak(t *testing.T) *fakeKeycloak {
 		k.mu.Unlock()
 		http.Redirect(w, r, q.Get("redirect_uri")+"?code=the-code&state="+url.QueryEscape(q.Get("state")), http.StatusFound)
 	})
-	mux.HandleFunc("/realms/romanctl/protocol/openid-connect/token", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/realms/private/protocol/openid-connect/token", func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		k.mu.Lock()
 		defer k.mu.Unlock()
 		w.Header().Set("Content-Type", "application/json")
 		access := jwt(map[string]any{"preferred_username": "ana", "name": "Ana", "exp": time.Now().Add(5 * time.Minute).Unix(),
-			"realm_access": map[string]any{"roles": []string{"iam-admin", "offline_access"}}})
+			"resource_access": map[string]any{"iam-manager-api": map[string]any{"roles": []string{"iam-admin", "public:viewer"}}}})
 		refresh := jwt(map[string]any{"typ": "Offline", "exp": time.Now().Add(30 * 24 * time.Hour).Unix()})
 		switch r.Form.Get("grant_type") {
 		case "authorization_code":
@@ -78,7 +78,7 @@ func newFakeKeycloak(t *testing.T) *fakeKeycloak {
 		}
 		json.NewEncoder(w).Encode(map[string]any{"access_token": access, "refresh_token": refresh, "expires_in": 300})
 	})
-	mux.HandleFunc("/realms/romanctl/protocol/openid-connect/revoke", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/realms/private/protocol/openid-connect/revoke", func(w http.ResponseWriter, r *http.Request) {
 		k.mu.Lock()
 		k.revoked = true
 		k.mu.Unlock()
@@ -89,7 +89,7 @@ func newFakeKeycloak(t *testing.T) *fakeKeycloak {
 }
 
 func (k *fakeKeycloak) endpoints() Endpoints {
-	return Endpoints{Issuer: k.server.URL + "/realms/romanctl", ClientID: "romanctl", API: "https://api.test"}
+	return Endpoints{Issuer: k.server.URL + "/realms/private", ClientID: "romanctl", API: "https://api.test"}
 }
 
 func isolate(t *testing.T) {
@@ -172,7 +172,7 @@ func TestSemRedeASessaoSalvaBasta(t *testing.T) {
 	k := newFakeKeycloak(t)
 	s := login(t, k)
 	s.ValidatedAt = time.Now().Add(-48 * time.Hour)
-	s.Issuer = "http://127.0.0.1:1/realms/romanctl"
+	s.Issuer = "http://127.0.0.1:1/realms/private"
 	Save(s)
 	if err := Require(context.Background()); err != nil {
 		t.Fatalf("sem rede, a sessão salva deveria bastar: %v", err)
@@ -203,7 +203,7 @@ func TestClientDeServicoSubstituiOLogin(t *testing.T) {
 	isolate(t)
 	k := newFakeKeycloak(t)
 	t.Setenv("ROMANCTL_AUTH_ISSUER", k.endpoints().Issuer)
-	t.Setenv("ROMANCTL_CLIENT_ID", "romanctl-ci")
+	t.Setenv("ROMANCTL_CLIENT_ID", "iam-api-ci")
 	t.Setenv("ROMANCTL_CLIENT_SECRET", "errado")
 	service.session = nil
 	if err := Require(context.Background()); err == nil {

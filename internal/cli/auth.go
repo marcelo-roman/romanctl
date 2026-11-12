@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"time"
 
 	"romanctl/internal/auth"
@@ -118,21 +119,11 @@ func whoamiCommand() error {
 	}
 	i18n.Printf("Realm:   %s\n", session.Issuer)
 	i18n.Printf("API:     %s\n", session.API)
-	if roles := iamRoles(session.Roles); len(roles) > 0 {
-		i18n.Printf("Papéis:  %v\n", roles)
+	if len(session.Roles) > 0 {
+		i18n.Printf("Papéis:  %s\n", strings.Join(session.Roles, ", "))
 	}
 	if !session.RefreshExpiry.IsZero() {
 		i18n.Printf("Sessão vale até %s (renova a cada uso)\n", session.RefreshExpiry.Local().Format("02/01/2006 15:04"))
 	}
 	return nil
-}
-
-func iamRoles(roles []string) []string {
-	var out []string
-	for _, r := range roles {
-		if len(r) > 4 && r[:4] == "iam-" {
-			out = append(out, r)
-		}
-	}
-	return out
 }

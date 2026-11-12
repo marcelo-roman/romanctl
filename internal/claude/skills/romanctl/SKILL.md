@@ -22,8 +22,9 @@ O Claude roda sem terminal interativo. Então:
   `--dry-run` mostra o plano sem executar; use antes de algo destrutivo ou grande.
 - **O romanctl só roda com login.** Se um comando falhar com "só funciona com login" ou "sessão
   expirou", não tente contornar: o login abre o navegador, então peça ao usuário para rodar
-  `! romanctl login`. `romanctl whoami --json` diz se há sessão. Para administrar o Keycloak
-  (realms, usuários, API keys) com esse login, veja `romanctl help iam`.
+  `! romanctl login` (entra pelo Google, com conta da criarch). `romanctl whoami --json` diz se há
+  sessão. Para administrar o Keycloak (usuários, aplicações, operadores, API keys), `romanctl iam`
+  usa um cliente da API do IAM Manager, não o login: veja a skill `iam-manager` e `romanctl help iam`.
 - **Na dúvida, `romanctl help <comando> [subcomando]`.** A ajuda é a fonte da verdade sobre
   opções; esta skill é um mapa.
 
@@ -51,7 +52,7 @@ O Claude roda sem terminal interativo. Então:
 | CPU, memória, disco, bateria, processos, plataforma        | `romanctl-system`      |
 | publicar no GitHub com CI e Dockerfile                    | `romanctl-publish`     |
 | atualizar o romanctl, idioma, modo offline, estas skills  | `romanctl-maintenance` |
-| realms, usuários, senhas e API keys do Keycloak            | `iam-manager`          |
+| usuários, aplicações, senhas e API keys do Keycloak        | `iam-manager`          |
 
 ## Quando o romanctl não cobre o pedido
 

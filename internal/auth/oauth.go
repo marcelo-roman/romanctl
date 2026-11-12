@@ -62,6 +62,21 @@ func postToken(ctx context.Context, endpoint string, form url.Values) (tokenResp
 	return t, nil
 }
 
+// Token é um access token e o momento em que ele deixa de valer.
+type Token struct {
+	AccessToken string
+	Expiry      time.Time
+}
+
+// ClientCredentials troca client_id e client_secret por um access token (sem refresh token).
+func ClientCredentials(ctx context.Context, endpoint, clientID, clientSecret string) (Token, error) {
+	t, err := postToken(ctx, endpoint, url.Values{"grant_type": {"client_credentials"}, "client_id": {clientID}, "client_secret": {clientSecret}})
+	if err != nil {
+		return Token{}, err
+	}
+	return Token{AccessToken: t.AccessToken, Expiry: time.Now().Add(time.Duration(t.ExpiresIn) * time.Second)}, nil
+}
+
 func randomString(n int) string {
 	b := make([]byte, n)
 	if _, err := rand.Read(b); err != nil {
@@ -144,7 +159,7 @@ func Login(ctx context.Context, opts LoginOptions) (*Session, error) {
 		"code_challenge":        {challenge(verifier)},
 		"code_challenge_method": {"S256"},
 	}
-	// Com o hint, o Keycloak pula a tela do realm romanctl e abre a do realm de usuários.
+	// Com o hint, o Keycloak pula a tela de login e vai direto ao Google.
 	if ep.IDP != "" && ep.IDP != "-" {
 		query.Set("kc_idp_hint", ep.IDP)
 	}

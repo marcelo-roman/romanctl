@@ -141,7 +141,7 @@ Os containers dos serviços se chamam `romanctl-<serviço>`, e os dados ficam em
 
 ## Primeiros passos
 
-**0. Faça login.** O romanctl só roda com login no Keycloak (realm `romanctl` em
+**0. Faça login.** O romanctl só roda com login no Keycloak (realm `private` em
 `auth.marceloroman.com.br`):
 
 ```bash
@@ -221,42 +221,53 @@ romanctl whoami                  # usuário, papéis e até quando a sessão val
 romanctl logout                  # revoga a sessão no Keycloak e apaga a local
 ```
 
-O login acontece no realm `romanctl` de `https://auth.marceloroman.com.br`, num client público
-(`romanctl`) que exige PKCE S256 e só aceita redirect para `http://127.0.0.1:<porta>/callback`. As
-contas não moram nele: o romanctl pede `kc_idp_hint=private`, e o Keycloak abre direto o realm
-`private`, onde ficam os usuários das aplicações privadas (o mesmo login do IAM Manager e do console do
-Keycloak). Na primeira entrada a conta no realm `romanctl` é criada sem papéis; `--idp -` mostra a
-tela do próprio realm `romanctl`, para as contas locais. O
-token é offline: a sessão vale 30 dias sem uso e renova a cada comando. Sem internet, a sessão salva
-basta enquanto valer; com internet, ela é conferida no Keycloak a cada 12 h, então um usuário
-bloqueado ou uma sessão encerrada saem na hora. Sem login rodam só `login`, `logout`, `whoami`,
-`help`, `version`, `self-update` e `templates`.
+O login acontece no realm `private` de `https://auth.marceloroman.com.br`, num client público
+(`romanctl`) que exige PKCE S256 e só aceita redirect para `http://127.0.0.1:<porta>/callback`. A
+única entrada é o Google, com conta do Workspace da criarch: o romanctl pede `kc_idp_hint=google`, o
+Keycloak vai direto ao Google e recusa conta de fora do domínio. O `private` só deixa entrar quem
+foi cadastrado antes como operador (`romanctl iam operator add <e-mail>`). Os papéis vêm no token
+como client roles de `iam-manager-api`. O token é offline: a sessão vale 30 dias sem uso e renova a
+cada comando. Sem internet, a sessão salva basta enquanto valer; com internet, ela é conferida no
+Keycloak a cada 12 h, então um usuário bloqueado ou uma sessão encerrada saem na hora. Sem login
+rodam só `login`, `logout`, `whoami`, `help`, `version`, `self-update` e `templates`.
 
-Em pipelines não há navegador: `ROMANCTL_CLIENT_ID` e `ROMANCTL_CLIENT_SECRET` (o client confidencial
-`romanctl-ci`, com `client_credentials`) substituem o login, sem gravar nada em disco. O CI deste
-repositório usa os secrets de mesmo nome. `ROMANCTL_AUTH_ISSUER` e `ROMANCTL_IAM_API` (ou `--issuer` e
-`--api` no login) apontam para outro Keycloak.
+Em pipelines não há navegador: `ROMANCTL_CLIENT_ID` e `ROMANCTL_CLIENT_SECRET` (um cliente da API
+do IAM Manager no `private`, com `client_credentials`) substituem o login, sem gravar nada em disco.
+O CI deste repositório usa os secrets de mesmo nome. `ROMANCTL_AUTH_ISSUER` e `ROMANCTL_IAM_API` (ou
+`--issuer` e `--api` no login) apontam para outro Keycloak.
 
-O mesmo login administra o Keycloak pela API do [IAM Manager](https://iam-api.marceloroman.com.br/api/guide.md):
+`romanctl iam` administra o Keycloak pela API do [IAM Manager](https://iam-api.marceloroman.com.br/api/guide.md)
+com um **cliente da API** (`client_credentials` no realm `private`), criado em IAM Manager →
+Operadores → Clientes da API. Os realms administrados são `private` (operadores) e `public`
+(usuários das aplicações):
 
 ```bash
-romanctl iam me                                   # o que você pode fazer
+romanctl iam credentials set --client-id iam-api-...   # pede o secret sem eco, confere e grava
+romanctl iam credentials                          # cliente, API e de onde veio (nunca o secret)
+romanctl iam me                                   # o que o cliente pode fazer
 romanctl iam realms
-romanctl iam realm create acme --display-name ACME
-romanctl iam users acme --search ana
-romanctl iam user create acme ana --email ana@acme.com --roles billing   # devolve um link para a senha
-romanctl iam user disable acme ana
-romanctl iam api-key create acme worker --roles billing                  # o secret só aparece aqui
-romanctl iam operator roles ana --realm romanctl --realms acme=admin     # delegar um realm
+romanctl iam users public --search ana
+romanctl iam user create public ana --email ana@acme.com      # devolve um link para a senha
+romanctl iam apps public                                      # aplicações, roles e clients
+romanctl iam app create public notes --roles reader,editor
+romanctl iam user access public ana notes --roles reader      # acesso a uma aplicação
+romanctl iam user disable public ana
+romanctl iam operator add ana@criarch.com.br --global iam-auditor   # libera o login no private
+romanctl iam operator roles ana@criarch.com.br --realms public=admin
+romanctl iam api-clients                                      # clientes da API
+romanctl iam api-client create pipeline --realms public=admin # o secret só aparece aqui
 romanctl iam audit
-romanctl iam api GET /api/realms/acme/settings    # qualquer rota da API
+romanctl iam api GET /api/realms/public/settings   # qualquer rota da API
 ```
 
-As permissões vêm dos papéis do realm `romanctl`: `iam-admin` (tudo), `iam-user-admin` (usuários,
-senhas e API keys), `iam-theme-admin` (temas) e `iam-auditor` (leitura), ou delegações
-`<realm>:admin|viewer` no client `iam-manager-api`. Quem só usa o romanctl não precisa de papel
-nenhum. O realm `romanctl` é tratado como o dos operadores do IAM Manager: só `iam-admin` vê e
-altera usuários e papéis dele.
+A credencial vem de `IAM_CLIENT_ID` e `IAM_CLIENT_SECRET` (com `IAM_API_URL` e `IAM_TOKEN_URL`
+opcionais) ou de `~/.config/iam-manager/credentials.env` (0600), o mesmo arquivo da skill
+`iam-manager`; o ambiente vale por cima do arquivo. O token dura 5 minutos e é renovado sozinho, com
+uma nova tentativa em 401. As permissões são as do cliente: papéis globais `iam-admin` (tudo),
+`iam-user-admin` (usuários, senhas e API keys), `iam-app-admin` (aplicações e acesso),
+`iam-theme-admin` (temas) e `iam-auditor` (leitura), ou as delegações `public:admin` e
+`public:viewer`. Tudo fica na auditoria com o `client_id` dele. Rotacionar o próprio cliente
+(`romanctl iam api-client rotate`) grava o secret novo no arquivo.
 
 ## Interface web
 

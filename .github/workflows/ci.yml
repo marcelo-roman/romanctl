@@ -15,7 +15,7 @@ on:
 
 env:
   ROMANCTL_TEMPLATES: ${{ github.workspace }}/templates
-  # O romanctl só roda com login; aqui o login é o client romanctl-ci do realm romanctl.
+  # O romanctl só roda com login; aqui o login é um cliente da API do IAM Manager no realm private.
   ROMANCTL_CLIENT_ID: ${{ secrets.ROMANCTL_CLIENT_ID }}
   ROMANCTL_CLIENT_SECRET: ${{ secrets.ROMANCTL_CLIENT_SECRET }}
 
