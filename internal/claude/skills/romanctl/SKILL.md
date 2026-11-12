@@ -51,6 +51,7 @@ O Claude roda sem terminal interativo. Então:
 | CPU, memória, disco, bateria, processos, plataforma        | `romanctl-system`      |
 | publicar no GitHub com CI e Dockerfile                    | `romanctl-publish`     |
 | atualizar o romanctl, idioma, modo offline, estas skills  | `romanctl-maintenance` |
+| realms, usuários, senhas e API keys do Keycloak            | `iam-manager`          |
 
 ## Quando o romanctl não cobre o pedido
 
