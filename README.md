@@ -3,39 +3,46 @@
 [![CI](https://github.com/marcelo-roman/romanctl/actions/workflows/ci.yml/badge.svg)](https://github.com/marcelo-roman/romanctl/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/marcelo-roman/romanctl)](https://github.com/marcelo-roman/romanctl/releases/latest)
 
-CLI para quem desenvolve. Com um único comando, ela:
+A CLI for developers. With a single command, it:
 
-- **instala ferramentas**: mais de 170, como kubectl, gh, AWS e Azure CLI, Terraform, Docker, SDKs de várias
-  linguagens e clientes de banco de dados;
-- **cria projetos**, inclusive com arquitetura pronta (Clean Architecture, DDD e CQRS em .NET), e **gera código**
-  dentro deles, como recursos completos, controllers, comandos e páginas;
-- **sobe o ambiente** do projeto: PostgreSQL, MongoDB, Redis, MySQL, SQL Server, RabbitMQ e Kafka, o banco, o `.env`
-  e o próprio app;
-- **publica no GitHub**, com CI e Dockerfile;
-- traz um **painel de terminal**, nos moldes do k9s, para fazer tudo isso sem decorar comandos.
+- **installs tools**: more than 170, such as kubectl, gh, the AWS and Azure CLIs, Terraform, Docker, SDKs for many
+  languages and database clients;
+- **creates projects**, including ready-made architectures (Clean Architecture, DDD and CQRS in .NET, hexagonal in Go,
+  and more), and **generates code** inside them, such as full resources, controllers, commands and pages;
+- **brings up the project environment**: PostgreSQL, MongoDB, Redis, MySQL, SQL Server, RabbitMQ and Kafka, the
+  database, the `.env` and the app itself;
+- **publishes to GitHub**, with CI and a Dockerfile;
+- ships a **terminal dashboard**, in the spirit of k9s, to do all of that without memorizing commands.
 
-Funciona em Linux e macOS, em `amd64` e `arm64`, e também no WSL e no Termux com `proot-distro`. Fala português e
-inglês, conforme o idioma do sistema.
+It runs on Linux and macOS, on `amd64` and `arm64`, and also on WSL and on Termux with `proot-distro`. It speaks
+English and Portuguese, following the system language.
 
-## Instalação
+![romanctl demo](docs/demo.gif)
+
+The full walkthrough of every command is in [`docs/demo.mp4`](docs/demo.mp4). The web interface is shown in
+[`docs/web-ui.mp4`](docs/web-ui.mp4). The terminal recordings are made with [vhs](https://github.com/charmbracelet/vhs) from the
+repository root (`vhs docs/demo.tape`, `vhs docs/highlight.tape`); the web one with `docs/webrec`, which drives Chrome
+against a running `romanctl web-ui`.
+
+## Installation
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/marcelo-roman/romanctl/main/install.sh | sh
 ```
 
-Pronto. Depois, rode `romanctl` para ver a lista de comandos, ou `romanctl ui` para abrir o painel.
+That's it. Then run `romanctl` to see the command list, or `romanctl ui` to open the dashboard.
 
-### O que o instalador faz
+### What the installer does
 
-1. Descobre o sistema (Linux ou macOS) e a arquitetura (`amd64` ou `arm64`).
-2. Baixa o binário da [última release](https://github.com/marcelo-roman/romanctl/releases/latest).
-3. Confere o SHA-256 com o arquivo `SHA256SUMS` da release. Se não bater, para sem instalar nada.
-4. Instala em `~/.local/bin/romanctl`, ou em `/usr/local/bin/romanctl` quando roda como root.
-5. Avisa se essa pasta não estiver no seu `PATH`.
+1. Detects the system (Linux or macOS) and the architecture (`amd64` or `arm64`).
+2. Downloads the binary from the [latest release](https://github.com/marcelo-roman/romanctl/releases/latest).
+3. Checks the SHA-256 against the release's `SHA256SUMS` file. If it doesn't match, it stops without installing anything.
+4. Installs to `~/.local/bin/romanctl`, or to `/usr/local/bin/romanctl` when run as root.
+5. Warns you if that directory is not on your `PATH`.
 
-Requisitos: `curl` ou `wget`, e `sha256sum` ou `shasum`. Já vêm instalados na maioria dos sistemas.
+Requirements: `curl` or `wget`, and `sha256sum` or `shasum`. They come preinstalled on most systems.
 
-### Prefere ler o script antes?
+### Rather read the script first?
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/marcelo-roman/romanctl/main/install.sh -o install.sh
@@ -43,51 +50,50 @@ less install.sh
 sh install.sh
 ```
 
-### Escolher a versão ou a pasta
+### Choosing the version or the directory
 
 ```bash
-# uma versão específica
+# a specific version
 curl -fsSL https://raw.githubusercontent.com/marcelo-roman/romanctl/main/install.sh | ROMANCTL_VERSION=v0.1.0 sh
 
-# outra pasta
+# another directory
 curl -fsSL https://raw.githubusercontent.com/marcelo-roman/romanctl/main/install.sh | ROMANCTL_INSTALL_DIR="$HOME/bin" sh
 
-# para todos os usuários da máquina
+# for every user on the machine
 curl -fsSL https://raw.githubusercontent.com/marcelo-roman/romanctl/main/install.sh | sudo sh
 ```
 
-### Colocar no PATH
+### Adding it to the PATH
 
-Se o instalador avisar que `~/.local/bin` não está no `PATH`, acrescente ao arquivo do seu shell e abra um terminal
-novo:
+If the installer warns that `~/.local/bin` is not on your `PATH`, add it to your shell's file and open a new terminal:
 
-| Shell | Comando |
+| Shell | Command |
 |---|---|
 | bash | `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc` |
 | zsh | `echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc` |
 | fish | `fish_add_path ~/.local/bin` |
 
-### Conferir
+### Checking
 
 ```bash
 romanctl version      # romanctl 0.1.0
-romanctl platform     # o que ele detectou na sua máquina
-romanctl doctor       # versões das ferramentas principais
+romanctl platform     # what it detected on your machine
+romanctl doctor       # versions of the main tools
 ```
 
-### Por sistema
+### Per system
 
-**Linux.** Funciona em Debian, Ubuntu, Fedora, RHEL, Arch, openSUSE e Alpine. As ferramentas são instaladas pelo
-gerenciador de pacotes da distribuição (`apt`, `dnf`, `pacman`, `zypper` ou `apk`) ou pelo binário oficial do
-fornecedor. Sem root, só o gerenciador de pacotes usa `sudo`. Para os serviços, como PostgreSQL e Kafka, é preciso
-Docker ou Podman: `romanctl tools install docker`.
+**Linux.** Works on Debian, Ubuntu, Fedora, RHEL, Arch, openSUSE and Alpine. Tools are installed through the
+distribution's package manager (`apt`, `dnf`, `pacman`, `zypper` or `apk`) or from the vendor's official binary.
+Without root, only the package manager uses `sudo`. Services such as PostgreSQL and Kafka need Docker or Podman:
+`romanctl tools install docker`.
 
-**macOS.** As ferramentas são instaladas pelo [Homebrew](https://brew.sh), que precisa estar instalado. Para os
-serviços, `romanctl tools install docker` instala o Colima com o Docker.
+**macOS.** Tools are installed through [Homebrew](https://brew.sh), which must be installed. For services,
+`romanctl tools install docker` installs Colima with Docker.
 
-**WSL.** Funciona como o Linux da distribuição que você usa.
+**WSL.** Works like the Linux distribution you use.
 
-**Termux (Android).** Use um Ubuntu dentro do Termux e instale lá dentro:
+**Termux (Android).** Use Ubuntu inside Termux and install it there:
 
 ```bash
 pkg install proot-distro
@@ -97,12 +103,12 @@ apt update && apt install -y curl
 curl -fsSL https://raw.githubusercontent.com/marcelo-roman/romanctl/main/install.sh | sh
 ```
 
-No proot, containers não rodam. O `romanctl` detecta isso: PostgreSQL, MongoDB e Redis rodam como processos locais,
-e o que precisa de container fica fora das listas. Detalhes em [Termux e proot](#termux-e-proot).
+Containers don't run under proot. `romanctl` detects that: PostgreSQL, MongoDB and Redis run as local processes, and
+whatever needs a container is left out of the lists. Details in [Termux and proot](#termux-and-proot).
 
-### A partir do código
+### From source
 
-Precisa do Go:
+You need Go:
 
 ```bash
 git clone https://github.com/marcelo-roman/romanctl.git
@@ -110,70 +116,70 @@ cd romanctl
 go build -ldflags="-s -w" -o ~/.local/bin/romanctl ./cmd/romanctl
 ```
 
-## Atualizar
+## Updating
 
 ```bash
-romanctl self-update            # atualiza para a última versão
-romanctl self-update --check    # só mostra se há versão nova
+romanctl self-update            # updates to the latest version
+romanctl self-update --check    # only shows whether there is a new version
 romanctl self-update --version v0.1.0
 ```
 
-O `self-update` confere o SHA-256 e roda a versão nova antes de trocar a atual: se ela não funcionar na sua máquina,
-nada muda. Se o `romanctl` estiver numa pasta do sistema, como `/usr/local/bin`, use `sudo`. Rodar o instalador de
-novo também atualiza.
+`self-update` checks the SHA-256 and runs the new version before replacing the current one: if it doesn't work on your
+machine, nothing changes. If `romanctl` lives in a system directory such as `/usr/local/bin`, use `sudo`. Running the
+installer again also updates it.
 
-## Desinstalar
+## Uninstalling
 
 ```bash
 rm "$(command -v romanctl)"
 ```
 
-Isso remove só o programa. O que ele criou fica até você apagar:
+That removes only the program. What it created stays until you delete it:
 
-| Pasta | O que tem |
+| Directory | Contents |
 |---|---|
-| `~/.local/share/romanctl` | dados dos serviços locais, logs, estado e caches |
-| `~/.config/romanctl` | idioma escolhido, templates e geradores próprios |
-| `~/projetos` | os seus projetos |
+| `~/.local/share/romanctl` | local service data, logs, state and caches |
+| `~/.config/romanctl` | chosen language, your own templates and generators |
+| `~/projetos` | your projects |
 
-As ferramentas instaladas continuam no sistema. Para removê-las antes, use `romanctl tools uninstall`.
-Os containers dos serviços se chamam `romanctl-<serviço>`, e os dados ficam em volumes de mesmo nome.
+Installed tools stay on the system. To remove them first, use `romanctl tools uninstall`. Service containers are named
+`romanctl-<service>`, and their data lives in volumes with the same name.
 
-## Primeiros passos
+## Getting started
 
-**0. Faça login.** O romanctl só roda com login no Keycloak (realm `private` em
-`auth.marceloroman.com.br`):
-
-```bash
-romanctl login   # abre o navegador; a sessão fica em ~/.config/romanctl/session.json
-```
-
-**1. Veja os comandos** e rode o que quiser pela lista:
+**0. Log in.** romanctl only runs after logging in to Keycloak (realm `private` at `auth.marceloroman.com.br`):
 
 ```bash
-romanctl         # lista de comandos: digite para filtrar, Enter roda e pergunta o que faltar
-romanctl ui      # painel de tela cheia
+romanctl login   # opens the browser; the session is stored in ~/.config/romanctl/session.json
 ```
 
-No painel, `Tab` troca de tela, `/` filtra, `Enter` mostra o que dá para fazer com o item, e `?` mostra todas as teclas.
-
-**2. Instale as ferramentas** de que você precisa:
+**1. Look at the commands** and run whatever you want from the list:
 
 ```bash
-romanctl tools list                  # o que roda na sua máquina
-romanctl tools install k8s           # escolha numa lista do grupo Kubernetes
-romanctl tools install gh node go    # ou diga quais
+romanctl         # command list: type to filter, Enter runs it and asks for whatever is missing
+romanctl ui      # full-screen dashboard
 ```
 
-**3. Crie um projeto** e gere código nele:
+In the dashboard, `Tab` switches screens, `/` filters, `Enter` shows what you can do with the item, and `?` shows
+every key.
+
+**2. Install the tools** you need:
 
 ```bash
-romanctl new loja --stack dotnet --arch clean,ddd,cqrs --with postgres
-cd ~/projetos/loja
-romanctl add resource Product        # CRUD completo, do domínio aos endpoints
+romanctl tools list                  # what runs on your machine
+romanctl tools install k8s           # pick from a list of the Kubernetes group
+romanctl tools install gh node go    # or name them
 ```
 
-**4. Suba tudo**: PostgreSQL, banco, `.env` e a API.
+**3. Create a project** and generate code in it:
+
+```bash
+romanctl new shop --stack dotnet --arch clean,ddd,cqrs --with postgres
+cd ~/projetos/shop
+romanctl add resource Product        # full CRUD, from the domain to the endpoints
+```
+
+**4. Bring everything up**: PostgreSQL, the database, the `.env` and the API.
 
 ```bash
 romanctl up -d
@@ -181,262 +187,268 @@ curl http://localhost:5080/products
 romanctl down
 ```
 
-**5. Publique** no GitHub, em repositório privado:
+**5. Publish** to GitHub, as a private repository:
 
 ```bash
 romanctl publish
 ```
 
-Qualquer comando sem argumentos pergunta o que falta. Para ajuda, use `romanctl <comando> --help`.
+Any command without arguments asks for what is missing. For help, use `romanctl <command> --help`.
 
-## Comandos
+## Commands
 
-| Comando | Para quê |
+| Command | What for |
 |---|---|
-| `romanctl` | Lista os comandos: digite para filtrar, Enter roda e pergunta o que faltar |
-| `ui` | Abre o painel |
-| `tools list`, `tools info`, `tools install`, `tools uninstall`, `tools categories` | Ferramentas |
-| `new`, `add`, `catalog`, `types` | Criar projetos e gerar código |
-| `up`, `down`, `run`, `logs` | Rodar projetos com o ambiente |
-| `code`, `open`, `list`, `rm` | Abrir, listar e remover projetos |
-| `publish` | Publicar no GitHub |
-| `status`, `start`, `stop`, `restart`, `install`, `restore` | Serviços |
-| `system`, `platform`, `doctor` | CPU, memória, bateria e diagnóstico |
-| `offline` | Preparar para trabalhar sem internet |
-| `web-ui` | Interface web em localhost |
-| `claude` | Skills para o Claude Code operar a máquina pelo romanctl |
-| `config lang`, `self-update`, `menu` | Idioma, atualização e menu em lista |
+| `romanctl` | Lists the commands: type to filter, Enter runs it and asks for whatever is missing |
+| `ui` | Opens the dashboard |
+| `tools list`, `tools info`, `tools versions`, `tools install`, `tools uninstall`, `tools categories` | Tools |
+| `new`, `add`, `catalog`, `types`, `templates` | Create projects and generate code |
+| `up`, `down`, `run`, `logs` | Run projects with their environment |
+| `code`, `open`, `list`, `rm` | Open, list and remove projects |
+| `publish` | Publish to GitHub |
+| `status`, `start`, `stop`, `restart`, `install`, `restore` | Services |
+| `system`, `platform`, `doctor` | CPU, memory, battery and diagnostics |
+| `offline` | Get ready to work without internet |
+| `login`, `logout`, `whoami`, `iam` | Access and Keycloak administration |
+| `web-ui` | Web interface on localhost |
+| `claude` | Skills so Claude Code can operate the machine through romanctl |
+| `config lang`, `self-update`, `menu` | Language, updates and the list menu |
 
-Os projetos ficam em `~/projetos`; para usar outra pasta, defina `ROMANCTL_PROJETOS`. `--json` funciona nos comandos
-de consulta, para scripts. Sem terminal, nada é perguntado. Os códigos de saída são
-0 (sucesso), 1 (falha ao executar) e 2 (uso incorreto).
+Projects live in `~/projetos`; to use another directory, set `ROMANCTL_PROJETOS`. `--json` works on the query commands,
+for scripts. Without a terminal, nothing is asked. Exit codes are 0 (success), 1 (execution failure) and 2 (incorrect
+usage).
 
-# Referência
+# Reference
 
-## Login e Keycloak
+## Login and Keycloak
 
 ```bash
-romanctl login                   # authorization code com PKCE, redirect em 127.0.0.1
-romanctl whoami                  # usuário, papéis e até quando a sessão vale
-romanctl logout                  # revoga a sessão no Keycloak e apaga a local
+romanctl login                   # authorization code with PKCE, redirect to 127.0.0.1
+romanctl whoami                  # user, roles and when the session expires
+romanctl logout                  # revokes the session in Keycloak and deletes the local one
 ```
 
-O login acontece no realm `private` de `https://auth.marceloroman.com.br`, num client público
-(`romanctl`) que exige PKCE S256 e só aceita redirect para `http://127.0.0.1:<porta>/callback`. A
-única entrada é o Google, com conta do Workspace da criarch: o romanctl pede `kc_idp_hint=google`, o
-Keycloak vai direto ao Google e recusa conta de fora do domínio. O `private` só deixa entrar quem
-foi cadastrado antes como operador (`romanctl iam operator add <e-mail>`). Os papéis vêm no token
-como client roles de `iam-manager-api`. O token é offline: a sessão vale 30 dias sem uso e renova a
-cada comando. Sem internet, a sessão salva basta enquanto valer; com internet, ela é conferida no
-Keycloak a cada 12 h, então um usuário bloqueado ou uma sessão encerrada saem na hora. Sem login
-rodam só `login`, `logout`, `whoami`, `help`, `version`, `self-update` e `templates`.
+Login happens in the `private` realm of `https://auth.marceloroman.com.br`, through a public client (`romanctl`) that
+requires PKCE S256 and only accepts redirects to `http://127.0.0.1:<port>/callback`. The only way in is Google, with a
+criarch Workspace account: romanctl sends `kc_idp_hint=google`, Keycloak goes straight to Google and rejects accounts
+outside the domain. `private` only lets in people previously registered as operators
+(`romanctl iam operator add <email>`). Roles come in the token as client roles of `iam-manager-api`. The token is
+offline: the session lasts 30 days without use and is renewed on every command. Without internet, the saved session is
+enough while it is valid; with internet, it is checked against Keycloak every 12 h, so a blocked user or a terminated
+session is cut off right away. Without login, only `login`, `logout`, `whoami`, `help`, `version`, `self-update` and
+`templates` run.
 
-Em pipelines não há navegador: `ROMANCTL_CLIENT_ID` e `ROMANCTL_CLIENT_SECRET` (um cliente da API
-do IAM Manager no `private`, com `client_credentials`) substituem o login, sem gravar nada em disco.
-O CI deste repositório usa os secrets de mesmo nome. `ROMANCTL_AUTH_ISSUER` e `ROMANCTL_IAM_API` (ou
-`--issuer` e `--api` no login) apontam para outro Keycloak.
+Pipelines have no browser: `ROMANCTL_CLIENT_ID` and `ROMANCTL_CLIENT_SECRET` (an IAM Manager API client in `private`,
+with `client_credentials`) replace the login, without writing anything to disk. This repository's CI uses secrets with
+the same names. `ROMANCTL_AUTH_ISSUER` and `ROMANCTL_IAM_API` (or `--issuer` and `--api` on login) point to another
+Keycloak.
 
-`romanctl iam` administra o Keycloak pela API do [IAM Manager](https://iam-api.marceloroman.com.br/api/guide.md)
-com um **cliente da API** (`client_credentials` no realm `private`), criado em IAM Manager →
-Operadores → Clientes da API. Os realms administrados são `private` (operadores) e `public`
-(usuários das aplicações):
+`romanctl iam` administers Keycloak through the [IAM Manager](https://iam-api.marceloroman.com.br/api/guide.md) API
+with an **API client** (`client_credentials` in the `private` realm), created in IAM Manager → Operators → API clients.
+The administered realms are `private` (operators) and `public` (application users):
 
 ```bash
-romanctl iam credentials set --client-id iam-api-...   # pede o secret sem eco, confere e grava
-romanctl iam credentials                          # cliente, API e de onde veio (nunca o secret)
-romanctl iam me                                   # o que o cliente pode fazer
+romanctl iam credentials set --client-id iam-api-...   # asks for the secret without echo, checks and saves it
+romanctl iam credentials                          # client, API and where they came from (never the secret)
+romanctl iam me                                   # what the client is allowed to do
 romanctl iam realms
 romanctl iam users public --search ana
-romanctl iam user create public ana --email ana@acme.com      # devolve um link para a senha
-romanctl iam apps public                                      # aplicações, roles e clients
+romanctl iam user create public ana --email ana@acme.com      # returns a link to set the password
+romanctl iam apps public                                      # applications, roles and clients
 romanctl iam app create public notes --roles reader,editor
-romanctl iam user access public ana notes --roles reader      # acesso a uma aplicação
+romanctl iam user access public ana notes --roles reader      # access to an application
 romanctl iam user disable public ana
-romanctl iam operator add ana@criarch.com.br --global iam-auditor   # libera o login no private
+romanctl iam operator add ana@criarch.com.br --global iam-auditor   # allows login to private
 romanctl iam operator roles ana@criarch.com.br --realms public=admin
-romanctl iam api-clients                                      # clientes da API
-romanctl iam api-client create pipeline --realms public=admin # o secret só aparece aqui
+romanctl iam api-clients                                      # API clients
+romanctl iam api-client create pipeline --realms public=admin # the secret is shown only here
 romanctl iam audit
-romanctl iam api GET /api/realms/public/settings   # qualquer rota da API
+romanctl iam api GET /api/realms/public/settings   # any API route
 ```
 
-A credencial vem de `IAM_CLIENT_ID` e `IAM_CLIENT_SECRET` (com `IAM_API_URL` e `IAM_TOKEN_URL`
-opcionais) ou de `~/.config/iam-manager/credentials.env` (0600), o mesmo arquivo da skill
-`iam-manager`; o ambiente vale por cima do arquivo. O token dura 5 minutos e é renovado sozinho, com
-uma nova tentativa em 401. As permissões são as do cliente: papéis globais `iam-admin` (tudo),
-`iam-user-admin` (usuários, senhas e API keys), `iam-app-admin` (aplicações e acesso),
-`iam-theme-admin` (temas) e `iam-auditor` (leitura), ou as delegações `public:admin` e
-`public:viewer`. Tudo fica na auditoria com o `client_id` dele. Rotacionar o próprio cliente
-(`romanctl iam api-client rotate`) grava o secret novo no arquivo.
+The credential comes from `IAM_CLIENT_ID` and `IAM_CLIENT_SECRET` (with optional `IAM_API_URL` and `IAM_TOKEN_URL`) or
+from `~/.config/iam-manager/credentials.env` (0600), the same file the `iam-manager` skill uses; the environment wins
+over the file. The token lasts 5 minutes and renews itself, retrying once on 401. Permissions are the client's: global
+roles `iam-admin` (everything), `iam-user-admin` (users, passwords and API keys), `iam-app-admin` (applications and
+access), `iam-theme-admin` (themes) and `iam-auditor` (read-only), or the delegations `public:admin` and
+`public:viewer`. Everything is audited with its `client_id`. Rotating your own client
+(`romanctl iam api-client rotate`) writes the new secret to the file.
 
-## Interface web
+## Web interface
 
 ```bash
 romanctl web-ui                  # http://localhost:7777
 romanctl web-ui --port 8888 --open
 ```
 
-Uma interface no navegador para o que a CLI faz: painel da máquina, projetos (criar a partir de um template, subir,
-derrubar, logs, gerar código, remover), serviços, ferramentas (instalar, escolher versão, remover), templates e as
-tarefas em andamento, com a saída ao vivo. Cada ação roda o próprio romanctl com `--json`, então o resultado é o mesmo
-da linha de comando. Segue o idioma do romanctl e o tema claro ou escuro do sistema.
+[Watch it in action](docs/web-ui.mp4): create a project from a template, generate code, bring it up, read its logs,
+browse services, tools and templates, follow jobs, switch language and remove the project.
 
-O servidor escuta só em `127.0.0.1`, recusa pedidos com outro nome de host e exige um token que vai embutido na
-página, renovado a cada execução: outro site aberto no navegador não consegue chamar a API.
+A browser interface for what the CLI does: machine dashboard, projects (create from a template, bring up, take down,
+logs, generate code, remove), services, tools (install, pick a version, remove), templates and running jobs, with live
+output. Each action runs romanctl itself with `--json`, so the result is the same as on the command line. It follows
+romanctl's language and the system's light or dark theme.
 
-O código fica em [`web/`](web) (React, Vite e TypeScript) e o build vai para `internal/webui/dist`, embutido no
-binário. Depois de mudar a interface, rode `npm run build` em `web/` e commite o `dist`; o CI confere que ele está
-atualizado.
+The server listens only on `127.0.0.1`, rejects requests with another host name and requires a token embedded in the
+page, renewed on every run: another site open in the browser cannot call the API.
 
-## Painel
+The code lives in [`web/`](web) (React, Vite and TypeScript) and the build goes to `internal/webui/dist`, embedded in
+the binary. After changing the interface, run `npm run build` in `web/` and commit `dist`; CI checks that it is up to
+date.
 
-`romanctl ui` abre um painel de tela cheia, nos moldes do k9s, com telas de projetos, serviços, ferramentas
-e sistema, que se atualizam sozinhas.
+## Dashboard
 
-No alto ficam a máquina, a versão, quantos projetos e serviços estão no ar, CPU e memória; ao lado, as teclas que valem
-agora. A lista vem numa moldura com o nome da tela, o filtro e a contagem no título, cada linha pintada pelo estado, e
-embaixo a trilha de onde você está. Em terminal pequeno, o cabeçalho vira uma linha e as teclas descem para o rodapé.
+`romanctl ui` opens a full-screen dashboard, in the spirit of k9s, with project, service, tool and system screens that
+refresh by themselves.
 
-| Tecla | O que faz |
+At the top you see the machine, the version, how many projects and services are up, CPU and memory; beside them, the
+keys that apply right now. The list sits in a frame with the screen name, the filter and the count in the title, each
+row colored by its state, and a breadcrumb at the bottom. In a small terminal, the header shrinks to one line and the
+keys move to the footer.
+
+| Key | What it does |
 |---|---|
-| `Tab`, `1` a `4` | Troca de tela |
-| `:` | Vai direto: `:tools`, `:svc`, `:prj`, `:sys`, ou uma categoria como `:db` e `:k8s` |
-| `/` | Filtra a lista |
-| `Enter` | Mostra as ações do item; em Ferramentas, as versões disponíveis |
-| `d`, `l` | Detalhes e logs do item; em Ferramentas, os detalhes trazem o README, com `j`/`k` para rolar |
-| `<` `>` | Troca de categoria, em Ferramentas |
-| `?` | Mostra todas as teclas da tela atual |
-| `Esc`, `q` | Volta e sai |
+| `Tab`, `1` to `4` | Switches screens |
+| `:` | Jumps straight to `:tools`, `:svc`, `:prj`, `:sys`, or a category such as `:db` and `:k8s` |
+| `/` | Filters the list |
+| `Enter` | Shows the item's actions; in Tools, the available versions |
+| `d`, `l` | Item details and logs; in Tools, details include the README, with `j`/`k` to scroll |
+| `<` `>` | Switches category, in Tools |
+| `?` | Shows every key of the current screen |
+| `Esc`, `q` | Go back and quit |
 
-O cabeçalho mostra só as teclas que valem para o item selecionado. Ações longas rodam em segundo plano, com o andamento na
-própria linha, e remover sempre pede confirmação.
+The header shows only the keys that apply to the selected item. Long actions run in the background, with progress on
+the row itself, and removing always asks for confirmation.
 
-Em Ferramentas, quando o cursor para numa linha, o painel consulta a versão que a instalação traria e mostra na coluna
-VERSÃO, como `1.29 → 1.31`. Instalar e reinstalar pedem confirmação, com a versão e a origem. `romanctl menu` abre a versão em lista, mais simples.
+In Tools, when the cursor rests on a row, the dashboard looks up the version an install would bring and shows it in the
+VERSION column, as in `1.29 → 1.31`. Installing and reinstalling ask for confirmation, with the version and the source.
+`romanctl menu` opens the simpler list version.
 
-## Idioma
+## Language
 
-Português e inglês. O idioma segue o sistema: `LC_ALL`, `LC_MESSAGES`, `LANGUAGE`, `LANG` e, no macOS, o idioma
-da conta. Sem nenhuma pista, usa inglês. Para escolher:
+English and Portuguese. The language follows the system: `LC_ALL`, `LC_MESSAGES`, `LANGUAGE`, `LANG` and, on macOS,
+the account language. With no hint at all, it uses English. To choose:
 
 ```bash
-romanctl config lang pt      # grava a escolha; auto volta a seguir o sistema
-romanctl status --lang en    # só neste comando
+romanctl config lang pt      # saves the choice; auto goes back to following the system
+romanctl status --lang en    # only for this command
 ROMANCTL_LANG=en romanctl status
 ```
 
-No Termux com `proot-distro`, o Android não informa o idioma ao Ubuntu, então vale gravar a escolha. Os projetos
-gerados pelos templates continuam em português.
+On Termux with `proot-distro`, Android doesn't tell Ubuntu the language, so it's worth saving the choice. Projects
+generated from the templates are in English.
 
-As mensagens em português são as chaves de `internal/i18n/en.go`, e um teste falha se alguma ficar sem tradução.
+The source code is in English. Messages are written in English in the code, and `internal/i18n/pt*.go` holds the
+Portuguese translation; a test fails if a message is left untranslated.
 
-## Ferramentas
+## Tools
 
 ```bash
-romanctl tools list                 # só o que roda nesta máquina
-romanctl tools list --all           # inclui o resto, com o motivo
-romanctl tools info k9s             # instalada, disponível, origem, página e README
-romanctl tools versions helm        # versões instaláveis, da mais nova para a mais antiga
+romanctl tools list                 # only what runs on this machine
+romanctl tools list --all           # includes the rest, with the reason
+romanctl tools info k9s             # installed, available, source, page and README
+romanctl tools versions helm        # installable versions, newest first
 romanctl tools install helm --version 3.18.4
 romanctl tools install kubectl gh aws az docker
-romanctl tools install k8s          # lista o grupo, com a opção Todos
-romanctl tools install k8s --yes    # instala o grupo inteiro
+romanctl tools install k8s          # lists the group, with an All option
+romanctl tools install k8s --yes    # installs the whole group
 romanctl tools install k8s --dry-run
 romanctl tools uninstall kubectl --yes
-romanctl tools uninstall k8s        # lista o que está instalado no grupo
+romanctl tools uninstall k8s        # lists what is installed in the group
 ```
 
-O catálogo fica em `internal/tools/catalog_*.go`, em grupos: `sdk`, `node-tools`, `python-tools`, `build`,
-`git`, `cloud`, `k8s`, `iac`, `containers`, `security`, `db`, `observability`, `network`, `shell` e `ai`.
-Downloads são conferidos com o SHA-256 do fornecedor quando ele publica um. Depois de instalar, a
-ferramenta é executada para confirmar que roda.
+The catalog lives in `internal/tools/catalog_*.go`, in groups: `sdk`, `node-tools`, `python-tools`, `build`, `git`,
+`cloud`, `k8s`, `iac`, `containers`, `security`, `db`, `observability`, `network`, `shell` and `ai`. Downloads are
+checked against the vendor's SHA-256 when one is published. After installing, the tool is executed to confirm it runs.
 
-Sem terminal, ou com `--json`, um grupo é instalado inteiro, porque não há quem responda ao menu.
+Without a terminal, or with `--json`, a group is installed whole, because there is nobody to answer the menu.
 
-A lista de ferramentas mostra sempre a última versão de cada uma, guardada por 6 horas para não ir à rede toda vez. No
-painel, `Enter` numa ferramenta abre as versões disponíveis e instala a escolhida; em `romanctl tools list`, a opção é
-"Escolher outra versão". As versões vêm da mesma origem do instalador (releases do GitHub, HashiCorp, npm, PyPI, `apt-cache
-madison`, `dnf --showduplicates`, e as listas oficiais do Node, Go e Zig), sem pré-releases. Com o Homebrew e com os
-instaladores próprios de aws, gcloud, dart, swift, rust e docker-cli, só existe a última.
+The tool list always shows the latest version of each one, cached for 6 hours so it doesn't hit the network every time.
+In the dashboard, `Enter` on a tool opens the available versions and installs the chosen one; in `romanctl tools list`,
+the option is "Choose another version". Versions come from the same source as the installer (GitHub releases,
+HashiCorp, npm, PyPI, `apt-cache madison`, `dnf --showduplicates`, and the official Node, Go and Zig lists), without
+pre-releases. With Homebrew and with the custom installers of aws, gcloud, dart, swift, rust and docker-cli, only the
+latest exists.
 
-`tools info` e a instalação mostram a versão que vai chegar, consultada na mesma origem que o instalador usa: releases do
-GitHub, `apt-cache policy` e equivalentes, Homebrew, npm, PyPI ou o instalador oficial (dl.k8s.io, nodejs.org, go.dev,
-HashiCorp). O README vem do GitHub, ou da descrição no PyPI, e é renderizado no terminal; fora de um terminal, sai o
-markdown cru.
+`tools info` and the install show the version that will arrive, looked up in the same source the installer uses: GitHub
+releases, `apt-cache policy` and equivalents, Homebrew, npm, PyPI or the official installer (dl.k8s.io, nodejs.org,
+go.dev, HashiCorp). The README comes from GitHub, or from the PyPI description, and is rendered in the terminal; outside
+a terminal, the raw markdown is printed.
 
-A listagem, as listas de seleção e os grupos mostram só o que roda na máquina, conforme o sistema, a
-arquitetura, o gerenciador de pacotes, a libc e as capacidades detectadas: containers (namespaces e cgroups,
-e VM no macOS), virtualização (`/dev/kvm` ou `kern.hv_support`) e interface gráfica (`DISPLAY` ou
-`WAYLAND_DISPLAY`). Se a detecção errar, force com `ROMANCTL_CONTAINERS`, `ROMANCTL_VM` e `ROMANCTL_GUI`,
-valendo `0` ou `1`. O que cada ferramenta exige está em `internal/tools/requirements.go`.
+The listing, the selection lists and the groups show only what runs on the machine, according to the system, the
+architecture, the package manager, the libc and the detected capabilities: containers (namespaces and cgroups, and a VM
+on macOS), virtualization (`/dev/kvm` or `kern.hv_support`) and a graphical interface (`DISPLAY` or
+`WAYLAND_DISPLAY`). If detection gets it wrong, force it with `ROMANCTL_CONTAINERS`, `ROMANCTL_VM` and `ROMANCTL_GUI`,
+set to `0` or `1`. What each tool requires is in `internal/tools/requirements.go`.
 
-`uninstall` funciona igual, mostrando só o que está instalado, e sempre pede confirmação antes de
-remover. `--yes` dispensa a lista e a confirmação, e nesse caso `all` é recusado. Antes de remover pelo `apt`, ele simula a
-operação e recusa se levar junto um pacote vital ou outro pacote instalado explicitamente.
+`uninstall` works the same way, showing only what is installed, and always asks for confirmation before removing.
+`--yes` skips the list and the confirmation, and in that case `all` is refused. Before removing through `apt`, it
+simulates the operation and refuses if it would take along an essential package or another explicitly installed one.
 
-## Listas e loading
+## Lists and progress
 
-Em um terminal, toda lista filtra ao digitar, sem diferenciar maiúsculas e acentos, e cada palavra precisa aparecer
-na linha. O primeiro Esc limpa o filtro, e o segundo volta. Nas listas de múltipla escolha, Espaço marca e "Todos"
-ou Ctrl+A marcam só o que o filtro está mostrando.
+In a terminal, every list filters as you type, ignoring case and accents, and every word must appear in the row. The
+first Esc clears the filter, and the second goes back. In multiple-choice lists, Space selects, and "All" or Ctrl+A
+select only what the filter is showing.
 
-Nas listas de ferramentas, ←/→ trocam de categoria, e digitar o nome da categoria também funciona. Em comandos, use
-`--category`, que aceita nomes como `db`, `"banco de dados"` e `linguagens`, separados por vírgula. `romanctl tools
-categories` mostra todas.
+In tool lists, ←/→ switch categories, and typing the category name also works. In commands, use `--category`, which
+accepts names such as `db`, `databases` and `languages`, separated by commas. `romanctl tools categories` shows them
+all.
 
-`romanctl tools list` e `romanctl list` são listas navegáveis, com ações em cada item. Para imprimir, use `--plain`
-ou `--filter <texto>`; com pipe, `--json` ou sem terminal, elas imprimem sozinhas.
+`romanctl tools list` and `romanctl list` are navigable lists, with actions on each item. To print instead, use
+`--plain` or `--filter <text>`; with a pipe, `--json` or no terminal, they print by themselves.
 
-O que demora mostra uma animação com progresso, só em terminal. As versões das ferramentas ficam em cache até o
-binário mudar, e o tamanho dos caches do `offline` fica guardado por uma hora.
+Whatever takes a while shows a progress animation, only in a terminal. Tool versions are cached until the binary
+changes, and the size of the `offline` caches is kept for an hour.
 
-## Templates de arquitetura
+## Architecture templates
 
 ```bash
-romanctl new pedidos --stack dotnet --arch clean,ddd,cqrs --with postgres
-romanctl new estoque --stack go --arch hexagonal,ddd --with postgres
+romanctl new orders --stack dotnet --arch clean,ddd,cqrs --with postgres
+romanctl new inventory --stack go --arch hexagonal,ddd --with postgres
 ```
 
-| Stack | Arquitetura | Base | Serviços |
+| Stack | Architecture | Based on | Services |
 |---|---|---|---|
-| `dotnet` | `clean`, `ddd`, `cqrs` | Minimal API, EF Core, despachante próprio | `postgres` |
-| `dotnet` | `clean`, `ddd`, `cqrs`, `event-sourcing` | Marten no PostgreSQL, projeções, concorrência otimista | `postgres` |
-| `dotnet` | `modular-monolith`, `ddd` | Módulos Catalog e Ordering, contratos públicos, eventos de integração, um esquema por módulo | `postgres` |
-| `dotnet` | `vertical-slice` | Minimal API, uma pasta por funcionalidade, EF Core | `postgres` |
-| `go` | `hexagonal`, `ddd` | `net/http` da biblioteca padrão, pgx | `postgres` |
-| `go` | `microservices`, `event-driven` | Pedidos e faturamento com outbox, inbox e RabbitMQ (ou HTTP sem ele) | `postgres`, `rabbitmq` |
-| `kotlin` | `hexagonal`, `ddd` | Ktor, Gradle com wrapper, HikariCP, Konsist | `postgres` |
-| `node` | `clean`, `ddd`, `cqrs` | NestJS com @nestjs/cqrs, TypeScript, pg, Vitest | `postgres` |
-| `node` | `bff` | API de pedidos e BFF em Fastify, web em React; três processos | `postgres` |
-| `node` | `layered` | Fastify, rotas, serviços e repositórios, pg | `postgres` |
-| `node` | `trpc` | Monorepo com Next.js, tRPC, zod e pg | `postgres` |
+| `dotnet` | `clean`, `ddd`, `cqrs` | Minimal API, EF Core, custom dispatcher | `postgres` |
+| `dotnet` | `clean`, `ddd`, `cqrs`, `event-sourcing` | Marten on PostgreSQL, projections, optimistic concurrency | `postgres` |
+| `dotnet` | `modular-monolith`, `ddd` | Catalog and Ordering modules, public contracts, integration events, one schema per module | `postgres` |
+| `dotnet` | `vertical-slice` | Minimal API, one folder per feature, EF Core | `postgres` |
+| `go` | `hexagonal`, `ddd` | `net/http` from the standard library, pgx | `postgres` |
+| `go` | `microservices`, `event-driven` | Orders and billing with outbox, inbox and RabbitMQ (or HTTP without it) | `postgres`, `rabbitmq` |
+| `kotlin` | `hexagonal`, `ddd` | Ktor, Gradle with wrapper, HikariCP, Konsist | `postgres` |
+| `node` | `clean`, `ddd`, `cqrs` | NestJS with @nestjs/cqrs, TypeScript, pg, Vitest | `postgres` |
+| `node` | `bff` | Orders API and BFF in Fastify, web in React; three processes | `postgres` |
+| `node` | `layered` | Fastify, routes, services and repositories, pg | `postgres` |
+| `node` | `trpc` | Monorepo with Next.js, tRPC, zod and pg | `postgres` |
 | `java` | `hexagonal`, `ddd` | Spring Boot, Maven, JdbcClient, ArchUnit | `postgres` |
 | `python` | `layered` | Django, Django REST Framework, uv | `postgres` |
-| `react` | `feature-sliced` | Front da API de pedidos: Vite, React Router, TanStack Query, lint de camadas FSD | — |
+| `react` | `feature-sliced` | Front end for the orders API: Vite, React Router, TanStack Query, FSD layer lint | — |
 | `rust` | `hexagonal`, `ddd` | axum, tokio, sqlx | `postgres` |
 | `php` | `hexagonal`, `ddd` | Symfony 7.4, Doctrine DBAL, PHPUnit | `postgres` |
 | `python` | `hexagonal`, `ddd` | FastAPI, uv, psycopg | `postgres` |
 
-`romanctl catalog` lista os templates e as arquiteturas conhecidas: `bff`, `clean`, `cqrs`, `ddd`, `event-driven`,
-`event-sourcing`, `feature-sliced`, `hexagonal`, `layered`, `microservices`, `modular-monolith`, `trpc` e
-`vertical-slice`. Apelidos como `ports-and-adapters`, `vsa`, `modulith` e `fsd` também valem.
+`romanctl catalog` lists the templates and the known architectures: `bff`, `clean`, `cqrs`, `ddd`, `event-driven`,
+`event-sourcing`, `feature-sliced`, `hexagonal`, `layered`, `microservices`, `modular-monolith`, `trpc` and
+`vertical-slice`. Aliases such as `ports-and-adapters`, `vsa`, `modulith` and `fsd` also work.
 
-Depois de gerar, o `new` confere as ferramentas de que o projeto precisa e, em um terminal, oferece instalá-las. Com
-tudo instalado, ele roda o preparo do template, como `dotnet restore` ou `go mod tidy`. Com `--offline`, o preparo
-fica para depois. Uma falha no preparo não apaga o projeto.
+After generating, `new` checks the tools the project needs and, in a terminal, offers to install them. With everything
+installed, it runs the template's setup, such as `dotnet restore` or `go mod tidy`. With `--offline`, setup is left for
+later. A setup failure does not delete the project.
 
-### Onde ficam
+### Where they live
 
-Os templates não fazem parte do binário. Eles estão na pasta [`templates/`](templates) deste repositório, uma
-subpasta por linguagem, e são baixados para `~/.local/share/romanctl/templates`, na tag da versão instalada:
+Templates are not part of the binary. They live in this repository's [`templates/`](templates) directory, one
+subdirectory per language, and are downloaded to `~/.local/share/romanctl/templates`, at the tag of the installed
+version:
 
 ```
 templates/
   go/
-    projects/hexagonal-ddd/          um projeto que compila e testa na própria pasta
+    projects/hexagonal-ddd/          a project that builds and tests in its own directory
     projects/microservices/
     generators/hexagonal-ddd/resource/
-    generators/simple/handler/       geradores dos projetos Go simples
+    generators/simple/handler/       generators for simple Go projects
   node/
     projects/clean-ddd-cqrs/  projects/layered/  projects/trpc/  projects/bff/
     generators/express/  generators/next/  ...
@@ -444,59 +456,59 @@ templates/
 ```
 
 ```bash
-romanctl templates                 # onde estão e de que versão vieram
-romanctl templates update          # baixa de novo, da tag da versão instalada
+romanctl templates                 # where they are and which version they came from
+romanctl templates update          # downloads again, from the installed version's tag
 romanctl templates update --ref refs/heads/main
 ```
 
-O instalador, o `self-update` e o `offline prep` baixam os templates sozinhos, e o primeiro `new` também, se ainda não
-houver nenhum. Para desenvolver um template, aponte `ROMANCTL_TEMPLATES` para a pasta do repositório.
+The installer, `self-update` and `offline prep` download the templates by themselves, and so does the first `new` if
+there are none yet. To develop a template, point `ROMANCTL_TEMPLATES` at the repository directory.
 
-### Como um template é feito
+### How a template is built
 
-Cada template é um projeto de verdade, que compila e passa nos testes dentro da própria pasta, com o nome de exemplo
-`sample-app`. Gerar é copiar a pasta e trocar esse nome, em todas as grafias, pelo do projeto:
+Each template is a real project that builds and passes its tests inside its own directory, with the sample name
+`sample-app`. Generating means copying the directory and replacing that name, in every spelling, with the project's:
 
-| No template | `minha-loja` vira |
+| In the template | `my-shop` becomes |
 |---|---|
-| `SampleApp` | `MinhaLoja` |
-| `sampleApp` | `minhaLoja` |
-| `sample_app` | `minha_loja` |
-| `sample-app` | `minha-loja` |
-| `SAMPLE_APP` | `MINHA_LOJA` |
-| `Sample App` | `Minha Loja` |
-| `sample app` | `minha loja` |
-| `sampleapp` | `minhaloja`, como em `com.example.sampleapp` |
+| `SampleApp` | `MyShop` |
+| `sampleApp` | `myShop` |
+| `sample_app` | `my_shop` |
+| `sample-app` | `my-shop` |
+| `SAMPLE_APP` | `MY_SHOP` |
+| `Sample App` | `My Shop` |
+| `sample app` | `my shop` |
+| `sampleapp` | `myshop`, as in `com.example.sampleapp` |
 
-A troca vale para o conteúdo e para os caminhos, como `src/SampleApp.Api`. A pasta do template é a variante com todos
-os serviços. O que muda quando um serviço fica de fora vai em `_variants/`, que nem o Go nem o .NET compilam:
+The replacement applies to contents and to paths, such as `src/SampleApp.Api`. The template directory is the variant
+with every service. What changes when a service is left out goes in `_variants/`, which neither Go nor .NET compile:
 
 ```yaml
 id: hexagonal-ddd
 stack: go
 arch: [ddd, hexagonal]
-description: API Go com arquitetura hexagonal e DDD, com HTTP da biblioteca padrão
-services: [postgres]                  # o que --with aceita
-requires: [go]                        # ferramentas do romanctl tools
-setup: [go mod tidy]                  # roda na pasta do projeto, depois de gerar; um passo pode ter when
+description: Go API with hexagonal architecture and DDD, using the standard library's HTTP
+services: [postgres]                  # what --with accepts
+requires: [go]                        # tools from romanctl tools
+setup: [go mod tidy]                  # runs in the project directory after generating; a step may have when
 run: go run ./cmd/api
 test: go test ./...
 url: http://localhost:8090
-env:                                  # variáveis extras que o up grava no .env, por serviço
+env:                                  # extra variables up writes to .env, per service
   postgres:
     PGHOST: "{{.Host}}"
-publish:                              # CI e Dockerfile do romanctl publish
+publish:                              # CI and Dockerfile for romanctl publish
   kind: go
   vars: {Main: ./cmd/api}
-conditional:                          # pastas que só existem com ou sem um serviço
+conditional:                          # directories that only exist with or without a service
   - path: internal/adapters/postgres
     when: postgres
-overlays:                             # arquivos que substituem os da raiz quando o serviço fica de fora
+overlays:                             # files that replace the root ones when the service is left out
   - from: _variants/memory
     when: "!postgres"
 ```
 
-Um projeto com vários programas, como um monorepo com API e front, declara `processes` no lugar de `run`:
+A project with several programs, such as a monorepo with an API and a front end, declares `processes` instead of `run`:
 
 ```yaml
 processes:
@@ -510,14 +522,15 @@ processes:
     url: http://localhost:5173
 ```
 
-O `run` e o `up` sobem todos juntos, com o nome do processo no começo de cada linha do log, e o `up -d` espera cada
-`url` responder. Se um processo termina, os outros são parados e o comando falha na hora, com o fim do log. O `down`
-para todos. Cada processo pode ter variáveis próprias em `env:`, além das do `.env`, como `PORT` diferente para cada um.
+`run` and `up` start them all together, with the process name at the start of each log line, and `up -d` waits for each
+`url` to respond. If a process exits, the others are stopped and the command fails right away, with the tail of the
+log. `down` stops them all. Each process may have its own variables in `env:`, on top of the `.env` ones, such as a
+different `PORT` for each.
 
-Com `processes`, o `run` do topo é opcional.
+With `processes`, the top-level `run` is optional.
 
-Um passo do `setup` pode valer só numa variante. Assim a variante sem um serviço não precisa carregar outro lockfile:
-ela instala e o gerenciador de pacotes tira do lock o que o manifesto dela não pede.
+A `setup` step may apply to a single variant. That way the variant without a service doesn't need to carry another
+lockfile: it installs, and the package manager drops from the lock whatever its manifest doesn't ask for.
 
 ```yaml
 setup:
@@ -527,116 +540,119 @@ setup:
     when: "!postgres"
 ```
 
-Com `uv`, `cargo` e `go mod tidy`, o lock já se ajusta sozinho ao manifesto; no Composer, a variante roda
-`composer update` dos pacotes que saíram.
+With `uv`, `cargo` and `go mod tidy`, the lock already adjusts itself to the manifest; with Composer, the variant runs
+`composer update` for the packages that were removed.
 
-`run`, `test`, `publish.vars` e os campos `dir` e `run` dos processos também passam pela troca de nomes. Os valores de `env` são montados no `up`, com o
-endereço do serviço: `{{.Host}}`, `{{.Port}}`, `{{.User}}`, `{{.Password}}`, `{{.Database}}` e `{{.URL}}`. Além
-deles, todo projeto recebe as variáveis padrão de cada serviço, como `DATABASE_URL`.
+`run`, `test`, `publish.vars` and the processes' `dir` and `run` fields also go through the name replacement. The `env`
+values are built by `up`, with the service address: `{{.Host}}`, `{{.Port}}`, `{{.User}}`, `{{.Password}}`,
+`{{.Database}}` and `{{.URL}}`. On top of those, every project gets each service's standard variables, such as
+`DATABASE_URL`.
 
-Uma pasta em `~/.config/romanctl/templates/<stack>/<id>/` tem prioridade sobre os templates do romanctl. Cada projeto
-gerado ganha um `romanctl.yaml` com o que o `run`, o `up`, o `add` e o `publish` usam.
+A directory at `~/.config/romanctl/templates/<stack>/<id>/` takes priority over romanctl's templates. Each generated
+project gets a `romanctl.yaml` with what `run`, `up`, `add` and `publish` use.
 
-Os testes do romanctl geram cada template com todas as combinações de serviços e falham se sobrar um nome de exemplo.
-O CI roda os testes de cada template na própria pasta e também os do projeto gerado, contra um PostgreSQL de verdade.
+romanctl's tests generate each template with every combination of services and fail if a sample name is left over. CI
+runs each template's tests in its own directory and also the generated project's, against a real PostgreSQL.
 
-## Adicionar ao projeto
+## Adding to a project
 
-`romanctl add` gera código conforme o tipo do projeto, e `romanctl add --list` mostra as opções:
+`romanctl add` generates code according to the project type, and `romanctl add --list` shows the options:
 
 ```bash
-romanctl add resource Product                      # CRUD completo
+romanctl add resource Product                      # full CRUD
 romanctl add domain Customer
 romanctl add controller Customer
 romanctl add command ArchiveProduct --in Product
 romanctl add query ListActiveProducts --in Product
 romanctl add event ProductArchived --in Product
 romanctl add value-object Sku --in Product
-romanctl add resource Person --plural People       # quando a regra do inglês erra o plural
-romanctl add resource Product --dry-run            # só mostra
+romanctl add resource Person --plural People       # when the English plural rule gets it wrong
+romanctl add resource Product --dry-run            # only shows
 ```
 
-| Projeto | Geradores |
+| Project | Generators |
 |---|---|
-| .NET Clean, DDD e CQRS | `resource`, `domain`, `application`, `repository`, `controller`, `command`, `query`, `event`, `value-object`, `test` |
-| .NET simples | `controller`, `service`, `model` |
+| .NET Clean, DDD and CQRS | `resource`, `domain`, `application`, `repository`, `controller`, `command`, `query`, `event`, `value-object`, `test` |
+| .NET simple | `controller`, `service`, `model` |
 | Express | `route`, `middleware`, `service` |
 | Next.js | `page`, `api`, `component` |
 | React | `component`, `hook`, `page` |
 | React feature-sliced | `entity`, `feature`, `page` |
 | .NET event sourcing | `resource`, `domain`, `application`, `controller`, `test`, `event` |
-| .NET monólito modular | `module`, `resource` (com `--in <módulo>`) |
+| .NET modular monolith | `module`, `resource` (with `--in <module>`) |
 | .NET Vertical Slice | `resource` |
-| Go hexagonal e DDD | `resource` |
-| Go microsserviços | `resource` (no serviço orders) |
-| Java hexagonal e DDD | `resource` |
-| Kotlin hexagonal e DDD | `resource` |
-| Node Clean, DDD e CQRS | `resource` |
+| Go hexagonal and DDD | `resource` |
+| Go microservices | `resource` (in the orders service) |
+| Java hexagonal and DDD | `resource` |
+| Kotlin hexagonal and DDD | `resource` |
+| Node Clean, DDD and CQRS | `resource` |
 | Node BFF | `resource` |
-| Node em camadas | `resource` |
+| Node layered | `resource` |
 | Node tRPC | `resource` |
-| PHP hexagonal e DDD | `resource` |
-| Python hexagonal e DDD | `resource` |
-| Python em camadas (Django) | `resource` |
-| Rust hexagonal e DDD | `resource` |
-| Go simples | `handler`, `service`, `model` |
+| PHP hexagonal and DDD | `resource` |
+| Python hexagonal and DDD | `resource` |
+| Python layered (Django) | `resource` |
+| Rust hexagonal and DDD | `resource` |
+| Go simple | `handler`, `service`, `model` |
 
-Sem `--force`, nada é sobrescrito. O que precisa de registro em outro arquivo é inserido antes de um marcador,
-como `// romanctl:endpoints`; sem o marcador, o comando mostra o que fazer à mão. As linhas inseridas recebem o recuo
-do marcador e mantêm o recuo relativo entre si, então blocos aninhados, como YAML, entram inteiros. Um bloco que já
-está no arquivo não é inserido de novo.
+Without `--force`, nothing is overwritten. Whatever needs registering in another file is inserted before a marker, such
+as `// romanctl:endpoints`; without the marker, the command shows what to do by hand. Inserted lines take the marker's
+indentation and keep their relative indentation, so nested blocks, such as YAML, go in whole. A block already in the
+file is not inserted again.
 
-Cada gerador é uma pasta em `templates/<linguagem>/generators/<alvo>/<tipo>`, com um `generator.yaml` e os arquivos em
-`files/`. O alvo é o id do template (`go/hexagonal-ddd`) ou o tipo de projeto simples (`node/express`, `node/next`,
-`react/vite`, `go/simple`, `dotnet/simple`). Eles usam a entidade de exemplo `SampleItem` (e `SampleItems`, `sample-item`,
-`sample_items`, `sample item`...), o agregado de `--in` `SampleParent` e o projeto `SampleApp`, trocados como nos templates. Um patch
-com `when: postgres` só vale com o serviço, e `after:` roda comandos depois de gravar, como `gofmt -w`. Uma pasta em
-`~/.config/romanctl/generators/<linguagem>/<alvo>/<tipo>` tem prioridade.
+Each generator is a directory at `templates/<language>/generators/<target>/<kind>`, with a `generator.yaml` and the
+files in `files/`. The target is the template id (`go/hexagonal-ddd`) or the simple project type (`node/express`,
+`node/next`, `react/vite`, `go/simple`, `dotnet/simple`). They use the sample entity `SampleItem` (and `SampleItems`,
+`sample-item`, `sample_items`, `sample item`...), the `--in` aggregate `SampleParent` and the project `SampleApp`,
+replaced as in the templates. A patch with `when: postgres` only applies with that service, and `after:` runs commands
+after writing, such as `gofmt -w`. A directory at `~/.config/romanctl/generators/<language>/<target>/<kind>` takes
+priority.
 
-## Subir o ambiente
+## Bringing up the environment
 
 ```bash
-romanctl up                  # serviços, banco, .env e o app, em primeiro plano
-romanctl up loja -d          # em segundo plano; espera o app responder
-romanctl up --no-run         # só prepara o ambiente
-romanctl logs loja
-romanctl down loja           # ou --all, ou --keep-services
+romanctl up                  # services, database, .env and the app, in the foreground
+romanctl up shop -d          # in the background; waits for the app to respond
+romanctl up --no-run         # only prepares the environment
+romanctl logs shop
+romanctl down shop           # or --all, or --keep-services
 ```
 
-O `up` lê os serviços do `romanctl.yaml`, cria o banco do projeto e acrescenta ao `.env` só o que falta, sem mudar
-o que você editou. O `.env` entra no `.gitignore`, e as variáveis valem para o app, salvo as que já estiverem no
-ambiente. O `romanctl run` também carrega o `.env`, só sem ligar os serviços. Se a porta estiver ocupada, o comando
-para e diz por qual projeto, quando for o caso.
+`up` reads the services from `romanctl.yaml`, creates the project's database and appends to `.env` only what is
+missing, without changing what you edited. `.env` goes into `.gitignore`, and the variables apply to the app, except
+those already set in the environment. `romanctl run` also loads `.env`, just without starting the services. If the port
+is taken, the command stops and says by which project, when that's the case.
 
-O `down` desliga só os serviços que o `up` ligou e que nenhum outro projeto no ar usa. O que já estava ligado antes
-continua ligado. Projetos sem `romanctl.yaml` não têm serviços: o `up` só roda o app.
+`down` stops only the services that `up` started and that no other running project uses. Whatever was already running
+before stays running. Projects without `romanctl.yaml` have no services: `up` just runs the app.
 
-## Publicar
+## Publishing
 
 ```bash
-romanctl publish                                   # repositório privado
-romanctl publish loja --public --description "Loja"
+romanctl publish                                   # private repository
+romanctl publish shop --public --description "Shop"
 romanctl publish --dry-run
 ```
 
-Gera CI e Dockerfile conforme o projeto, sem sobrescrever os que existirem, faz o commit, cria o repositório com
-o `gh` e envia. Se o repositório já existir, só envia as alterações. Arquivos como `.env` e chaves privadas
-cancelam a publicação, assim como segredos encontrados pelo `gitleaks`, se ele estiver instalado.
+Generates CI and a Dockerfile for the project, without overwriting existing ones, commits, creates the repository with
+`gh` and pushes. If the repository already exists, it only pushes the changes. Files such as `.env` and private keys
+cancel the publish, as do secrets found by `gitleaks`, if it is installed.
 
-## Serviços
+## Services
 
-Fora do proot, os serviços rodam em Docker ou Podman, com portas só em `127.0.0.1` e dados em volumes
-nomeados. O code-server roda como processo local.
+Outside proot, services run in Docker or Podman, with ports bound only to `127.0.0.1` and data in named volumes.
+code-server runs as a local process.
 
-`romanctl status` e o painel mostram só o que está instalado: o Docker, quando existe, e os serviços cujo container
-`romanctl-<serviço>` existe. Ter o Docker não instala nada, e nem uma imagem baixada por outro projeto: `romanctl install
-<serviço>` baixa a imagem, se faltar, e cria o container parado. O resto aparece numa linha, ou com `romanctl status --all`.
+`romanctl status` and the dashboard show only what is installed: Docker, when present, and the services whose
+`romanctl-<service>` container exists. Having Docker doesn't install anything, nor does an image pulled by another
+project: `romanctl install <service>` pulls the image, if missing, and creates the stopped container. The rest shows up
+on a single line, or with `romanctl status --all`.
 
-O Docker aparece como serviço porque os demais dependem dele. Ligar e desligar o daemon usa o systemd (ou `service`) com
-`sudo`; parar pede confirmação, porque derruba todos os containers da máquina, e `stop all` nunca o inclui. Com o Docker
-Desktop, o daemon é ligado e desligado pelo próprio Docker Desktop.
+Docker shows up as a service because the others depend on it. Starting and stopping the daemon uses systemd (or
+`service`) with `sudo`; stopping asks for confirmation, because it brings down every container on the machine, and
+`stop all` never includes it. With Docker Desktop, the daemon is started and stopped by Docker Desktop itself.
 
-| Serviço | Endereço |
+| Service | Address |
 |---|---|
 | `code` | `http://127.0.0.1:8080` |
 | `postgres` | `postgres://postgres:postgres@127.0.0.1:5432/postgres` |
@@ -644,108 +660,108 @@ Desktop, o daemon é ligado e desligado pelo próprio Docker Desktop.
 | `redis` | `redis://127.0.0.1:6379` |
 | `mysql` | `mysql://root:mysql@127.0.0.1:3306` |
 | `mariadb` | `mysql://root:mariadb@127.0.0.1:3307` |
-| `sqlserver` | `Server=127.0.0.1,1433`; só `amd64`; a imagem aceita a licença do SQL Server Developer |
-| `rabbitmq` | `amqp://guest:guest@127.0.0.1:5672`; painel em `http://127.0.0.1:15672` |
+| `sqlserver` | `Server=127.0.0.1,1433`; `amd64` only; the image accepts the SQL Server Developer license |
+| `rabbitmq` | `amqp://guest:guest@127.0.0.1:5672`; management UI at `http://127.0.0.1:15672` |
 | `kafka` | `127.0.0.1:9092` |
 
-As senhas são fixas e servem só para desenvolvimento local.
+The passwords are fixed and meant only for local development.
 
-## Sistema
-
-```bash
-romanctl system           # CPU, memória, disco, bateria e processos
-romanctl system battery   # nível, watts, temperatura e previsão de autonomia
-romanctl system watch     # mede por um tempo e estima o gasto dos seus processos
-```
-
-A autonomia vem da carga restante dividida pela corrente, e cada leitura entra em um histórico que dá a
-queda real em %/h. No Linux a bateria vem de `/sys/class/power_supply`, no macOS de `pmset` e `ioreg` e
-no Termux do `termux-battery-status`, que exige o app Termux:API.
-
-Nenhum desses sistemas informa o consumo por processo a um programa comum. O `watch` calcula por regressão
-quanto o consumo sobe com o uso de CPU e se recusa a dar um número quando os dados não sustentam.
-
-## Depois de uma queda
-
-Cada `start` registra o serviço em `~/.local/share/romanctl/estado.json` e cada `stop` tira.
-Depois de uma queda ou de reiniciar a máquina, `romanctl restore` sobe de novo só o que
-estava ligado. Projetos em `romanctl run` não voltam sozinhos, porque precisam de um terminal
-próprio: o `restore` mostra o comando de cada um.
-
-## Sem internet
-
-`romanctl offline prep` baixa, com internet, templates de React e Next com `node_modules`,
-caches de npm, Go e NuGet e extensões do code-server. Também configura o `GOPROXY` para cair no
-cache local quando a rede falhar.
-
-Sem internet, `romanctl new` usa os templates e os caches sozinho. Para adicionar pacotes:
+## System
 
 ```bash
-npm install <pacote> --offline
-go get <módulo>
-dotnet add package <pacote>
+romanctl system           # CPU, memory, disk, battery and processes
+romanctl system battery   # level, watts, temperature and estimated time left
+romanctl system watch     # measures for a while and estimates what your processes draw
 ```
 
-`romanctl offline test` cria e compila cada tipo de projeto com a rede bloqueada por um proxy
-morto. Esse teste não substitui o modo avião.
+Time left comes from the remaining charge divided by the current, and each reading goes into a history that gives the
+real drop in %/h. On Linux the battery comes from `/sys/class/power_supply`, on macOS from `pmset` and `ioreg`, and on
+Termux from `termux-battery-status`, which requires the Termux:API app.
 
-## Automação
+None of these systems tell an ordinary program the power draw per process. `watch` uses regression to work out how much
+the draw rises with CPU usage and refuses to give a number when the data doesn't support one.
 
-`--json` funciona em `status`, `list`, `catalog`, `new`, `add`, `publish`, `tools`, `system`, `platform`, `claude` e `config`, e as mensagens de progresso vão
-para o stderr. Códigos de saída: 0 sucesso, 1 falha ao
-executar, 2 uso incorreto. Sem terminal, os comandos nunca abrem menu: informe tudo por argumentos.
+## After a crash
+
+Each `start` records the service in the state file under `~/.local/share/romanctl` and each `stop` removes it. After a
+crash or a reboot, `romanctl restore` brings back only what was running. Projects in `romanctl run` don't come back by
+themselves, because they need their own terminal: `restore` shows the command for each one.
+
+## Without internet
+
+`romanctl offline prep` downloads, while online, React and Next templates with `node_modules`, npm, Go and NuGet caches,
+and code-server extensions. It also configures `GOPROXY` to fall back to the local cache when the network fails.
+
+Without internet, `romanctl new` uses the templates and caches on its own. To add packages:
+
+```bash
+npm install <package> --offline
+go get <module>
+dotnet add package <package>
+```
+
+`romanctl offline test` creates and builds each project type with the network blocked by a dead proxy. This test is not
+a substitute for airplane mode.
+
+## Automation
+
+`--json` works on `status`, `list`, `catalog`, `new`, `add`, `publish`, `tools`, `system`, `platform`, `claude` and
+`config`, and progress messages go to stderr. Exit codes: 0 success, 1 execution failure, 2 incorrect usage. Without a
+terminal, commands never open a menu: pass everything as arguments.
 
 ## Claude Code
 
 ```bash
-romanctl claude install      # grava as skills em ~/.claude/skills
-romanctl claude status       # instalada, desatualizada, ausente ou alheia
+romanctl claude install      # writes the skills to ~/.claude/skills
+romanctl claude status       # installed, outdated, missing or foreign
 romanctl claude uninstall
 ```
 
-As skills vêm dentro do binário, em `internal/claude/skills`, e ensinam o Claude Code a fazer tudo pelo romanctl: uma
-geral, com as regras de uso sem terminal, e uma por área (ferramentas, projetos, ambiente, geradores, serviços,
-sistema, publicação e manutenção). O romanctl marca as pastas que cria com um arquivo `.romanctl` e só troca ou apaga
-essas; uma skill com o mesmo nome feita à mão só é trocada com `--force`. Depois de um `self-update`, rode
-`romanctl claude install` de novo.
+The skills ship inside the binary, in `internal/claude/skills`, and teach Claude Code to do everything through
+romanctl: a general one, with the rules for use without a terminal, and one per area (tools, projects, environment,
+generators, services, system, publishing and maintenance). romanctl marks the directories it creates with a `.romanctl`
+file and only replaces or deletes those; a hand-made skill with the same name is only replaced with `--force`. After a
+`self-update`, run `romanctl claude install` again.
 
-## Termux e proot
+## Termux and proot
 
-`romanctl` detecta `proot-distro` e muda de comportamento só nesse ambiente:
+`romanctl` detects `proot-distro` and changes behavior only in that environment:
 
-- **Containers não rodam**, porque o Android não libera namespaces e cgroups. `docker`, `podman`, `kind` e
-  afins são recusados, com o motivo. `docker-cli` funciona com um Docker remoto.
-- **Postgres, Mongo e Redis rodam como processo local.** Os demais serviços ficam indisponíveis.
-- **PostgreSQL** precisa do shim `pgshim.c.txt`, carregado via `LD_PRELOAD`. Ele corrige o dono que o
-  `stat()` reporta e emula a memória compartilhada SysV. É um contorno: faça backup do que for importante.
-- **MongoDB** fica na série 7.0, porque as versões novas testadas falham ao alocar memória no kernel Android.
-- **.NET** ganha um wrapper com limite de heap e o caminho do host para o `dotnet test`.
-- **Os serviços param** quando a sessão do Ubuntu que os iniciou é encerrada (`--kill-on-exit`).
+- **Containers don't run**, because Android doesn't allow namespaces and cgroups. `docker`, `podman`, `kind` and the
+  like are refused, with the reason. `docker-cli` works against a remote Docker.
+- **Postgres, Mongo and Redis run as local processes.** The other services are unavailable.
+- **PostgreSQL** needs the `pgshim.c.txt` shim, loaded through `LD_PRELOAD`. It fixes the owner `stat()` reports and
+  emulates SysV shared memory. It is a workaround: back up whatever matters.
+- **MongoDB** stays on the 7.0 series, because the newer versions tested fail to allocate memory on the Android kernel.
+- **.NET** gets a wrapper with a heap limit and the host path for `dotnet test`.
+- **Services stop** when the Ubuntu session that started them ends (`--kill-on-exit`).
 
-## Estrutura do código
+## Code layout
 
-| Pasta | Responsabilidade |
+| Directory | Responsibility |
 |---|---|
-| `cmd/romanctl` | Ponto de entrada |
-| `internal/cli` | Comandos e menus |
-| `internal/tools` | Registro e instalação de ferramentas, e a versão e o README de cada uma |
-| `internal/tui` | O painel |
-| `internal/claude` | As skills do Claude Code e a instalação delas |
-| `internal/services` | code-server, PostgreSQL, MongoDB, Redis e `restore` |
-| `internal/projects` | Criar, listar, rodar e remover projetos simples |
-| `internal/scaffold` | Templates de arquitetura, em `internal/scaffold/templates` |
-| `internal/publish` | CI, Dockerfile e publicação no GitHub |
-| `internal/offline` | Preparação e teste sem internet |
-| `internal/manifest` | O `romanctl.yaml` de cada projeto |
-| `internal/state` | O que deve estar ligado, para o `restore` |
-| `internal/platform` | Detecta sistema, arquitetura, gerenciador de pacotes, root, WSL e proot |
-| `internal/browser` | Abrir URLs em cada sistema |
-| `internal/sys`, `internal/ui`, `internal/config` | Processos e rede, saída e prompts, caminhos |
+| `cmd/romanctl` | Entry point |
+| `internal/cli` | Commands and menus |
+| `internal/tools` | Tool registry and installation, plus each tool's version and README |
+| `internal/tui` | The dashboard |
+| `internal/claude` | The Claude Code skills and their installation |
+| `internal/services` | code-server, PostgreSQL, MongoDB, Redis and `restore` |
+| `internal/projects` | Create, list, run and remove simple projects |
+| `internal/scaffold` | Architecture templates and generators |
+| `internal/publish` | CI, Dockerfile and publishing to GitHub |
+| `internal/offline` | Preparation and testing without internet |
+| `internal/manifest` | Each project's `romanctl.yaml` |
+| `internal/state` | What should be running, for `restore` |
+| `internal/platform` | Detects system, architecture, package manager, root, WSL and proot |
+| `internal/browser` | Opening URLs on each system |
+| `internal/i18n` | Language detection and the Portuguese translation |
+| `internal/webui` | The embedded web interface server |
+| `internal/sys`, `internal/ui`, `internal/config` | Processes and network, output and prompts, paths |
 
 ```bash
 go test ./...
 ```
 
-O CI roda em Linux e macOS, nas duas arquiteturas, e em containers de Debian, Fedora, Arch, openSUSE e
-Alpine. O `scripts/toolsweep.py` instala e remove todas as ferramentas; no CI, rode à mão com `sweep`.
-Uma tag `v*` publica os binários e os checksums em uma release.
+CI runs on Linux and macOS, on both architectures, and in Debian, Fedora, Arch, openSUSE and Alpine containers.
+`scripts/toolsweep.py` installs and removes every tool; in CI, run it by hand with `sweep`. A `v*` tag publishes the
+binaries and checksums to a release.
