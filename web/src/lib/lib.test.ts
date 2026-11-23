@@ -18,10 +18,10 @@ describe("version", () => {
 
 describe("project name", () => {
   it("follows the backend rules", () => {
-    expect(validateProjectName("loja", true)).toBeNull();
-    expect(validateProjectName("1loja", false)).toBeNull();
-    expect(validateProjectName("1loja", true)).toBe("validation.nameLetter");
-    expect(validateProjectName("Loja", false)).toBe("validation.namePattern");
+    expect(validateProjectName("store", true)).toBeNull();
+    expect(validateProjectName("1store", false)).toBeNull();
+    expect(validateProjectName("1store", true)).toBe("validation.nameLetter");
+    expect(validateProjectName("Store", false)).toBe("validation.namePattern");
     expect(validateProjectName("-rf", false)).toBe("validation.namePattern");
     expect(validateProjectName("", false)).toBe("validation.nameRequired");
     expect(validateEntity("Product", true)).toBeNull();
@@ -34,15 +34,15 @@ describe("jobs", () => {
   it("builds create bodies and commands", () => {
     const template = catalog.templates[1];
     if (!template) throw new Error("fixture");
-    expect(buildCreateBody({ source: { kind: "template", template }, name: "loja", services: [], git: true })).toEqual({
+    expect(buildCreateBody({ source: { kind: "template", template }, name: "store", services: [], git: true })).toEqual({
       action: "project.create",
-      name: "loja",
+      name: "store",
       stack: "go",
       arch: ["ddd", "hexagonal"],
       with: [],
       git: true,
     });
-    expect(jobCommand({ args: ["new", "loja", "--stack", "go"] })).toBe("romanctl new loja --stack go");
+    expect(jobCommand({ args: ["new", "store", "--stack", "go"] })).toBe("romanctl new store --stack go");
     expect(relatedQueryKeys("tool.install")).toContainEqual(["tools"]);
     expect(relatedQueryKeys("service.stop")).toContainEqual(["services"]);
   });

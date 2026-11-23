@@ -16,7 +16,7 @@ import (
 	"romanctl/internal/platform"
 )
 
-// Proc é um processo com o uso medido durante a amostra.
+// Proc is a process with the usage measured during the sample.
 type Proc struct {
 	PID    int     `json:"pid"`
 	Name   string  `json:"name"`
@@ -24,7 +24,7 @@ type Proc struct {
 	Memory int64   `json:"rssBytes"`
 }
 
-// Memory é o uso de memória da máquina.
+// Memory is the machine's memory usage.
 type Memory struct {
 	Total     int64 `json:"totalBytes"`
 	Available int64 `json:"availableBytes"`
@@ -32,18 +32,18 @@ type Memory struct {
 	SwapFree  int64 `json:"swapFreeBytes"`
 }
 
-// Disk é o espaço da partição da pasta do usuário.
+// Disk is the space on the partition of the user's home directory.
 type Disk struct {
 	Path string `json:"path"`
 	Size int64  `json:"sizeBytes"`
 	Free int64  `json:"freeBytes"`
 }
 
-// Snapshot é o retrato da máquina.
+// Snapshot is a picture of the machine.
 type Snapshot struct {
 	Platform     platform.Info `json:"platform"`
 	Cores        int           `json:"cores"`
-	SystemCPU    *float64      `json:"systemCpuPercent"` // nulo quando a máquina não informa
+	SystemCPU    *float64      `json:"systemCpuPercent"` // null when the machine does not report it
 	OwnCPUCores  float64       `json:"visibleProcessesCores"`
 	OwnMemory    int64         `json:"visibleProcessesRssBytes"`
 	Memory       Memory        `json:"memory"`
@@ -53,7 +53,7 @@ type Snapshot struct {
 	Top          []Proc        `json:"top"`
 }
 
-// Take mede por um intervalo, porque uso de CPU só existe entre duas leituras.
+// Take measures over an interval, because CPU usage only exists between two readings.
 func Take(interval time.Duration) Snapshot {
 	s := Snapshot{Platform: platform.Current, Cores: runtime.NumCPU()}
 	s.Top, s.SystemCPU = sampleCPU(interval)
@@ -97,7 +97,7 @@ func sampleCPU(interval time.Duration) ([]Proc, *float64) {
 	afterTotal, afterIdle, _ := readProcStat()
 
 	var system *float64
-	// No proot o /proc/stat é simulado: um número dali seria inventado.
+	// Under proot /proc/stat is simulated: any number from it would be made up.
 	if statOK && !platform.Current.Proot {
 		if v, ok := cpuPercent(beforeTotal, beforeIdle, afterTotal, afterIdle); ok {
 			system = &v
@@ -130,10 +130,10 @@ func parseProcStat(text string) (total, idle int64, ok bool) {
 	}
 	for i, f := range fields[1:] {
 		v, _ := strconv.ParseInt(f, 10, 64)
-		if i < 8 { // guest já está contado em user
+		if i < 8 { // guest is already counted in user
 			total += v
 		}
-		if i == 3 || i == 4 { // idle e iowait
+		if i == 3 || i == 4 { // idle and iowait
 			idle += v
 		}
 	}
@@ -165,7 +165,7 @@ func readProcs() map[int]procTicks {
 	return out
 }
 
-// O nome do processo pode ter espaços e parênteses, então a linha é lida a partir do último ")".
+// The process name may contain spaces and parentheses, so the line is read from the last ")".
 func parsePidStat(text string) (ticks, rssPages int64, name string, ok bool) {
 	open, closeIdx := strings.Index(text, "("), strings.LastIndex(text, ")")
 	if open < 0 || closeIdx < open {
@@ -193,7 +193,7 @@ func commandName(cmdline, fallback string) string {
 	return arg0
 }
 
-// hz é a unidade de /proc/PID/stat, 100 em praticamente todo Linux.
+// hz is the unit of /proc/PID/stat, 100 on practically every Linux.
 func diffProcs(before, after map[int]procTicks, interval time.Duration, hz float64) []Proc {
 	var out []Proc
 	for pid, now := range after {
@@ -201,7 +201,7 @@ func diffProcs(before, after map[int]procTicks, interval time.Duration, hz float
 		if prev, ok := before[pid]; ok {
 			used -= prev.ticks
 		} else {
-			used = 0 // nasceu durante a amostra: o total acumulado não é desse intervalo
+			used = 0 // started during the sample: the accumulated total is not from this interval
 		}
 		if used < 0 {
 			used = 0
@@ -217,7 +217,7 @@ var macCPU = regexp.MustCompile(`CPU usage:\s*([\d.]+)% user,\s*([\d.]+)% sys`)
 func sampleMac() ([]Proc, *float64) {
 	var system *float64
 	if out, err := exec.Command("top", "-l", "2", "-n", "0", "-s", "1").Output(); err == nil {
-		// A primeira amostra do top é a média desde o boot: vale a última.
+		// top's first sample is the average since boot: the last one counts.
 		if all := macCPU.FindAllStringSubmatch(string(out), -1); len(all) > 0 {
 			m := all[len(all)-1]
 			user, _ := strconv.ParseFloat(m[1], 64)
@@ -248,7 +248,7 @@ func parsePs(text string) []Proc {
 	return procs
 }
 
-// ---------------------------------------------------------------- memória e disco
+// ---------------------------------------------------------------- memory and disk
 
 func readMemory() Memory {
 	if platform.Current.OS == "darwin" {
@@ -325,14 +325,14 @@ func readDisk() Disk {
 
 // ---------------------------------------------------------------- watch
 
-// Sample é uma medição do comando watch.
+// Sample is one measurement of the watch command.
 type Sample struct {
 	At    time.Time `json:"at"`
 	Power float64   `json:"powerW"`
 	Cores float64   `json:"cores"`
 }
 
-// Fit é o resultado da regressão entre uso de CPU e consumo.
+// Fit is the result of the regression between CPU usage and power draw.
 type Fit struct {
 	Samples    int     `json:"samples"`
 	MeanPower  float64 `json:"meanPowerW"`
@@ -346,12 +346,12 @@ type Fit struct {
 	Unreliable string  `json:"unreliableReason,omitempty"`
 }
 
-// Estimate relaciona CPU e consumo para atribuir parte dos watts aos processos visíveis.
-// A regressão só é aceita com amostras suficientes, variação de CPU e correlação visível.
+// Estimate relates CPU and power draw to attribute part of the watts to the visible processes.
+// The regression is only accepted with enough samples, CPU variation and visible correlation.
 func Estimate(samples []Sample) Fit {
 	fit := Fit{Samples: len(samples)}
 	if len(samples) == 0 {
-		fit.Unreliable = i18n.T("nenhuma amostra")
+		fit.Unreliable = i18n.T("no samples")
 		return fit
 	}
 	var sumX, sumY float64
@@ -362,7 +362,7 @@ func Estimate(samples []Sample) Fit {
 	n := float64(len(samples))
 	fit.MeanCores, fit.MeanPower = sumX/n, sumY/n
 	if len(samples) < 12 {
-		fit.Unreliable = i18n.Sprintf("poucas amostras (%d de 12)", len(samples))
+		fit.Unreliable = i18n.Sprintf("too few samples (%d of 12)", len(samples))
 		return fit
 	}
 	var sxx, sxy, syy float64
@@ -372,18 +372,18 @@ func Estimate(samples []Sample) Fit {
 		sxy += dx * dy
 		syy += dy * dy
 	}
-	if sxx/n < 0.01 { // desvio padrão abaixo de 0,1 núcleo
-		fit.Unreliable = i18n.T("o uso de CPU quase não variou; rode algo pesado durante parte da medição")
+	if sxx/n < 0.01 { // standard deviation below 0.1 cores
+		fit.Unreliable = i18n.T("CPU usage barely varied; run something heavy during part of the measurement")
 		return fit
 	}
 	if syy == 0 {
-		fit.Unreliable = i18n.T("o consumo não variou")
+		fit.Unreliable = i18n.T("power did not vary")
 		return fit
 	}
 	slope := sxy / sxx
 	fit.R2 = sxy * sxy / (sxx * syy)
 	if slope <= 0 || fit.R2 < 0.3 {
-		fit.Unreliable = i18n.Sprintf("o consumo não acompanhou o uso de CPU (R²=%.2f); outros apps ou a tela pesaram mais", fit.R2)
+		fit.Unreliable = i18n.Sprintf("power did not follow CPU usage (R²=%.2f); other apps or the screen weighed more", fit.R2)
 		return fit
 	}
 	fit.WattsCore = slope
@@ -394,7 +394,7 @@ func Estimate(samples []Sample) Fit {
 	return fit
 }
 
-// SampleOwnCores mede a CPU dos processos visíveis, em núcleos.
+// SampleOwnCores measures the visible processes' CPU, in cores.
 func SampleOwnCores(interval time.Duration) float64 {
 	procs, _ := sampleCPU(interval)
 	var total float64

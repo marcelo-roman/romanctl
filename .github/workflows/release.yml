@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Compila para cada plataforma
+      - name: Build for each platform
         run: |
           for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
             os="${target%/*}"; arch="${target#*/}"
@@ -24,7 +24,7 @@ jobs:
               -o "romanctl-$os-$arch" ./cmd/romanctl
           done
           sha256sum romanctl-* > SHA256SUMS
-          # O self-update lê este arquivo para saber qual é a última versão.
+          # self-update reads this file to learn the latest version.
           echo "$GITHUB_REF_NAME" > VERSION
       - run: gh release create "$GITHUB_REF_NAME" romanctl-* SHA256SUMS VERSION --generate-notes
         env:

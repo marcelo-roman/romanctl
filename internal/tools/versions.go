@@ -13,8 +13,8 @@ import (
 	"romanctl/internal/sys"
 )
 
-// Version é uma versão que dá para instalar. ID é o que vai para --version e para o
-// instalador, como a tag "v0.51.0"; Label é o que a pessoa lê, como "0.51.0".
+// Version is an installable version. ID is what goes to --version and to the installer,
+// like the tag "v0.51.0"; Label is what the user reads, like "0.51.0".
 type Version struct {
 	ID    string `json:"id"`
 	Label string `json:"label"`
@@ -27,7 +27,7 @@ var rePrerelease = regexp.MustCompile(`(?i)(alpha|beta|rc|pre|dev|nightly|snapsh
 
 func stable(v string) bool { return !rePrerelease.MatchString(v) }
 
-// compareVersions ordena pelos números: 1.10.0 vem depois de 1.9.3.
+// compareVersions orders numerically: 1.10.0 comes after 1.9.3.
 func compareVersions(a, b string) int {
 	x, y := reVersion.FindString(a), reVersion.FindString(b)
 	xs, ys := strings.Split(x, "."), strings.Split(y, ".")
@@ -46,7 +46,7 @@ func compareVersions(a, b string) int {
 	return 0
 }
 
-// newestFirst ordena, tira as repetidas e corta na quantidade que cabe numa lista.
+// newestFirst sorts, drops duplicates and trims to what fits in a list.
 func newestFirst(list []Version) []Version {
 	slices.SortStableFunc(list, func(a, b Version) int { return compareVersions(b.Label, a.Label) })
 	list = slices.CompactFunc(list, func(a, b Version) bool { return a.ID == b.ID })
@@ -63,7 +63,7 @@ func plain(ids []string) []Version {
 	return newestFirst(out)
 }
 
-// resolveTag usa a tag pedida ou, sem pedido, a última release.
+// resolveTag uses the requested tag or, if none, the latest release.
 func resolveTag(repo, want string) (string, error) {
 	if want != "" {
 		return want, nil
@@ -80,9 +80,9 @@ func orLatest(want string, latest func() (string, error)) (string, error) {
 
 var reReleaseTag = regexp.MustCompile(`/releases/tag/([^"]+)"`)
 
-// githubVersions lê o feed de releases, que não gasta o limite da API do GitHub. Num
-// repositório com vários produtos, como o kustomize, fica só com as tags da mesma família
-// da última release.
+// githubVersions reads the releases feed, which does not consume GitHub API rate limit. In a
+// repository with several products, like kustomize, it keeps only tags of the same family as
+// the latest release.
 func githubVersions(repo string) ([]Version, error) {
 	feed, err := fetchText("https://github.com/" + repo + "/releases.atom")
 	if err != nil {
@@ -124,7 +124,7 @@ func npmVersions(pkg string) ([]Version, error) {
 	var doc struct {
 		Versions map[string]any `json:"versions"`
 	}
-	// O documento resumido traz só as versões, e não o README de cada uma.
+	// The abbreviated document carries only the versions, not each one's README.
 	if err := fetchJSONWith("https://registry.npmjs.org/"+pkg, &doc, "Accept", "application/vnd.npm.install-v1+json"); err != nil {
 		return nil, err
 	}
@@ -153,10 +153,10 @@ func pypiVersions(pkg string) ([]Version, error) {
 	return plain(ids), nil
 }
 
-// pkgVersions pergunta ao gerenciador de pacotes quais versões os repositórios oferecem.
+// pkgVersions asks the package manager which versions the repositories offer.
 func pkgVersions(manager string, pkgs []string) ([]Version, error) {
 	if len(pkgs) == 0 {
-		return nil, i18n.Errorf("nenhum pacote definido para esta distribuição")
+		return nil, i18n.Errorf("no package defined for this distribution")
 	}
 	var ids []string
 	switch manager {
@@ -181,7 +181,7 @@ func pkgVersions(manager string, pkgs []string) ([]Version, error) {
 			}
 		}
 	default:
-		return nil, i18n.Errorf("o %s instala só a versão atual do repositório", manager)
+		return nil, i18n.Errorf("%s only installs the repository's current version", manager)
 	}
 	out := make([]Version, 0, len(ids))
 	for _, id := range ids {
@@ -192,7 +192,7 @@ func pkgVersions(manager string, pkgs []string) ([]Version, error) {
 
 func pkgInstallAt(manager string, pkgs []string, version string) error {
 	if len(pkgs) == 0 {
-		return i18n.Errorf("nenhum pacote definido para esta distribuição")
+		return i18n.Errorf("no package defined for this distribution")
 	}
 	switch manager {
 	case platform.Apt:
@@ -200,7 +200,7 @@ func pkgInstallAt(manager string, pkgs []string, version string) error {
 	case platform.Dnf:
 		return privileged(nil, "dnf", "install", "-y", pkgs[0]+"-"+version)
 	}
-	return i18n.Errorf("o %s instala só a versão atual do repositório", manager)
+	return i18n.Errorf("%s only installs the repository's current version", manager)
 }
 
 func nodeVersions() ([]Version, error) {
@@ -211,7 +211,7 @@ func nodeVersions() ([]Version, error) {
 	if err := fetchJSON("https://nodejs.org/dist/index.json", &releases); err != nil {
 		return nil, err
 	}
-	// Uma por major, a mais nova de cada: ninguém escolhe entre 40 patches do Node 22.
+	// One per major, the newest of each: nobody picks among 40 patches of Node 22.
 	seen := map[string]bool{}
 	var out []Version
 	for i, r := range releases {
@@ -227,7 +227,7 @@ func nodeVersions() ([]Version, error) {
 			if len(out) > 0 || i > 3 {
 				continue
 			}
-			note = i18n.T("atual, sem LTS")
+			note = i18n.T("current, not LTS")
 		}
 		seen[major] = true
 		out = append(out, Version{ID: r.Version, Label: strings.TrimPrefix(r.Version, "v"), Note: note})
@@ -240,7 +240,7 @@ func goVersions() ([]Version, error) {
 	if err != nil {
 		return nil, err
 	}
-	// A mais nova de cada linha (1.25.x, 1.24.x...).
+	// The newest of each line (1.25.x, 1.24.x...).
 	seen := map[string]bool{}
 	var out []Version
 	for _, r := range releases {
@@ -275,13 +275,13 @@ func zigVersions() ([]Version, error) {
 
 func kubectlVersions() ([]Version, error) { return githubVersions("kubernetes/kubernetes") }
 
-// Versions lista o que dá para instalar nesta máquina, da mais nova para a mais antiga. A
-// rota é a mesma de runInstall, então a lista nunca oferece o que o instalador não sabe pôr.
+// Versions lists what can be installed on this machine, newest first. The route is the same
+// as runInstall's, so the list never offers what the installer cannot install.
 func (t *Tool) Versions() ([]Version, error) {
 	p := platform.Current
 	switch {
 	case p.OS == "darwin" && !t.Portable:
-		return nil, i18n.Errorf("no macOS, o Homebrew instala só a última versão")
+		return nil, i18n.Errorf("on macOS, Homebrew only installs the latest version")
 	case t.Npm != "":
 		return npmVersions(t.Npm)
 	case t.PyPI != "":
@@ -289,13 +289,13 @@ func (t *Tool) Versions() ([]Version, error) {
 	case t.versions != nil && t.installAt != nil:
 		return t.versions()
 	case t.Install != nil:
-		return nil, i18n.Errorf("o instalador de %s só traz a última versão", t.Name)
+		return nil, i18n.Errorf("the %s installer only brings the latest version", t.Name)
 	}
 	return pkgVersions(p.Manager, t.pkgsFor(p.Manager))
 }
 
-// resolveVersion aceita o rótulo ("0.51.0") ou o ID ("v0.51.0") e devolve o ID. Uma versão
-// fora da lista curta ainda é aceita, para quem sabe exatamente o que quer.
+// resolveVersion accepts the label ("0.51.0") or the ID ("v0.51.0") and returns the ID. A version
+// outside the short list is still accepted, for whoever knows exactly what they want.
 func (t *Tool) resolveVersion(want string) string {
 	if list, err := t.Versions(); err == nil {
 		for _, v := range list {
@@ -303,7 +303,7 @@ func (t *Tool) resolveVersion(want string) string {
 				return v.ID
 			}
 		}
-		// O prefixo da tag é o que o ID tem a mais que o rótulo: "v", "kustomize/v" ou nada.
+		// The tag prefix is what the ID has beyond the label: "v", "kustomize/v" or nothing.
 		if len(list) > 0 {
 			prefix := strings.TrimSuffix(list[0].ID, list[0].Label)
 			if !strings.HasPrefix(want, prefix) {
@@ -314,12 +314,12 @@ func (t *Tool) resolveVersion(want string) string {
 	return want
 }
 
-// installVersion instala uma versão escolhida pela mesma rota que Versions oferece.
+// installVersion installs a chosen version through the same route Versions offers.
 func (t *Tool) installVersion(version string) error {
 	p := platform.Current
 	switch {
 	case p.OS == "darwin" && !t.Portable:
-		return i18n.Errorf("no macOS, o Homebrew instala só a última versão")
+		return i18n.Errorf("on macOS, Homebrew only installs the latest version")
 	case t.Npm != "":
 		return npmInstall(t.Npm+"@"+version, t.RemovePaths)
 	case t.PyPI != "" && t.venvDest != "":
@@ -327,7 +327,7 @@ func (t *Tool) installVersion(version string) error {
 	case t.installAt != nil:
 		return t.installAt(version)
 	case t.Install != nil:
-		return i18n.Errorf("o instalador de %s só traz a última versão", t.Name)
+		return i18n.Errorf("the %s installer only brings the latest version", t.Name)
 	}
 	return pkgInstallAt(p.Manager, t.pkgsFor(p.Manager), version)
 }

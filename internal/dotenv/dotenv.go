@@ -1,4 +1,4 @@
-// Package dotenv lê arquivos .env.
+// Package dotenv reads .env files.
 package dotenv
 
 import (
@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// KV é uma variável do .env.
+// KV is a variable from a .env file.
 type KV struct{ Key, Value string }
 
 func unquote(v string) string {
@@ -17,7 +17,7 @@ func unquote(v string) string {
 	return v
 }
 
-// Parse lê um .env; linhas em branco e comentários são ignorados.
+// Parse reads a .env file; blank lines and comments are ignored.
 func Parse(text string) []KV {
 	var out []KV
 	for _, line := range strings.Split(text, "\n") {
@@ -32,7 +32,7 @@ func Parse(text string) []KV {
 	return out
 }
 
-// Load devolve as variáveis do arquivo no formato CHAVE=valor. O que já está no ambiente tem prioridade.
+// Load returns the file's variables as KEY=value. What is already in the environment takes precedence.
 func Load(path string, lookup func(string) (string, bool)) []string {
 	b, err := os.ReadFile(path)
 	if err != nil {

@@ -1,9 +1,9 @@
 #!/bin/sh
-# Percorre os templates do catálogo.
-#   dry      simula a geração, com e sem serviços
-#   inplace  roda o preparo e os testes de cada template na própria pasta, com os nomes de exemplo
-#   test     gera com todos os serviços, cria o banco e roda os testes do projeto gerado
-# Uso: scripts/templates.sh dry|inplace|test ./romanctl [stack/id]
+# Walks the catalog templates.
+#   dry      dry-runs generation, with and without services
+#   inplace  runs each template's setup and tests in place, with the sample names
+#   test     generates with every service, creates the database and runs the generated project's tests
+# Usage: scripts/templates.sh dry|inplace|test ./romanctl [stack/id]
 set -eu
 
 mode=${1:?use: templates.sh dry|inplace|test ./romanctl}
@@ -43,7 +43,7 @@ only=${3:-}
     "$romanctl" install "$service"
     "$romanctl" start "$service"
   done
-  created=$("$romanctl" new "$name" --stack "$stack" --arch "$arch" ${with:+--with "$with"} --sem-git --json)
+  created=$("$romanctl" new "$name" --stack "$stack" --arch "$arch" ${with:+--with "$with"} --no-git --json)
   echo "$created" | jq -e '.setup != "failed"' >/dev/null
   "$romanctl" up "$name" --no-run --json >/dev/null
   dir=$(echo "$created" | jq -r .path)

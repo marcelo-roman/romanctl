@@ -1,4 +1,4 @@
-// Package tools instala ferramentas de desenvolvimento em Linux e macOS.
+// Package tools installs development tools on Linux and macOS.
 package tools
 
 import (
@@ -33,13 +33,13 @@ const (
 	GroupAI     = "ai"
 )
 
-// Groups define a ordem e os títulos da listagem.
+// Groups defines the order and titles of the listing.
 var Groups = []struct{ Key, Title string }{
-	{GroupSDK, i18n.T("Linguagens de programação e SDKs")}, {GroupNode, i18n.T("Ferramentas de Node.js")}, {GroupPython, i18n.T("Ferramentas de Python")},
-	{GroupBuild, i18n.T("Build e automação")}, {GroupGit, "Git e GitHub"}, {GroupCloud, i18n.T("Nuvem")}, {GroupK8s, "Kubernetes"},
-	{GroupIaC, i18n.T("Infraestrutura como código")}, {GroupImages, i18n.T("Containers e imagens")}, {GroupSec, i18n.T("Segurança")},
-	{GroupDB, i18n.T("Clientes de banco de dados")}, {GroupObs, i18n.T("Observabilidade e carga")}, {GroupNet, i18n.T("Rede")},
-	{GroupShell, i18n.T("Terminal e produtividade")}, {GroupAI, i18n.T("IA")},
+	{GroupSDK, i18n.T("Programming languages and SDKs")}, {GroupNode, i18n.T("Node.js tools")}, {GroupPython, i18n.T("Python tools")},
+	{GroupBuild, i18n.T("Build and automation")}, {GroupGit, i18n.T("Git and GitHub")}, {GroupCloud, i18n.T("Cloud")}, {GroupK8s, "Kubernetes"},
+	{GroupIaC, i18n.T("Infrastructure as code")}, {GroupImages, i18n.T("Containers and images")}, {GroupSec, i18n.T("Security")},
+	{GroupDB, i18n.T("Database clients")}, {GroupObs, i18n.T("Observability and load")}, {GroupNet, i18n.T("Network")},
+	{GroupShell, i18n.T("Terminal and productivity")}, {GroupAI, i18n.T("AI")},
 }
 
 var groupAliases = map[string]string{
@@ -51,8 +51,8 @@ var groupAliases = map[string]string{
 	"node": "", "ia": GroupAI,
 }
 
-// Tool é uma ferramenta instalável. Detect substitui a checagem por versão quando
-// o binário é compartilhado, como o dotnet com vários SDKs.
+// Tool is an installable tool. Detect replaces the version check when the binary
+// is shared, like dotnet with several SDKs.
 type Tool struct {
 	Key         string
 	Name        string
@@ -60,30 +60,30 @@ type Tool struct {
 	Description string
 	Aliases     []string
 	Version     []string
-	VersionLine string // a linha da versão começa assim, quando não é a primeira da saída
+	VersionLine string // the version line starts like this, when it is not the first line of output
 	Detect      func() (string, bool)
-	Install     func() error        // instalador próprio, usado no Linux
-	Portable    bool                // Install também vale no macOS (npm, venv etc.)
-	Pkgs        map[string][]string // pacotes por gerenciador; "*" vale para todos
-	RemovePkgs  map[string][]string // o que remover, se for diferente de Pkgs
-	Brew        []string            // fórmulas do Homebrew no macOS
-	Cask        bool                // Brew são casks
+	Install     func() error        // custom installer, used on Linux
+	Portable    bool                // Install also works on macOS (npm, venv etc.)
+	Pkgs        map[string][]string // packages per manager; "*" applies to all
+	RemovePkgs  map[string][]string // what to remove, if different from Pkgs
+	Brew        []string            // Homebrew formulas on macOS
+	Cask        bool                // Brew entries are casks
 	PostInstall func() error
-	ProotReason string   // por que não roda em proot
-	Arches      []string // vazio significa todas
-	Next        string   // o que fazer depois de instalar
-	Warning     string   // o que mais deixa de funcionar ao remover
-	RemoveNpm   string   // pacote global do npm a remover
+	ProotReason string   // why it does not run under proot
+	Arches      []string // empty means all
+	Next        string   // what to do after installing
+	Warning     string   // what else stops working on removal
+	RemoveNpm   string   // global npm package to remove
 	RemovePaths []string
 	AfterRemove func() error
-	Repo        string // projeto no GitHub: README e página
-	Npm         string // pacote do npm, quando vem de lá
-	PyPI        string // pacote do PyPI, quando vem de lá
-	Release     bool   // o instalador baixa as releases de Repo
+	Repo        string // GitHub project: README and page
+	Npm         string // npm package, when it comes from there
+	PyPI        string // PyPI package, when it comes from there
+	Release     bool   // the installer downloads Repo's releases
 	latest      func() (string, error)
-	versions    func() ([]Version, error) // versões que installAt sabe instalar
+	versions    func() ([]Version, error) // versions installAt knows how to install
 	installAt   func(version string) error
-	venvDest    string // ambiente Python próprio, para instalar pkg==versão
+	venvDest    string // dedicated Python environment, to install pkg==version
 	venvBins    []string
 }
 
@@ -91,7 +91,7 @@ func (t *Tool) aka(aliases ...string) *Tool { t.Aliases = aliases; return t }
 func (t *Tool) ver(args ...string) *Tool    { t.Version = args; return t }
 func (t *Tool) warn(w string) *Tool         { t.Warning = w; return t }
 
-// on troca os pacotes de um gerenciador; sem nomes, a ferramenta não existe nele.
+// on replaces a manager's packages; with no names, the tool does not exist there.
 func (t *Tool) on(manager string, pkgs ...string) *Tool {
 	if t.Pkgs == nil {
 		t.Pkgs = map[string][]string{}
@@ -106,15 +106,15 @@ func (t *Tool) noBrew() *Tool                 { t.Brew = nil; return t }
 func (t *Tool) next(text string) *Tool        { t.Next = text; return t }
 func (t *Tool) only(arches ...string) *Tool   { t.Arches = arches; return t }
 
-// Unavailable explica por que a ferramenta não pode ser instalada nesta máquina.
+// Unavailable explains why the tool cannot be installed on this machine.
 func (t *Tool) Unavailable() string {
-	// O sistema vem primeiro: "só existe para macOS" explica mais que a falta de uma capacidade.
+	// The OS comes first: "only exists for macOS" explains more than a missing capability.
 	if why := t.unsupportedSystem(); why != "" {
 		return why
 	}
 	p := platform.Current
 	for _, need := range requirements[t.Key] {
-		// glibc só importa onde o Linux instala o binário oficial.
+		// glibc only matters where Linux installs the official binary.
 		if need == platform.NeedGlibc && p.OS == "darwin" {
 			continue
 		}
@@ -128,17 +128,17 @@ func (t *Tool) Unavailable() string {
 func (t *Tool) unsupportedSystem() string {
 	p := platform.Current
 	if len(t.Arches) > 0 && !slices.Contains(t.Arches, p.Arch) {
-		return i18n.Sprintf("não há versão para %s", p.Arch)
+		return i18n.Sprintf("there is no version for %s", p.Arch)
 	}
 	if p.OS == "darwin" {
 		if t.Portable {
 			return ""
 		}
 		if len(t.Brew) == 0 {
-			return i18n.T("só existe para Linux")
+			return i18n.T("only exists for Linux")
 		}
 		if p.Manager != platform.Brew {
-			return i18n.T("precisa do Homebrew: https://brew.sh")
+			return i18n.T("needs Homebrew: https://brew.sh")
 		}
 		return ""
 	}
@@ -146,13 +146,13 @@ func (t *Tool) unsupportedSystem() string {
 		return ""
 	}
 	if len(t.Pkgs) == 0 {
-		return i18n.T("só existe para macOS")
+		return i18n.T("only exists for macOS")
 	}
 	if len(t.pkgsFor(p.Manager)) == 0 {
 		if p.Manager == "" {
-			return i18n.T("nenhum gerenciador de pacotes reconhecido nesta máquina")
+			return i18n.T("no recognized package manager on this machine")
 		}
-		return i18n.Sprintf("não há pacote para %s", p.Manager)
+		return i18n.Sprintf("there is no package for %s", p.Manager)
 	}
 	return ""
 }
@@ -174,7 +174,7 @@ func (t *Tool) removePkgsFor(manager string) []string {
 	return t.pkgsFor(manager)
 }
 
-// runInstall escolhe o caminho de instalação certo para esta máquina.
+// runInstall picks the right installation route for this machine.
 func (t *Tool) runInstall(version string) error {
 	p := platform.Current
 	var err error
@@ -194,10 +194,10 @@ func (t *Tool) runInstall(version string) error {
 	return err
 }
 
-// All é o catálogo completo, definido nos arquivos catalog_*.go.
+// All is the full catalog, defined in the catalog_*.go files.
 var All = slices.Concat(catalogSDK(), catalogDev(), catalogInfra(), catalogUtils())
 
-// Find busca uma ferramenta pelo nome ou por um apelido.
+// Find looks up a tool by name or alias.
 func Find(name string) *Tool {
 	name = strings.ToLower(name)
 	for _, t := range All {
@@ -209,7 +209,7 @@ func Find(name string) *Tool {
 }
 
 func isGroup(name string) (string, bool) {
-	// Aceita "Banco de dados", "banco-de-dados" e "BANCO".
+	// Accepts "Database clients", "database-clients" and "DATABASE", plus the Portuguese titles.
 	name = strings.Join(strings.Fields(strings.ReplaceAll(ui.Fold(name), "-", " ")), "-")
 	if alias, ok := groupAliases[name]; ok && alias != "" {
 		return alias, true
@@ -223,10 +223,10 @@ func isGroup(name string) (string, bool) {
 	return "", false
 }
 
-// FindGroup traduz um nome de categoria na chave dela.
+// FindGroup translates a category name into its key.
 func FindGroup(name string) (string, bool) { return isGroup(name) }
 
-// GroupTitle devolve o nome de uma categoria.
+// GroupTitle returns a category's name.
 func GroupTitle(key string) string {
 	for _, g := range Groups {
 		if g.Key == key {
@@ -236,8 +236,8 @@ func GroupTitle(key string) string {
 	return key
 }
 
-// GroupKeys lista as ferramentas de um grupo ou de "all"; nil se name não for grupo.
-// Um nome de ferramenta vale mais que um grupo: "node" é a ferramenta.
+// GroupKeys lists the tools of a group or of "all"; nil if name is not a group.
+// A tool name beats a group: "node" is the tool.
 func GroupKeys(name string) []string {
 	var keys []string
 	if strings.EqualFold(name, "all") || strings.EqualFold(name, "tudo") {
@@ -261,8 +261,8 @@ func GroupKeys(name string) []string {
 	return keys
 }
 
-// Resolve traduz nomes, grupos e "all" em ferramentas, sem repetir nenhuma. Grupos trazem
-// só o que roda nesta máquina; um nome pedido diretamente passa, e a instalação explica a recusa.
+// Resolve translates names, groups and "all" into tools, without repeats. Groups bring only
+// what runs on this machine; a name requested directly passes, and installation explains the refusal.
 func Resolve(names []string) ([]*Tool, error) {
 	var out []*Tool
 	add := func(t *Tool) {
@@ -279,7 +279,7 @@ func Resolve(names []string) ([]*Tool, error) {
 			}
 			continue
 		}
-		// Um nome de ferramenta vale mais que um grupo: "node" é a ferramenta.
+		// A tool name beats a group: "node" is the tool.
 		if t := Find(name); t != nil {
 			add(t)
 			continue
@@ -292,12 +292,12 @@ func Resolve(names []string) ([]*Tool, error) {
 			}
 			continue
 		}
-		return nil, ui.Usagef("ferramenta ou grupo desconhecido %q (veja: romanctl tools list)", name)
+		return nil, ui.Usagef("unknown tool or group %q (see: romanctl tools list)", name)
 	}
 	return out, nil
 }
 
-// Detected informa a versão instalada. A ferramenta conta como instalada só se rodar.
+// Detected reports the installed version. The tool only counts as installed if it runs.
 func (t *Tool) Detected() (string, bool) {
 	if t.Detect != nil {
 		return t.Detect()
@@ -312,8 +312,8 @@ func (t *Tool) Detected() (string, bool) {
 	return versionLine(out, t.VersionLine), true
 }
 
-// versionOutput roda um comando de versão com prazo. WaitDelay cobre o programa que deixa um
-// processo filho com a saída aberta: sem ele, a espera passaria do prazo.
+// versionOutput runs a version command with a timeout. WaitDelay covers programs that leave a
+// child process holding the output open: without it, the wait would exceed the timeout.
 func versionOutput(command ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
@@ -344,7 +344,7 @@ func firstLine(s string) string {
 	return ""
 }
 
-// Status é o estado de uma ferramenta, em tela ou em --json.
+// Status is a tool's state, on screen or in --json.
 type Status struct {
 	Key         string `json:"key"`
 	Name        string `json:"name"`
@@ -352,12 +352,12 @@ type Status struct {
 	Description string `json:"description"`
 	Installed   bool   `json:"installed"`
 	Version     string `json:"version"`
-	Latest      string `json:"latest,omitempty"` // a última conhecida, guardada há menos de 6 horas
+	Latest      string `json:"latest,omitempty"` // the latest known, stored less than 6 hours ago
 	Unavailable string `json:"unavailable,omitempty"`
 }
 
-// Statuses consulta as ferramentas em paralelo. A versão vem do cache enquanto o binário não
-// mudar, porque rodar 170 programas a cada listagem é o que deixava a tela parada.
+// Statuses checks the tools in parallel. The version comes from the cache while the binary is
+// unchanged, because running 170 programs on every listing is what froze the screen.
 func Statuses(progress func(done, total int)) []Status {
 	cache := loadVersionCache()
 	type finished struct {
@@ -396,7 +396,7 @@ collect:
 			break collect
 		}
 	}
-	// Uma ferramenta que não responde não pode segurar a lista inteira.
+	// A tool that does not respond must not hold up the whole list.
 	for i, t := range All {
 		if !seen[i] {
 			installed := false
@@ -411,26 +411,26 @@ collect:
 	return out
 }
 
-// statusBudget é o máximo que uma listagem espera.
+// statusBudget is the longest a listing waits.
 var statusBudget = 12 * time.Second
 
-// Result é o resultado da instalação de uma ferramenta.
+// Result is the outcome of installing a tool.
 type Result struct {
 	Key     string `json:"key"`
-	Action  string `json:"action"` // installed, skipped ou failed
+	Action  string `json:"action"` // installed, skipped or failed
 	Version string `json:"version,omitempty"`
 	Error   string `json:"error,omitempty"`
 }
 
-// InstallOne instala e confirma que a ferramenta realmente roda depois.
+// InstallOne installs and confirms the tool really runs afterwards.
 func InstallOne(t *Tool, force bool) Result { return InstallVersion(t, "", force) }
 
-// InstallVersion instala uma versão escolhida; vazia, a última. Pedir uma versão diferente da
-// instalada já é reinstalar, sem precisar de force.
+// InstallVersion installs a chosen version; empty means the latest. Asking for a version other than
+// the installed one is a reinstall, with no need for force.
 func InstallVersion(t *Tool, want string, force bool) Result {
 	installed, ok := t.Detected()
 	if ok && !force && (want == "" || UpToDate(installed, want)) {
-		ui.Okf("%s já está instalado: %s", t.Name, installed)
+		ui.Okf("%s is already installed: %s", t.Name, installed)
 		return Result{Key: t.Key, Action: "skipped", Version: installed}
 	}
 	if why := t.Unavailable(); why != "" {
@@ -440,39 +440,39 @@ func InstallVersion(t *Tool, want string, force bool) Result {
 	chosen := ""
 	if want != "" {
 		chosen = t.resolveVersion(want)
-		ui.Infof("%s %s, versão escolhida", t.Name, strings.TrimPrefix(want, "v"))
+		ui.Infof("%s %s, chosen version", t.Name, strings.TrimPrefix(want, "v"))
 	} else if u := t.Upstream(false); u.Latest != "" {
 		ui.Infof("%s %s, via %s", t.Name, u.Latest, u.Source)
 	}
 	var err0 error
-	ui.Spin(i18n.Sprintf("Instalando %s...", t.Name), func(func(string)) { err0 = t.runInstall(chosen) })
+	ui.Spin(i18n.Sprintf("Installing %s...", t.Name), func(func(string)) { err0 = t.runInstall(chosen) })
 	if err := err0; err != nil {
 		ui.Failf("%s: %v", t.Name, err)
 		return Result{Key: t.Key, Action: "failed", Error: err.Error()}
 	}
 	version, ok := t.Detected()
 	if !ok {
-		err := i18n.Sprintf("%s foi instalado, mas não rodou", t.Name)
+		err := i18n.Sprintf("%s was installed but did not run", t.Name)
 		ui.Failf("%s", err)
-		// Não deixa para trás algo que não funciona, às vezes com gigabytes.
+		// Does not leave behind something that does not work, sometimes gigabytes of it.
 		if rmErr := t.remove(); rmErr != nil {
 			ui.Warnf("%v", rmErr)
 		}
 		return Result{Key: t.Key, Action: "failed", Error: err}
 	}
-	ui.Okf("%s instalado: %s", t.Name, version)
+	ui.Okf("%s installed: %s", t.Name, version)
 	if want != "" && !UpToDate(version, want) {
-		ui.Warnf("pedido %s, mas o binário responde %s: outro %s pode estar antes no PATH", want, version, t.Name)
+		ui.Warnf("asked for %s, but the binary reports %s: another %s may come first in PATH", want, version, t.Name)
 	}
 	if t.Next != "" {
-		ui.Infof("Próximo passo: %s", t.Next)
+		ui.Infof("Next step: %s", t.Next)
 	}
 	return Result{Key: t.Key, Action: "installed", Version: version}
 }
 
-// isExternal diz se o binário que sobrou não é nosso: o do Termux, os que vêm com o macOS, como
-// o jq em /usr/bin, e os que a máquina já tinha, como o kubectl dos runners do GitHub. Uma
-// ferramenta instalada pelo gerenciador de pacotes que continua em /usr/bin é falha de verdade.
+// isExternal says whether the leftover binary is not ours: Termux's, the ones shipped with macOS, like
+// jq in /usr/bin, and the ones the machine already had, like kubectl on GitHub runners. A tool
+// installed by the package manager that is still in /usr/bin is a real failure.
 func isExternal(path, goos string, managedByPackages bool, ours []string) bool {
 	if strings.HasPrefix(path, termuxPrefix) {
 		return true
@@ -491,14 +491,14 @@ func isExternal(path, goos string, managedByPackages bool, ours []string) bool {
 	return true
 }
 
-// UninstallOne remove o que a declaração da ferramenta indica e confere o resultado.
+// UninstallOne removes what the tool's declaration says and checks the result.
 func UninstallOne(t *Tool) Result {
 	if _, ok := t.Detected(); !ok && !hasLeftovers(t) {
-		ui.Infof("%s não está instalado", t.Name)
+		ui.Infof("%s is not installed", t.Name)
 		return Result{Key: t.Key, Action: "skipped"}
 	}
 	var rmErr0 error
-	ui.Spin(i18n.Sprintf("Removendo %s...", t.Name), func(func(string)) { rmErr0 = t.remove() })
+	ui.Spin(i18n.Sprintf("Removing %s...", t.Name), func(func(string)) { rmErr0 = t.remove() })
 	if err := rmErr0; err != nil {
 		ui.Failf("%s: %v", t.Name, err)
 		return Result{Key: t.Key, Action: "failed", Error: err.Error()}
@@ -513,13 +513,13 @@ func UninstallOne(t *Tool) Result {
 		p := platform.Current
 		managed := p.OS != "darwin" && len(t.removePkgsFor(p.Manager)) > 0
 		if isExternal(where, p.OS, managed, []string{p.BinDir, p.OptDir}) {
-			ui.Warnf("%s continua disponível pelo sistema, fora do romanctl: %s", t.Name, where)
+			ui.Warnf("%s is still available from the system, outside romanctl: %s", t.Name, where)
 			return Result{Key: t.Key, Action: "external", Version: where}
 		}
-		err := i18n.Sprintf("%s continua instalado em %s", t.Name, where)
+		err := i18n.Sprintf("%s is still installed in %s", t.Name, where)
 		ui.Failf("%s", err)
 		return Result{Key: t.Key, Action: "failed", Error: err}
 	}
-	ui.Okf("%s removido", t.Name)
+	ui.Okf("%s removed", t.Name)
 	return Result{Key: t.Key, Action: "removed"}
 }

@@ -1,5 +1,5 @@
-// Package auth faz o login do romanctl no Keycloak (realm private, authorization code com PKCE)
-// e guarda a sessão. Sem sessão válida a CLI não roda.
+// Package auth logs romanctl in to Keycloak (realm private, authorization code with PKCE)
+// and stores the session. Without a valid session the CLI does not run.
 package auth
 
 import (
@@ -19,14 +19,14 @@ const (
 	DefaultIssuer   = "https://auth.marceloroman.com.br/realms/private"
 	DefaultClientID = "romanctl"
 	DefaultAPI      = "https://iam-api.marceloroman.com.br"
-	// DefaultIDP é o Google Workspace da criarch, o único jeito de entrar no realm private.
+	// DefaultIDP is criarch's Google Workspace, the only way into the private realm.
 	DefaultIDP = "google"
-	// revalidate é de quanto em quanto tempo a sessão é conferida no Keycloak, quando há rede.
+	// revalidate is how often the session is checked against Keycloak, when online.
 	revalidate = 12 * time.Hour
 )
 
-// Session é o que fica em disco depois do login. O refresh token é offline: vale enquanto for
-// usado pelo menos uma vez a cada 30 dias, mesmo sem rede no meio.
+// Session is what stays on disk after login. The refresh token is offline: it stays valid as long
+// as it is used at least once every 30 days, even with no network in between.
 type Session struct {
 	Issuer        string    `json:"issuer"`
 	ClientID      string    `json:"clientId"`
@@ -54,7 +54,7 @@ func envOr(k, def string) string {
 	return def
 }
 
-// Endpoints de onde fazer login; flags do login e variáveis de ambiente mudam o padrão.
+// Endpoints to log in against; login flags and environment variables override the defaults.
 type Endpoints struct {
 	Issuer   string
 	ClientID string
@@ -95,7 +95,7 @@ func Load() (*Session, error) {
 	return &s, nil
 }
 
-// Save grava com 0600 e troca o arquivo de uma vez: a web-ui roda vários romanctl ao mesmo tempo.
+// Save writes with 0600 and replaces the file atomically: the web-ui runs several romanctl at once.
 func Save(s *Session) error {
 	path := SessionPath()
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
@@ -150,16 +150,16 @@ type claims struct {
 	} `json:"resource_access"`
 }
 
-// managerAudience é o client do IAM Manager; os papéis de quem usa o romanctl são client roles dele.
+// managerAudience is the IAM Manager client; romanctl users' roles are its client roles.
 const managerAudience = "iam-manager-api"
 
-// readClaims lê o corpo do JWT sem conferir a assinatura: o token veio do Keycloak por TLS, e quem
-// confere de verdade é a API.
+// readClaims reads the JWT body without verifying the signature: the token came from Keycloak over
+// TLS, and the API is what really verifies it.
 func readClaims(token string) (claims, error) {
 	var c claims
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
-		return c, i18n.Errorf("token em formato inesperado")
+		return c, i18n.Errorf("token in an unexpected format")
 	}
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {

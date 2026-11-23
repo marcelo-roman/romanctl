@@ -17,13 +17,13 @@ var (
 
 var spinFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
-// Só anima em um terminal: um pipe ou --json nunca recebem esses caracteres.
+// Animates only in a terminal: a pipe or --json never receives these characters.
 func spinnerEnabled() bool {
 	return !silent && !JSONOutput && term.IsTerminal(int(os.Stderr.Fd()))
 }
 
-// Spin mostra uma animação enquanto fn roda. O aviso só aparece se a espera passar de um
-// instante, para operações rápidas não piscarem. fn pode trocar o texto com update.
+// Spin shows an animation while fn runs. It only appears if the wait lasts more than an
+// instant, so quick operations do not flicker. fn may change the text with update.
 func Spin(message string, fn func(update func(string))) {
 	spinMu.Lock()
 	nested := spinActive
@@ -68,7 +68,7 @@ func Spin(message string, fn func(update func(string))) {
 	})
 }
 
-// clearSpinnerLine abre espaço para uma mensagem aparecer acima da animação.
+// clearSpinnerLine makes room for a message to appear above the animation.
 func clearSpinnerLine() {
 	if spinActive {
 		fmt.Fprint(os.Stderr, "\r\033[K")

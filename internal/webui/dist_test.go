@@ -7,17 +7,17 @@ import (
 	"testing"
 )
 
-func TestADistEmbutidaTemOIndexEOsAssets(t *testing.T) {
+func TestEmbeddedDistHasIndexAndAssets(t *testing.T) {
 	index, err := fs.ReadFile(dist, "dist/index.html")
 	if err != nil {
-		t.Fatalf("dist/index.html ausente: rode npm run build em web/ (%v)", err)
+		t.Fatalf("dist/index.html missing: run npm run build in web/ (%v)", err)
 	}
 	if !strings.Contains(string(index), "</head>") {
-		t.Fatal("dist/index.html sem </head>: o token não teria onde entrar")
+		t.Fatal("dist/index.html without </head>: the token would have nowhere to go")
 	}
 	assets, err := fs.ReadDir(dist, "dist/assets")
 	if err != nil || len(assets) == 0 {
-		t.Fatalf("dist/assets vazio: rode npm run build em web/ (%v)", err)
+		t.Fatalf("dist/assets empty: run npm run build in web/ (%v)", err)
 	}
 	_, h := testServer(t, "/bin/true")
 	for _, a := range assets {

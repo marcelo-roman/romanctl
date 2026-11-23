@@ -19,7 +19,7 @@ import (
 	"romanctl/internal/tools"
 )
 
-// Row é uma linha de tabela. Status vira cor; Data guarda o que as ações precisam.
+// Row is a table row. Status becomes a color; Detail holds what the details view shows.
 type Row struct {
 	Key     string
 	Columns []string
@@ -28,7 +28,7 @@ type Row struct {
 	Detail  [][2]string
 }
 
-// Backend isola o painel do sistema, para os testes dirigirem a tela sem efeitos colaterais.
+// Backend isolates the panel from the system, so tests can drive the screen without side effects.
 type Backend interface {
 	Services() []Row
 	Projects() []Row
@@ -44,7 +44,7 @@ type Backend interface {
 
 type realBackend struct{ self string }
 
-// latestSlots limita as consultas simultâneas: a lista inteira são umas 170 idas à rede.
+// latestSlots limits concurrent queries: the whole list is about 170 network round trips.
 var latestSlots = make(chan struct{}, 8)
 
 func (b *realBackend) Latest(key string) tools.Upstream {
@@ -81,7 +81,7 @@ func (b *realBackend) Header() string { return platform.Current.Describe() }
 func (b *realBackend) Services() []Row {
 	rows := []Row{}
 	for _, s := range services.All {
-		// Só o que existe aqui: um banco que nunca foi baixado não é serviço desta máquina.
+		// Only what exists here: a database that was never pulled is not a service of this machine.
 		if s.Unsupported != "" || !s.Installed() && !state.WantsRunning(s.Key) {
 			continue
 		}
@@ -89,18 +89,18 @@ func (b *realBackend) Services() []Row {
 		if s.Engine {
 			group = engineGroup
 		}
-		status := "parado"
+		status := "stopped"
 		switch {
 		case !s.Installed():
-			status = "nao-instalado"
+			status = "not-installed"
 		case s.Running():
-			status = "rodando"
+			status = "running"
 		case state.WantsRunning(s.Key):
-			status = "caiu"
+			status = "crashed"
 		}
 		rows = append(rows, Row{Key: s.Key, Status: status, Group: group,
 			Columns: []string{s.Key, s.Name, statusText(status), s.URL()},
-			Detail:  [][2]string{{i18n.T("Serviço"), s.Name}, {i18n.T("Chave"), s.Key}, {i18n.T("Estado"), statusText(status)}, {i18n.T("Endereço"), s.URL()}, {i18n.T("Log"), s.LogFile}}})
+			Detail:  [][2]string{{i18n.T("Service"), s.Name}, {i18n.T("Key"), s.Key}, {i18n.T("State"), statusText(status)}, {i18n.T("Address"), s.URL()}, {i18n.T("Log"), s.LogFile}}})
 	}
 	return rows
 }
@@ -109,22 +109,22 @@ func (b *realBackend) Projects() []Row {
 	rows := []Row{}
 	ups := state.ReadState().Ups
 	for _, p := range projects.ListProjects() {
-		status := "parado"
+		status := "stopped"
 		if e, ok := ups[p.Name]; ok {
 			switch {
 			case e.Alive():
-				status = "rodando"
+				status = "running"
 			case e.PID != 0:
-				status = "caiu"
+				status = "crashed"
 			default:
-				status = "preparado"
+				status = "prepared"
 			}
 		}
 		url := projects.AppURL(p.Path)
 		rows = append(rows, Row{Key: p.Name, Status: status,
 			Columns: []string{p.Name, p.Type, statusText(status), url, p.Mod.Format("02/01/06 15:04")},
-			Detail: [][2]string{{i18n.T("Projeto"), p.Name}, {i18n.T("Tipo"), p.Type}, {i18n.T("Estado"), statusText(status)}, {i18n.T("Pasta"), p.Path},
-				{i18n.T("Endereço"), url}, {i18n.T("Geradores"), generators(p.Path)}}})
+			Detail: [][2]string{{i18n.T("Project"), p.Name}, {i18n.T("Type"), p.Type}, {i18n.T("State"), statusText(status)}, {i18n.T("Folder"), p.Path},
+				{i18n.T("Address"), url}, {i18n.T("Generators"), generators(p.Path)}}})
 	}
 	return rows
 }
@@ -147,14 +147,14 @@ func (b *realBackend) Tools() []Row {
 		if s.Unavailable != "" && !s.Installed {
 			continue
 		}
-		status, version := "disponivel", ""
+		status, version := "available", ""
 		if s.Installed {
-			status, version = "instalado", s.Version
+			status, version = "installed", s.Version
 		}
 		rows = append(rows, Row{Key: s.Key, Status: status, Group: s.Group,
 			Columns: []string{s.Key, s.Group, statusText(status), version, "", s.Description},
-			Detail: [][2]string{{i18n.T("Ferramenta"), s.Name}, {i18n.T("Categoria"), tools.GroupTitle(s.Group)}, {i18n.T("Estado"), statusText(status)},
-				{i18n.T("Versão"), version}, {i18n.T("Descrição"), s.Description}, {i18n.T("Ao remover"), warningOf(s.Key)}}})
+			Detail: [][2]string{{i18n.T("Tool"), s.Name}, {i18n.T("Category"), tools.GroupTitle(s.Group)}, {i18n.T("State"), statusText(status)},
+				{i18n.T("Version"), version}, {i18n.T("Description"), s.Description}, {i18n.T("When removing"), warningOf(s.Key)}}})
 	}
 	return rows
 }
@@ -175,7 +175,7 @@ func (b *realBackend) Upstream(key string) tools.Upstream {
 
 func (b *realBackend) System() sysinfo.Snapshot { return sysinfo.Take(time.Second) }
 
-// Logs lê só o final: o painel atualiza isso de tempos em tempos.
+// Logs reads only the tail: the panel refreshes it from time to time.
 func (b *realBackend) Logs(view, key string) string {
 	var cmd []string
 	switch view {
@@ -188,14 +188,14 @@ func (b *realBackend) Logs(view, key string) string {
 		case s.LogTail != nil:
 			cmd = s.LogTail()
 		case s.LogFile == "":
-			return i18n.T("Este serviço não tem log para mostrar aqui.")
+			return i18n.T("This service has no log to show here.")
 		default:
 			cmd = []string{"tail", "-n", "300", s.LogFile}
 		}
 	case viewProjects:
 		e, ok := state.ReadState().Ups[key]
 		if !ok || e.Log == "" {
-			return i18n.T("Este projeto não está em segundo plano. Suba com a tecla u para ter log aqui.")
+			return i18n.T("This project is not in the background. Bring it up with the u key to have logs here.")
 		}
 		cmd = []string{"tail", "-n", "300", e.Log}
 	default:
@@ -208,7 +208,7 @@ func (b *realBackend) Logs(view, key string) string {
 	return out
 }
 
-// Command roda o próprio romanctl em outro processo: a saída dele não atravessa o painel.
+// Command runs romanctl itself in another process: its output does not cross the panel.
 func (b *realBackend) Command(args ...string) *exec.Cmd {
 	cmd := exec.Command(b.self, args...)
 	cmd.Dir = filepath.Dir(b.self)

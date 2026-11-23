@@ -1,75 +1,75 @@
 ---
 name: romanctl-tools
-description: Instala, remove, atualiza e consulta ferramentas de desenvolvimento pelo romanctl (kubectl, helm, terraform, node, go, dotnet, gh, docker CLI, clientes de banco, linters, CLIs de nuvem, cerca de 170). Use quando o usuário pedir para instalar um programa, quando um comando falhar por "command not found", ou para saber versão instalada, versão disponível, origem e README de uma ferramenta.
+description: Installs, removes, updates and inspects development tools through romanctl (kubectl, helm, terraform, node, go, dotnet, gh, docker CLI, database clients, linters, cloud CLIs, about 170). Use when the user asks to install a program, when a command fails with "command not found", or to find out the installed version, available version, source and README of a tool.
 ---
 
-# Ferramentas pelo romanctl
+# Tools through romanctl
 
-Siga as regras gerais da skill `romanctl` (sem terminal, `--json`, `--yes`).
+Follow the general rules of the `romanctl` skill (no terminal, `--json`, `--yes`).
 
-## Descobrir
-
-```bash
-romanctl tools list --plain --json                 # o que roda nesta máquina, com estado e versão
-romanctl tools list --all --filter <texto> --json  # inclui o que não roda aqui, com o motivo
-romanctl tools list --category k8s,db --json       # por categoria
-romanctl tools categories --json                   # categorias e contagens
-romanctl tools info <nome> --json                  # instalada, disponível, origem, página
-romanctl tools info <nome>                         # o mesmo, com o README em markdown
-romanctl tools versions <nome> --json              # versões instaláveis, da mais nova para a mais antiga
-```
-
-Categorias: `sdk`, `node-tools`, `python-tools`, `build`, `git`, `cloud`, `k8s`, `iac`,
-`containers`, `security`, `db`, `observability`, `network`, `shell`, `ai`. Apelidos em
-português também valem (`banco`, `nuvem`, `linguagens`...).
-
-`tools list --json` traz `latest` quando a última versão foi consultada nas últimas 6 horas.
-`tools info` responde `upToDate` e `upstream.latest`: é a versão que a instalação traria
-agora, consultada na mesma origem que o instalador usa (GitHub releases, apt/dnf/pacman,
-Homebrew, npm, PyPI ou o instalador oficial do projeto).
-
-## Instalar
+## Discover
 
 ```bash
-romanctl tools install <nome> [<nome>...] --yes --json
-romanctl tools install <grupo> --yes --json     # o grupo inteiro
-romanctl tools install <nome> --force --yes     # reinstala: é assim que se atualiza
-romanctl tools install <nome> --version <versão> --yes --json   # uma versão específica, mesmo mais antiga
-romanctl tools install <nomes> --dry-run        # o plano, sem instalar
+romanctl tools list --plain --json                 # what runs on this machine, with state and version
+romanctl tools list --all --filter <text> --json   # includes what does not run here, with the reason
+romanctl tools list --category k8s,db --json       # by category
+romanctl tools categories --json                   # categories and counts
+romanctl tools info <name> --json                  # installed, available, source, page
+romanctl tools info <name>                         # the same, with the README in markdown
+romanctl tools versions <name> --json              # installable versions, newest to oldest
 ```
 
-### Versão específica
+Categories: `sdk`, `node-tools`, `python-tools`, `build`, `git`, `cloud`, `k8s`, `iac`,
+`containers`, `security`, `db`, `observability`, `network`, `shell`, `ai`. Portuguese aliases
+also work (`banco`, `nuvem`, `linguagens`...).
 
-Quando o usuário pedir uma versão ("o terraform 1.9", "o node 20"), consulte
-`tools versions <nome> --json` e escolha o `id` (ou o `label`) que bate; com versão parcial,
-prefira a mais nova daquela linha e diga qual escolheu. `--version` vale para uma ferramenta
-por vez, e trocar a versão de algo instalado já é reinstalar, sem `--force`.
+`tools list --json` includes `latest` when the latest version was checked in the last 6 hours.
+`tools info` answers `upToDate` and `upstream.latest`: the version an installation would bring
+right now, checked against the same source the installer uses (GitHub releases, apt/dnf/pacman,
+Homebrew, npm, PyPI or the project's official installer).
 
-Nem toda ferramenta permite escolher: com o Homebrew no macOS e com alguns instaladores
-próprios (aws, gcloud, dart, swift, rust, docker-cli), `versions` responde que só existe a
-última. Diga isso ao usuário em vez de procurar outro caminho.
-
-- Sem `--yes`, um grupo abriria uma lista de escolha; sem terminal, `--yes` é obrigatório
-  para grupos.
-- O resultado JSON traz `results[]` com `action` (`installed`, `skipped`, `failed`,
-  `unavailable`) e `version`. `skipped` quer dizer que já estava instalada.
-- Depois de instalar, se o romanctl avisar para pôr uma pasta no PATH, repasse o aviso ao
-  usuário; não edite o `.zshrc`/`.bashrc` sem pedir.
-- Instalação baixa da internet e pode pedir `sudo` (pacotes do sistema). Se falhar por
-  permissão, diga ao usuário e sugira `! romanctl tools install <nome>` para ele rodar.
-
-## Remover
+## Install
 
 ```bash
-romanctl tools uninstall <nome> --yes --json
-romanctl tools uninstall <nomes> --dry-run
+romanctl tools install <name> [<name>...] --yes --json
+romanctl tools install <group> --yes --json     # the whole group
+romanctl tools install <name> --force --yes     # reinstalls: this is how you update
+romanctl tools install <name> --version <version> --yes --json   # a specific version, even an older one
+romanctl tools install <names> --dry-run        # the plan, without installing
 ```
 
-`--yes` recusa `all` de propósito. Algumas ferramentas avisam o que deixa de funcionar
-(`tools info` mostra em "Ao remover"); confirme com o usuário antes de remover SDKs.
+### Specific version
 
-## Quando a ferramenta não está no catálogo
+When the user asks for a version ("terraform 1.9", "node 20"), check
+`tools versions <name> --json` and pick the matching `id` (or `label`); for a partial version,
+prefer the newest of that line and say which one you chose. `--version` applies to one tool
+at a time, and changing the version of something installed is already a reinstall, without `--force`.
 
-`romanctl tools list --all --filter <nome> --json` vazio quer dizer que o romanctl não a
-conhece. Diga isso ao usuário e ofereça instalar por fora desta vez ou acrescentá-la ao
-catálogo do romanctl (`internal/tools/catalog_*.go` no repositório do romanctl).
+Not every tool allows choosing: with Homebrew on macOS and with some custom
+installers (aws, gcloud, dart, swift, rust, docker-cli), `versions` answers that only the
+latest exists. Tell the user that instead of looking for another way.
+
+- Without `--yes`, a group would open a picker; without a terminal, `--yes` is required
+  for groups.
+- The JSON result has `results[]` with `action` (`installed`, `skipped`, `failed`,
+  `unavailable`) and `version`. `skipped` means it was already installed.
+- After installing, if romanctl warns to add a folder to PATH, pass the warning on to the
+  user; do not edit `.zshrc`/`.bashrc` without asking.
+- Installation downloads from the internet and may ask for `sudo` (system packages). If it fails due to
+  permissions, tell the user and suggest `! romanctl tools install <name>` for them to run.
+
+## Remove
+
+```bash
+romanctl tools uninstall <name> --yes --json
+romanctl tools uninstall <names> --dry-run
+```
+
+`--yes` refuses `all` on purpose. Some tools warn about what stops working
+(`tools info` shows it under "When removing"); confirm with the user before removing SDKs.
+
+## When the tool is not in the catalog
+
+An empty `romanctl tools list --all --filter <name> --json` means romanctl does not
+know it. Tell the user and offer to install it outside romanctl this time or to add it to
+romanctl's catalog (`internal/tools/catalog_*.go` in the romanctl repository).

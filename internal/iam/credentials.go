@@ -22,10 +22,10 @@ const (
 	envSecret   = "IAM_CLIENT_SECRET"
 )
 
-// ErrNoCredentials: sem cliente da API não há como chamar o IAM Manager.
+// ErrNoCredentials: without an API client there is no way to call IAM Manager.
 var ErrNoCredentials = errors.New("no IAM Manager API client")
 
-// Credentials é um cliente da API do IAM Manager (client_credentials no realm private).
+// Credentials is an IAM Manager API client (client_credentials in the private realm).
 type Credentials struct {
 	API          string `json:"api"`
 	TokenURL     string `json:"tokenUrl"`
@@ -34,7 +34,7 @@ type Credentials struct {
 	Source       string `json:"source"`
 }
 
-// CredentialsPath é o mesmo arquivo que a skill iam-manager usa.
+// CredentialsPath is the same file the iam-manager skill uses.
 func CredentialsPath() string {
 	if p := os.Getenv("IAM_CREDENTIALS_FILE"); p != "" {
 		return p
@@ -57,7 +57,7 @@ func fileValues(path string) (map[string]string, error) {
 	return values, nil
 }
 
-// LoadCredentials lê o arquivo e deixa as variáveis de ambiente valerem por cima, campo a campo.
+// LoadCredentials reads the file and lets environment variables override it, field by field.
 func LoadCredentials() (Credentials, error) {
 	path := CredentialsPath()
 	values, err := fileValues(path)
@@ -94,7 +94,7 @@ func LoadCredentials() (Credentials, error) {
 	return c, nil
 }
 
-// SaveCredentials grava com 0600, trocando o arquivo de uma vez.
+// SaveCredentials writes with 0600, replacing the file atomically.
 func SaveCredentials(c Credentials) error {
 	path := CredentialsPath()
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
@@ -102,7 +102,7 @@ func SaveCredentials(c Credentials) error {
 	}
 	for _, v := range []string{c.API, c.TokenURL, c.ClientID, c.ClientSecret} {
 		if strings.ContainsAny(v, "\n\r\"") {
-			return i18n.Errorf("a credencial tem um caractere inválido")
+			return i18n.Errorf("the credential has an invalid character")
 		}
 	}
 	content := fmt.Sprintf("%s=%s\n%s=%s\n%s=%s\n%s=\"%s\"\n", envAPI, c.API, envTokenURL, c.TokenURL, envClientID, c.ClientID, envSecret, c.ClientSecret)

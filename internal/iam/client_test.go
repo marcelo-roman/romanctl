@@ -27,14 +27,14 @@ func isolate(t *testing.T) string {
 	return path
 }
 
-func TestSemCredencial(t *testing.T) {
+func TestNoCredentials(t *testing.T) {
 	isolate(t)
 	if _, err := LoadCredentials(); !errors.Is(err, ErrNoCredentials) {
-		t.Fatalf("sem arquivo nem ambiente: %v", err)
+		t.Fatalf("no file and no environment: %v", err)
 	}
 }
 
-func TestSalvaComPermissao0600ELeDeVolta(t *testing.T) {
+func TestSavesWith0600AndReadsBack(t *testing.T) {
 	path := isolate(t)
 	want := Credentials{API: "https://api.test", TokenURL: "https://kc.test/token", ClientID: "iam-api-x", ClientSecret: "s3cr=t"}
 	if err := SaveCredentials(want); err != nil {
@@ -42,7 +42,7 @@ func TestSalvaComPermissao0600ELeDeVolta(t *testing.T) {
 	}
 	info, err := os.Stat(path)
 	if err != nil || info.Mode().Perm() != 0o600 {
-		t.Fatalf("permissão %v (%v)", info.Mode().Perm(), err)
+		t.Fatalf("permission %v (%v)", info.Mode().Perm(), err)
 	}
 	got, err := LoadCredentials()
 	if err != nil {
@@ -50,14 +50,14 @@ func TestSalvaComPermissao0600ELeDeVolta(t *testing.T) {
 	}
 	want.Source = path
 	if got != want {
-		t.Fatalf("lido %+v, esperado %+v", got, want)
+		t.Fatalf("read %+v, want %+v", got, want)
 	}
 	if SaveCredentials(Credentials{ClientID: "a", ClientSecret: "b\nIAM_API_URL=evil"}) == nil {
-		t.Fatal("quebra de linha no secret precisa ser recusada")
+		t.Fatal("a newline in the secret must be rejected")
 	}
 }
 
-func TestAmbienteValePorCimaDoArquivo(t *testing.T) {
+func TestEnvironmentOverridesFile(t *testing.T) {
 	isolate(t)
 	if err := SaveCredentials(Credentials{API: "https://file", TokenURL: "https://file/token", ClientID: "file-id", ClientSecret: "file-secret"}); err != nil {
 		t.Fatal(err)
@@ -111,7 +111,7 @@ func (f *fakeIAM) credentials(secret string) Credentials {
 	return Credentials{API: f.server.URL, TokenURL: f.server.URL + "/token", ClientID: "iam-api-x", ClientSecret: secret}
 }
 
-func TestReaproveitaOTokenEntreChamadas(t *testing.T) {
+func TestReusesTokenAcrossCalls(t *testing.T) {
 	isolate(t)
 	f := newFakeIAM(t)
 	c := f.credentials("secret")
@@ -121,11 +121,11 @@ func TestReaproveitaOTokenEntreChamadas(t *testing.T) {
 		}
 	}
 	if n := f.tokens.Load(); n != 1 {
-		t.Fatalf("pediu %d tokens; um basta enquanto vale", n)
+		t.Fatalf("requested %d tokens; one is enough while valid", n)
 	}
 }
 
-func TestEm401PedeOutroTokenUmaVez(t *testing.T) {
+func TestOn401RequestsNewTokenOnce(t *testing.T) {
 	isolate(t)
 	f := newFakeIAM(t)
 	f.rejectAt = 1
@@ -134,15 +134,15 @@ func TestEm401PedeOutroTokenUmaVez(t *testing.T) {
 		t.Fatalf("%s %v", raw, err)
 	}
 	if n := f.tokens.Load(); n != 2 {
-		t.Fatalf("pediu %d tokens; esperado 2", n)
+		t.Fatalf("requested %d tokens; want 2", n)
 	}
 }
 
-func TestSecretErradoNaoVaiParaAAPI(t *testing.T) {
+func TestWrongSecretNeverReachesAPI(t *testing.T) {
 	isolate(t)
 	f := newFakeIAM(t)
 	_, err := With(context.Background(), f.credentials("wrong"), "GET", "/api/me", nil)
 	if err == nil || !strings.Contains(err.Error(), "iam-api-x") || strings.Contains(err.Error(), "wrong") {
-		t.Fatalf("erro deveria citar o cliente, nunca o secret: %v", err)
+		t.Fatalf("the error should name the client, never the secret: %v", err)
 	}
 }

@@ -9,7 +9,7 @@ import (
 
 const FileName = "romanctl.yaml"
 
-// Project é o romanctl.yaml gravado em cada projeto gerado.
+// Project is the romanctl.yaml written to every generated project.
 type Project struct {
 	Name      string    `yaml:"name" json:"name"`
 	Stack     string    `yaml:"stack" json:"stack"`
@@ -25,7 +25,7 @@ type Project struct {
 	Processes []Process `yaml:"processes,omitempty" json:"processes,omitempty"`
 }
 
-// Process é um dos programas de um projeto com vários, como a API e o front de um monorepo.
+// Process is one of the programs of a multi-process project, like a monorepo's API and frontend.
 type Process struct {
 	Name string            `yaml:"name" json:"name"`
 	Dir  string            `yaml:"dir,omitempty" json:"dir,omitempty"`
@@ -34,7 +34,7 @@ type Process struct {
 	Env  map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
 }
 
-// URLs são os endereços que precisam responder para o projeto estar no ar.
+// URLs are the addresses that must respond for the project to be up.
 func (p *Project) URLs() []string {
 	var out []string
 	if p.URL != "" {
@@ -48,10 +48,10 @@ func (p *Project) URLs() []string {
 	return out
 }
 
-// Env são as variáveis que o projeto lê de cada serviço, em text/template sobre services.Conn.
+// Env holds the variables the project reads from each service, as text/template over services.Conn.
 type Env map[string]map[string]string
 
-// Publish diz qual conjunto de CI e Dockerfile o projeto usa, e com que valores.
+// Publish says which CI and Dockerfile set the project uses, and with which values.
 type Publish struct {
 	Kind string            `yaml:"kind,omitempty" json:"kind,omitempty"`
 	Vars map[string]string `yaml:"vars,omitempty" json:"vars,omitempty"`
@@ -64,7 +64,7 @@ func Read(projectPath string) (*Project, bool) {
 	}
 	var m Project
 	if err := yaml.Unmarshal(b, &m); err != nil {
-		ui.Warnf("%s inválido em %s: %v", FileName, projectPath, err)
+		ui.Warnf("invalid %s in %s: %v", FileName, projectPath, err)
 		return nil, false
 	}
 	return &m, true

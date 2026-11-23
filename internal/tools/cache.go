@@ -49,8 +49,8 @@ func (c *versionCache) save() {
 	}
 }
 
-// cachedDetect só roda o programa se o binário mudou desde a última consulta. Quem instala e
-// remove continua usando Detected, que sempre executa de verdade.
+// cachedDetect only runs the program if the binary changed since the last check. Install and
+// remove keep using Detected, which always really runs it.
 func (t *Tool) cachedDetect(c *versionCache) (string, bool) {
 	if t.Detect != nil {
 		return t.Detected()

@@ -8,7 +8,7 @@ const storageKey = "romanctl.lang";
 function readStoredLang(): Lang | null {
   try {
     const value = window.localStorage.getItem(storageKey);
-    return value === "pt" || value === "en" ? value : null;
+    return value === "en" || value === "pt" ? value : null;
   } catch {
     return null;
   }
@@ -25,10 +25,10 @@ function storeLang(lang: Lang): void {
 export function I18nProvider({ children }: { children: ReactNode }) {
   const info = useInfo();
   const [override, setOverride] = useState<Lang | null>(readStoredLang);
-  const lang: Lang = override ?? info.data?.lang ?? "pt";
+  const lang: Lang = override ?? info.data?.lang ?? "en";
 
   useEffect(() => {
-    document.documentElement.lang = lang === "en" ? "en" : "pt-BR";
+    document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
   }, [lang]);
 
   const setLang = useCallback((next: Lang) => {

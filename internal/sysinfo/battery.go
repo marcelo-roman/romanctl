@@ -1,4 +1,4 @@
-// Package sysinfo lê CPU, memória, disco, processos e bateria da máquina.
+// Package sysinfo reads the machine's CPU, memory, disk, processes and battery.
 package sysinfo
 
 import (
@@ -18,27 +18,27 @@ import (
 
 const termuxBin = "/data/data/com.termux/files/usr/bin"
 
-// Battery é a leitura da bateria. Corrente em ampères, sempre positiva.
+// Battery is a battery reading. Current in amperes, always positive.
 type Battery struct {
 	Source         string  `json:"source"`
 	Percent        float64 `json:"percent"`
-	Status         string  `json:"status"` // discharging, charging, full ou unknown
+	Status         string  `json:"status"` // discharging, charging, full or unknown
 	Temperature    float64 `json:"temperatureC,omitempty"`
 	Voltage        float64 `json:"voltageV,omitempty"`
 	Current        float64 `json:"currentA,omitempty"`
 	Power          float64 `json:"powerW,omitempty"`
 	ChargeAh       float64 `json:"chargeAh,omitempty"`
 	FullChargeAh   float64 `json:"fullChargeAh,omitempty"`
-	HoursLeft      float64 `json:"hoursLeft,omitempty"`      // até acabar ou até encher
-	HoursBasis     string  `json:"hoursBasis,omitempty"`     // como HoursLeft foi calculado
-	RatePerHour    float64 `json:"percentPerHour,omitempty"` // queda medida pelo histórico
+	HoursLeft      float64 `json:"hoursLeft,omitempty"`      // until empty or until full
+	HoursBasis     string  `json:"hoursBasis,omitempty"`     // how HoursLeft was calculated
+	RatePerHour    float64 `json:"percentPerHour,omitempty"` // drop measured from the history
 	RateWindowMins float64 `json:"rateWindowMinutes,omitempty"`
 }
 
-// ErrNoBattery indica uma máquina sem bateria, como um desktop.
-var ErrNoBattery = i18n.Errorf("esta máquina não tem bateria")
+// ErrNoBattery means a machine without a battery, like a desktop.
+var ErrNoBattery = i18n.Errorf("this machine has no battery")
 
-// ReadBattery lê a fonte certa para a plataforma.
+// ReadBattery reads the right source for the platform.
 func ReadBattery() (*Battery, error) {
 	p := platform.Current
 	var b *Battery
@@ -60,7 +60,7 @@ func ReadBattery() (*Battery, error) {
 
 func fileExists(p string) bool { _, err := os.Stat(p); return err == nil }
 
-// finish calcula o que deriva da leitura.
+// finish computes what derives from the reading.
 func (b *Battery) finish() {
 	if b.Power == 0 && b.Voltage > 0 && b.Current > 0 {
 		b.Power = b.Voltage * b.Current
@@ -71,7 +71,7 @@ func (b *Battery) finish() {
 	switch b.Status {
 	case "discharging":
 		if b.ChargeAh > 0 {
-			b.HoursLeft, b.HoursBasis = b.ChargeAh/b.Current, i18n.T("carga restante ÷ corrente atual")
+			b.HoursLeft, b.HoursBasis = b.ChargeAh/b.Current, i18n.T("charge left ÷ current draw")
 		}
 	case "charging":
 		full := b.FullChargeAh
@@ -79,7 +79,7 @@ func (b *Battery) finish() {
 			full = b.ChargeAh / b.Percent * 100
 		}
 		if full > b.ChargeAh {
-			b.HoursLeft, b.HoursBasis = (full-b.ChargeAh)/b.Current, i18n.T("carga que falta ÷ corrente atual")
+			b.HoursLeft, b.HoursBasis = (full-b.ChargeAh)/b.Current, i18n.T("missing charge ÷ current draw")
 		}
 	}
 }
@@ -101,7 +101,7 @@ func normalizeStatus(s string) string {
 func readTermuxBattery() (*Battery, error) {
 	bin := termuxBin + "/termux-battery-status"
 	if !fileExists(bin) {
-		return nil, i18n.Errorf("instale o app Termux:API e, no Termux, rode: pkg install termux-api")
+		return nil, i18n.Errorf("install the Termux:API app and, in Termux, run: pkg install termux-api")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 	defer cancel()
@@ -110,7 +110,7 @@ func readTermuxBattery() (*Battery, error) {
 		"PREFIX=/data/data/com.termux/files/usr", "LD_LIBRARY_PATH=")
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, i18n.Errorf("termux-battery-status falhou (%v); o app Termux:API está instalado?", err)
+		return nil, i18n.Errorf("termux-battery-status failed (%v); is the Termux:API app installed?", err)
 	}
 	return parseTermuxBattery(out)
 }
@@ -126,15 +126,15 @@ func parseTermuxBattery(data []byte) (*Battery, error) {
 		ChargeCounter float64  `json:"charge_counter"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, i18n.Errorf("resposta inesperada do termux-battery-status: %w", err)
+		return nil, i18n.Errorf("unexpected response from termux-battery-status: %w", err)
 	}
 	current := raw.Current
 	if raw.CurrentAvg != nil && *raw.CurrentAvg != 0 {
-		current = *raw.CurrentAvg // varia menos que a leitura instantânea
+		current = *raw.CurrentAvg // varies less than the instantaneous reading
 	}
 	b := &Battery{Source: "termux-api", Percent: raw.Percentage, Status: normalizeStatus(raw.Status),
 		Temperature: raw.Temperature, Voltage: raw.Voltage / 1000, Current: scaleToAmps(current)}
-	// charge_counter vem em µAh, mas há aparelhos que usam mAh.
+	// charge_counter comes in µAh, but some devices use mAh.
 	switch counter := raw.ChargeCounter; {
 	case counter > 200000:
 		b.ChargeAh = counter / 1e6
@@ -144,7 +144,7 @@ func parseTermuxBattery(data []byte) (*Battery, error) {
 	return b, nil
 }
 
-// O Android devolve microampères, mas alguns fabricantes usam miliampères.
+// Android returns microamperes, but some manufacturers use milliamperes.
 func scaleToAmps(v float64) float64 {
 	if v < 0 {
 		v = -v
@@ -179,7 +179,7 @@ func readSysfsBattery(root string) (*Battery, error) {
 		b := &Battery{Source: "sysfs", Percent: num("capacity"), Status: normalizeStatus(string(status)),
 			Voltage: num("voltage_now") / 1e6, Current: num("current_now") / 1e6, Power: num("power_now") / 1e6,
 			ChargeAh: num("charge_now") / 1e6, FullChargeAh: num("charge_full") / 1e6}
-		// Algumas baterias informam energia (Wh) em vez de carga (Ah).
+		// Some batteries report energy (Wh) instead of charge (Ah).
 		if b.Voltage > 0 {
 			if b.Current == 0 && b.Power > 0 {
 				b.Current = b.Power / b.Voltage
@@ -206,7 +206,7 @@ var (
 func readMacBattery() (*Battery, error) {
 	out, err := exec.Command("pmset", "-g", "batt").Output()
 	if err != nil {
-		return nil, i18n.Errorf("pmset falhou: %w", err)
+		return nil, i18n.Errorf("pmset failed: %w", err)
 	}
 	b, err := parsePmset(string(out))
 	if err != nil {
@@ -228,7 +228,7 @@ func parsePmset(out string) (*Battery, error) {
 	if m[3] != "" {
 		h, _ := strconv.ParseFloat(m[3], 64)
 		min, _ := strconv.ParseFloat(m[4], 64)
-		b.HoursLeft, b.HoursBasis = h+min/60, i18n.T("estimativa do macOS")
+		b.HoursLeft, b.HoursBasis = h+min/60, i18n.T("macOS estimate")
 	}
 	return b, nil
 }

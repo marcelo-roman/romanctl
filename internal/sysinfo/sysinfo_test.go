@@ -11,7 +11,7 @@ import (
 
 func near(a, b float64) bool { return math.Abs(a-b) < 0.01 }
 
-func TestTermuxBateriaReal(t *testing.T) {
+func TestTermuxRealBattery(t *testing.T) {
 	b, err := parseTermuxBattery([]byte(`{"present":true,"plugged":"UNPLUGGED","status":"DISCHARGING","temperature":23.3,
 		"voltage":4281,"current":-937000,"current_average":-885000,"percentage":90,"charge_counter":9151630,"energy":null}`))
 	if err != nil {
@@ -22,11 +22,11 @@ func TestTermuxBateriaReal(t *testing.T) {
 		t.Fatalf("%+v", b)
 	}
 	if !near(b.Power, 3.79) || !near(b.HoursLeft, 10.34) {
-		t.Fatalf("potência %.2f, autonomia %.2f", b.Power, b.HoursLeft)
+		t.Fatalf("power %.2f, time left %.2f", b.Power, b.HoursLeft)
 	}
 }
 
-func TestTermuxEmMiliamperes(t *testing.T) {
+func TestTermuxInMilliamperes(t *testing.T) {
 	b, err := parseTermuxBattery([]byte(`{"status":"CHARGING","voltage":4000,"current":1500,"percentage":50,"charge_counter":5000}`))
 	if err != nil {
 		t.Fatal(err)
@@ -35,12 +35,12 @@ func TestTermuxEmMiliamperes(t *testing.T) {
 	if !near(b.Current, 1.5) || !near(b.ChargeAh, 5) {
 		t.Fatalf("%+v", b)
 	}
-	if !near(b.HoursLeft, 3.33) { // faltam 5 Ah a 1,5 A
-		t.Fatalf("até encher: %.2f", b.HoursLeft)
+	if !near(b.HoursLeft, 3.33) { // 5 Ah missing at 1.5 A
+		t.Fatalf("until full: %.2f", b.HoursLeft)
 	}
 }
 
-func TestSysfsEnergiaEmVezDeCarga(t *testing.T) {
+func TestSysfsEnergyInsteadOfCharge(t *testing.T) {
 	root := t.TempDir()
 	write := func(dir, name, v string) {
 		os.MkdirAll(filepath.Join(root, dir), 0o755)
@@ -63,13 +63,13 @@ func TestSysfsEnergiaEmVezDeCarga(t *testing.T) {
 	}
 }
 
-func TestSemBateria(t *testing.T) {
+func TestNoBattery(t *testing.T) {
 	if _, err := readSysfsBattery(t.TempDir()); err != ErrNoBattery {
-		t.Fatalf("erro: %v", err)
+		t.Fatalf("error: %v", err)
 	}
 }
 
-func TestMacBateria(t *testing.T) {
+func TestMacBattery(t *testing.T) {
 	b, err := parsePmset("Now drawing from 'Battery Power'\n -InternalBattery-0 (id=1)\t87%; discharging; 5:30 remaining present: true\n")
 	if err != nil {
 		t.Fatal(err)
@@ -99,11 +99,11 @@ func TestProcStat(t *testing.T) {
 		t.Fatalf("%v %v", v, ok)
 	}
 	if _, ok := cpuPercent(1000, 800, 1000, 800); ok {
-		t.Fatal("sem intervalo não há como medir")
+		t.Fatal("without an interval there is nothing to measure")
 	}
 }
 
-func TestPidStatComEspacosNoNome(t *testing.T) {
+func TestPidStatWithSpacesInName(t *testing.T) {
 	line := "42 (npm install (x)) S 1 1 1 0 -1 0 0 0 0 0 120 30 0 0 20 0 1 0 100 1000 77 0"
 	ticks, rss, name, ok := parsePidStat(line)
 	if !ok || ticks != 150 || rss != 77 || name != "npm install (x)" {
@@ -123,7 +123,7 @@ func TestDiffProcs(t *testing.T) {
 	}
 }
 
-func TestMemoria(t *testing.T) {
+func TestMemory(t *testing.T) {
 	m := parseMeminfo("MemTotal:  1000 kB\nMemAvailable: 400 kB\nSwapTotal: 200 kB\nSwapFree: 100 kB\n")
 	if m.Total != 1024000 || m.Available != 409600 || m.SwapFree != 102400 {
 		t.Fatalf("%+v", m)
@@ -146,16 +146,16 @@ func TestDischargeRate(t *testing.T) {
 	if !near(rate, 10) || window != 60 {
 		t.Fatalf("%v %v", rate, window)
 	}
-	// O carregador separa os trechos: só vale a descarga depois dele.
+	// The charger splits the stretches: only the discharge after it counts.
 	rate, _ = dischargeRate([]Reading{at(0, 50, "discharging"), at(10, 60, "charging"), at(20, 70, "discharging"), at(50, 67, "discharging")})
 	if !near(rate, 6) {
 		t.Fatalf("%v", rate)
 	}
 	if rate, _ := dischargeRate([]Reading{at(0, 90, "discharging"), at(5, 89, "discharging")}); rate != 0 {
-		t.Fatalf("5 minutos não bastam: %v", rate)
+		t.Fatalf("5 minutes are not enough: %v", rate)
 	}
 	if rate, _ := dischargeRate([]Reading{at(0, 50, "discharging"), at(60, 60, "charging")}); rate != 0 {
-		t.Fatalf("carregando não tem queda: %v", rate)
+		t.Fatalf("charging has no drop: %v", rate)
 	}
 }
 
@@ -168,8 +168,8 @@ func samples(f func(i int) (cores, watts float64)) []Sample {
 	return out
 }
 
-func TestEstimateRecuperaRelacaoConhecida(t *testing.T) {
-	// 2 W de base e 1,5 W por núcleo.
+func TestEstimateRecoversKnownRelation(t *testing.T) {
+	// 2 W baseline and 1.5 W per core.
 	fit := Estimate(samples(func(i int) (float64, float64) {
 		c := float64(i%4) * 0.5
 		return c, 2 + 1.5*c
@@ -182,11 +182,11 @@ func TestEstimateRecuperaRelacaoConhecida(t *testing.T) {
 	}
 }
 
-func TestEstimateRecusaDadosRuins(t *testing.T) {
+func TestEstimateRejectsBadData(t *testing.T) {
 	cases := map[string][]Sample{
-		"amostras": samples(func(int) (float64, float64) { return 1, 3 })[:5],
-		"variou":   samples(func(i int) (float64, float64) { return 1, 3 + float64(i%3) }),
-		"acompanhou": samples(func(i int) (float64, float64) {
+		"samples": samples(func(int) (float64, float64) { return 1, 3 })[:5],
+		"varied":  samples(func(i int) (float64, float64) { return 1, 3 + float64(i%3) }),
+		"follow": samples(func(i int) (float64, float64) {
 			return float64(i%2) * 2, 3 + float64(i%5)
 		}),
 	}

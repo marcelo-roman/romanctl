@@ -48,9 +48,9 @@ func fakeCodeload(t *testing.T, archives map[string][]byte) {
 	t.Cleanup(func() { config.DataDir = dataDir })
 }
 
-func TestUpdateBaixaATagEDepoisAMain(t *testing.T) {
+func TestUpdateDownloadsTagThenMain(t *testing.T) {
 	fakeCodeload(t, map[string][]byte{
-		"refs/tags/v9.9.8": tarball(t, map[string]string{"romanctl-9.9.8/README.md": "sem templates"}),
+		"refs/tags/v9.9.8": tarball(t, map[string]string{"romanctl-9.9.8/README.md": "no templates"}),
 		"refs/heads/main": tarball(t, map[string]string{
 			"romanctl-main/templates/go/projects/x/template.yaml": "id: x\n",
 			"romanctl-main/internal/cli/root.go":                  "package cli",
@@ -66,7 +66,7 @@ func TestUpdateBaixaATagEDepoisAMain(t *testing.T) {
 	}
 	Version = "9.9.8"
 	if r2, err := Update(""); err != nil || !r2.Fallback {
-		t.Fatalf("tag sem templates: %+v %v", r2, err)
+		t.Fatalf("tag without templates: %+v %v", r2, err)
 	}
 	if !r.Fallback || r.Ref != "refs/heads/main" || InstalledRef() != "refs/heads/main" {
 		t.Fatalf("%+v %q", r, InstalledRef())
@@ -75,18 +75,18 @@ func TestUpdateBaixaATagEDepoisAMain(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(Root(), "internal")); err == nil {
-		t.Fatal("extraiu o que não é template")
+		t.Fatal("extracted something that is not a template")
 	}
 }
 
-func TestUpdateRecusaCaminhoParaFora(t *testing.T) {
+func TestUpdateRejectsPathEscapingDestination(t *testing.T) {
 	fakeCodeload(t, map[string][]byte{
-		"refs/heads/main": tarball(t, map[string]string{"romanctl-main/templates/../../fora": "x"}),
+		"refs/heads/main": tarball(t, map[string]string{"romanctl-main/templates/../../outside": "x"}),
 	})
 	if _, err := Update("refs/heads/main"); err == nil {
-		t.Fatal("aceitou um arquivo sem templates")
+		t.Fatal("accepted an archive without templates")
 	}
-	if _, err := os.Stat(filepath.Join(filepath.Dir(config.DataDir), "fora")); err == nil {
-		t.Fatal("gravou fora da pasta")
+	if _, err := os.Stat(filepath.Join(filepath.Dir(config.DataDir), "outside")); err == nil {
+		t.Fatal("wrote outside the directory")
 	}
 }

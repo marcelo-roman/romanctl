@@ -1,6 +1,6 @@
 #!/bin/sh
-# Instala o romanctl: curl -fsSL <url>/install.sh | sh
-# Variáveis: ROMANCTL_VERSION (padrão: a última), ROMANCTL_INSTALL_DIR, ROMANCTL_REPO, ROMANCTL_BASE_URL.
+# Installs romanctl: curl -fsSL <url>/install.sh | sh
+# Variables: ROMANCTL_VERSION (default: latest), ROMANCTL_INSTALL_DIR, ROMANCTL_REPO, ROMANCTL_BASE_URL.
 set -eu
 
 REPO="${ROMANCTL_REPO:-marcelo-roman/romanctl}"
@@ -12,12 +12,12 @@ fail() { printf 'romanctl: %s\n' "$*" >&2; exit 1; }
 case "$(uname -s)" in
   Linux) os=linux ;;
   Darwin) os=darwin ;;
-  *) fail "sistema não suportado: $(uname -s). O romanctl roda em Linux e macOS." ;;
+  *) fail "unsupported OS: $(uname -s). romanctl runs on Linux and macOS." ;;
 esac
 case "$(uname -m)" in
   x86_64 | amd64) arch=amd64 ;;
   aarch64 | arm64) arch=arm64 ;;
-  *) fail "arquitetura não suportada: $(uname -m). O romanctl roda em amd64 e arm64." ;;
+  *) fail "unsupported architecture: $(uname -m). romanctl runs on amd64 and arm64." ;;
 esac
 
 if [ -n "${ROMANCTL_BASE_URL:-}" ]; then
@@ -42,7 +42,7 @@ fetch() {
   elif command -v wget >/dev/null 2>&1; then
     wget -q "$1" -O "$2"
   else
-    fail "precisa de curl ou wget."
+    fail "curl or wget is required."
   fi
 }
 
@@ -52,7 +52,7 @@ sha256() {
   elif command -v shasum >/dev/null 2>&1; then
     shasum -a 256 "$1" | cut -d' ' -f1
   else
-    fail "precisa de sha256sum ou shasum para conferir o download."
+    fail "sha256sum or shasum is required to verify the download."
   fi
 }
 
@@ -60,27 +60,27 @@ asset="romanctl-$os-$arch"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT INT TERM
 
-say "Baixando $asset ($VERSION)..."
-fetch "$base/$asset" "$tmp/$asset" || fail "não consegui baixar $base/$asset"
-fetch "$base/SHA256SUMS" "$tmp/SHA256SUMS" || fail "não consegui baixar a lista de checksums"
+say "Downloading $asset ($VERSION)..."
+fetch "$base/$asset" "$tmp/$asset" || fail "could not download $base/$asset"
+fetch "$base/SHA256SUMS" "$tmp/SHA256SUMS" || fail "could not download the checksum list"
 
 expected="$(awk -v f="$asset" '$2 == f || $2 == "*" f { print $1 }' "$tmp/SHA256SUMS")"
-[ -n "$expected" ] || fail "$asset não aparece em SHA256SUMS"
+[ -n "$expected" ] || fail "$asset is not listed in SHA256SUMS"
 actual="$(sha256 "$tmp/$asset")"
-[ "$expected" = "$actual" ] || fail "checksum não confere (esperado $expected, obtido $actual). Nada foi instalado."
-say "Checksum SHA-256 conferido."
+[ "$expected" = "$actual" ] || fail "checksum mismatch (expected $expected, got $actual). Nothing was installed."
+say "SHA-256 checksum verified."
 
 mkdir -p "$dir"
 chmod 755 "$tmp/$asset"
 mv "$tmp/$asset" "$dir/romanctl"
-say "Instalado em $dir/romanctl"
+say "Installed to $dir/romanctl"
 "$dir/romanctl" version
-"$dir/romanctl" templates update >/dev/null 2>&1 || say "Os templates ficam para depois: romanctl templates update"
+"$dir/romanctl" templates update >/dev/null 2>&1 || say "Templates can be fetched later: romanctl templates update"
 
 case ":$PATH:" in
   *":$dir:"*) ;;
   *) say ""
-     say "Adicione $dir ao PATH do seu shell, por exemplo:"
+     say "Add $dir to your shell's PATH, for example:"
      say "  echo 'export PATH=\"$dir:\$PATH\"' >> ~/.bashrc" ;;
 esac
-say "Para começar: romanctl login"
+say "To get started: romanctl login"

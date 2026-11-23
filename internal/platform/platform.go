@@ -1,4 +1,4 @@
-// Package platform descreve a máquina onde o romanctl está rodando.
+// Package platform describes the machine romanctl is running on.
 package platform
 
 import (
@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// Gerenciadores de pacotes reconhecidos.
+// Recognized package managers.
 const (
 	Apt    = "apt"
 	Dnf    = "dnf"
@@ -20,24 +20,24 @@ const (
 	Brew   = "brew"
 )
 
-// Info é o que os outros pacotes precisam saber sobre a máquina.
+// Info is what other packages need to know about the machine.
 type Info struct {
-	OS      string `json:"os"`      // linux ou darwin
-	Arch    string `json:"arch"`    // amd64 ou arm64
-	Proot   bool   `json:"proot"`   // Termux/proot-distro: sem Docker, namespaces nem cgroups
+	OS      string `json:"os"`      // linux or darwin
+	Arch    string `json:"arch"`    // amd64 or arm64
+	Proot   bool   `json:"proot"`   // Termux/proot-distro: no Docker, namespaces or cgroups
 	WSL     bool   `json:"wsl"`     // Windows Subsystem for Linux
-	Root    bool   `json:"root"`    // rodando como root
-	Manager string `json:"manager"` // gerenciador de pacotes, ou vazio
-	BinDir  string `json:"binDir"`  // onde os binários são publicados
-	OptDir  string `json:"optDir"`  // onde ficam as ferramentas com vários arquivos
+	Root    bool   `json:"root"`    // running as root
+	Manager string `json:"manager"` // package manager, or empty
+	BinDir  string `json:"binDir"`  // where binaries are published
+	OptDir  string `json:"optDir"`  // where multi-file tools live
 
-	Containers     bool   `json:"containers"`     // o kernel consegue rodar containers
-	Virtualization bool   `json:"virtualization"` // há aceleração para VMs
-	GUI            bool   `json:"gui"`            // há interface gráfica
-	Libc           string `json:"libc,omitempty"` // glibc ou musl, só no Linux
+	Containers     bool   `json:"containers"`     // the kernel can run containers
+	Virtualization bool   `json:"virtualization"` // VM acceleration is available
+	GUI            bool   `json:"gui"`            // a graphical interface is available
+	Libc           string `json:"libc,omitempty"` // glibc or musl, Linux only
 }
 
-// Current é a máquina atual.
+// Current is the current machine.
 var Current = Detect()
 
 func Detect() Info {
@@ -104,7 +104,7 @@ func installDirs(root bool, home string) (bin, opt string) {
 	return filepath.Join(home, ".local", "bin"), filepath.Join(home, ".local", "share", "romanctl", "tools")
 }
 
-// probes isola o que vem do sistema, para os testes simularem qualquer máquina.
+// probes isolates what comes from the system, so tests can simulate any machine.
 type probes struct {
 	exists func(string) bool
 	env    func(string) string
@@ -129,7 +129,7 @@ func realProbes() probes {
 
 func (i *Info) detectCapabilities(p probes) {
 	if i.OS == "darwin" {
-		// No macOS, containers rodam dentro de uma VM.
+		// On macOS, containers run inside a VM.
 		i.Virtualization = p.hvMac()
 		i.Containers = i.Virtualization
 		i.GUI = true
@@ -143,7 +143,7 @@ func (i *Info) detectCapabilities(p probes) {
 			i.Libc = "musl"
 		}
 	}
-	// Permite forçar quando a detecção errar: ROMANCTL_CONTAINERS=1, por exemplo.
+	// Allows forcing it when detection is wrong: ROMANCTL_CONTAINERS=1, for example.
 	force := func(name string, target *bool) {
 		switch p.env(name) {
 		case "1":
@@ -157,7 +157,7 @@ func (i *Info) detectCapabilities(p probes) {
 	force("ROMANCTL_GUI", &i.GUI)
 }
 
-// Requisitos que uma ferramenta pode exigir da máquina.
+// Requirements a tool may demand from the machine.
 const (
 	NeedContainers = "containers"
 	NeedVM         = "vm"
@@ -165,36 +165,36 @@ const (
 	NeedGlibc      = "glibc"
 )
 
-// Missing explica por que a máquina não atende ao requisito; vazio se atende.
+// Missing explains why the machine does not meet the requirement; empty if it does.
 func (i Info) Missing(need string) string {
 	switch need {
 	case NeedContainers:
 		if !i.Containers {
 			if i.Proot {
-				return i18n.T("o proot não tem os namespaces e cgroups de que containers precisam; para um Docker remoto, use docker-cli")
+				return i18n.T("proot lacks the namespaces and cgroups containers need; for a remote Docker, use docker-cli")
 			}
-			return i18n.T("esta máquina não consegue rodar containers")
+			return i18n.T("this machine cannot run containers")
 		}
 	case NeedVM:
 		if !i.Virtualization {
-			return i18n.T("esta máquina não tem virtualização disponível")
+			return i18n.T("this machine has no virtualization available")
 		}
 	case NeedGUI:
 		if !i.GUI {
-			return i18n.T("precisa de interface gráfica, e esta sessão não tem")
+			return i18n.T("needs a graphical interface, and this session has none")
 		}
 	case NeedGlibc:
 		if i.Libc == "musl" {
-			return i18n.T("o binário oficial exige glibc, e este sistema usa musl")
+			return i18n.T("the official binary requires glibc, and this system uses musl")
 		}
 	}
 	return ""
 }
 
-// Opt devolve um caminho dentro da pasta de ferramentas.
+// Opt returns a path inside the tools directory.
 func (i Info) Opt(name string) string { return filepath.Join(i.OptDir, name) }
 
-// Sudo prefixa o comando quando ele exige root. O brew nunca roda como root.
+// Sudo prefixes the command when it requires root. brew never runs as root.
 func (i Info) Sudo(command ...string) []string {
 	if i.Root || i.Manager == Brew {
 		return command
@@ -205,13 +205,13 @@ func (i Info) Sudo(command ...string) []string {
 	return append([]string{"sudo"}, command...)
 }
 
-// UArch é a arquitetura no estilo x86_64/aarch64.
+// UArch is the architecture in x86_64/aarch64 style.
 func (i Info) UArch() string { return pick(i.Arch, "x86_64", "aarch64") }
 
-// XArch é a arquitetura no estilo x86_64/arm64, comum em projetos Go.
+// XArch is the architecture in x86_64/arm64 style, common in Go projects.
 func (i Info) XArch() string { return pick(i.Arch, "x86_64", "arm64") }
 
-// X64 é a arquitetura no estilo x64/arm64, usado por Node e outros.
+// X64 is the architecture in x64/arm64 style, used by Node and others.
 func (i Info) X64() string { return pick(i.Arch, "x64", "arm64") }
 
 func pick(arch, amd, arm string) string {
@@ -221,7 +221,7 @@ func pick(arch, amd, arm string) string {
 	return arm
 }
 
-// Describe resume a plataforma em uma linha.
+// Describe summarizes the platform in one line.
 func (i Info) Describe() string {
 	parts := []string{i.OS + "/" + i.Arch}
 	if i.Proot {
@@ -242,8 +242,8 @@ func (i Info) Describe() string {
 		}
 		return no
 	}
-	parts = append(parts, yesNo(i.Containers, "containers", i18n.T("sem containers")),
-		yesNo(i.Virtualization, i18n.T("virtualização"), i18n.T("sem virtualização")),
-		yesNo(i.GUI, i18n.T("interface gráfica"), i18n.T("sem interface gráfica")))
+	parts = append(parts, yesNo(i.Containers, "containers", i18n.T("no containers")),
+		yesNo(i.Virtualization, i18n.T("virtualization"), i18n.T("no virtualization")),
+		yesNo(i.GUI, i18n.T("graphical interface"), i18n.T("no graphical interface")))
 	return strings.Join(parts, " · ")
 }

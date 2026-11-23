@@ -11,22 +11,22 @@ import (
 	"romanctl/internal/state"
 )
 
-func TestMergeEnvNaoSobrescreve(t *testing.T) {
+func TestMergeEnvDoesNotOverwrite(t *testing.T) {
 	path := filepath.Join(t.TempDir(), ".env")
-	os.WriteFile(path, []byte("# meu\nDATABASE_URL=minha\nOUTRA=1"), 0o600)
+	os.WriteFile(path, []byte("# mine\nDATABASE_URL=mine\nOTHER=1"), 0o600)
 	added, err := MergeEnv(path, []KV{{"DATABASE_URL", "romanctl"}, {"REDIS_URL", "redis://x"}, {"CS", "Host=a;Port=1"}})
 	if err != nil || !slices.Equal(added, []string{"REDIS_URL", "CS"}) {
 		t.Fatalf("%v %v", added, err)
 	}
 	b, _ := os.ReadFile(path)
 	text := string(b)
-	if !strings.Contains(text, "DATABASE_URL=minha\n") || !strings.Contains(text, "# meu") || !strings.Contains(text, "OUTRA=1\nREDIS_URL=") {
+	if !strings.Contains(text, "DATABASE_URL=mine\n") || !strings.Contains(text, "# mine") || !strings.Contains(text, "OTHER=1\nREDIS_URL=") {
 		t.Fatalf("%s", text)
 	}
 	if !strings.Contains(text, `CS="Host=a;Port=1"`) {
-		t.Fatalf("; precisa de aspas: %s", text)
+		t.Fatalf("; needs quotes: %s", text)
 	}
-	added, _ = MergeEnv(path, []KV{{"REDIS_URL", "outro"}})
+	added, _ = MergeEnv(path, []KV{{"REDIS_URL", "other"}})
 	if len(added) != 0 {
 		t.Fatalf("%v", added)
 	}
@@ -43,7 +43,7 @@ func TestProcessEnv(t *testing.T) {
 		t.Fatalf("%v", got)
 	}
 	if ProcessEnv(path+"x", os.LookupEnv) != nil {
-		t.Fatal("sem arquivo")
+		t.Fatal("no file")
 	}
 }
 
@@ -54,7 +54,7 @@ func TestEnsureIgnored(t *testing.T) {
 		t.Fatalf("%v %v", changed, err)
 	}
 	if changed, _ := EnsureIgnored(dir); changed {
-		t.Fatal("não deveria repetir")
+		t.Fatal("should not repeat")
 	}
 	os.WriteFile(filepath.Join(dir, ".gitignore"), []byte("bin/"), 0o644)
 	EnsureIgnored(dir)
@@ -72,37 +72,37 @@ func TestSplitServices(t *testing.T) {
 	}
 	stop, handOff = splitServices(nil, others, "a")
 	if len(stop)+len(handOff) != 0 {
-		t.Fatal("o que o up não ligou não é tocado")
+		t.Fatal("what up did not start is left alone")
 	}
 }
 
-func TestNomesEPorta(t *testing.T) {
-	if DBName("Minha-Loja.v2") != "minha_loja_v2" {
-		t.Fatal(DBName("Minha-Loja.v2"))
+func TestNamesAndPort(t *testing.T) {
+	if DBName("My-Shop.v2") != "my_shop_v2" {
+		t.Fatal(DBName("My-Shop.v2"))
 	}
-	if portOf("http://localhost:5080") != "5080" || portOf("nada") != "" {
-		t.Fatal("porta")
+	if portOf("http://localhost:5080") != "5080" || portOf("nothing") != "" {
+		t.Fatal("port")
 	}
 }
 
-func TestVariaveisDoTemplateUsamAConexaoDoServico(t *testing.T) {
+func TestTemplateVariablesUseServiceConnection(t *testing.T) {
 	m := &manifest.Project{Services: []string{"postgres", "redis"}, Env: manifest.Env{
 		"postgres": {"ConnectionStrings__Default": "Host={{.Host}};Port={{.Port}};Database={{.Database}};Username={{.User}};Password={{.Password}}"},
 	}}
-	vars, err := serviceEnv(m, "loja")
+	vars, err := serviceEnv(m, "shop")
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []KV{
-		{"DATABASE_URL", "postgres://postgres:postgres@127.0.0.1:5432/loja"},
-		{"ConnectionStrings__Default", "Host=127.0.0.1;Port=5432;Database=loja;Username=postgres;Password=postgres"},
+		{"DATABASE_URL", "postgres://postgres:postgres@127.0.0.1:5432/shop"},
+		{"ConnectionStrings__Default", "Host=127.0.0.1;Port=5432;Database=shop;Username=postgres;Password=postgres"},
 		{"REDIS_URL", "redis://127.0.0.1:6379"},
 	}
 	if !slices.Equal(vars, want) {
-		t.Fatalf("obtido %v", vars)
+		t.Fatalf("got %v", vars)
 	}
-	m.Env["postgres"]["X"] = "{{.Inexistente}}"
-	if _, err := serviceEnv(m, "loja"); err == nil {
-		t.Fatal("aceitou campo que não existe")
+	m.Env["postgres"]["X"] = "{{.Missing}}"
+	if _, err := serviceEnv(m, "shop"); err == nil {
+		t.Fatal("accepted a field that does not exist")
 	}
 }

@@ -27,7 +27,7 @@ func repoTemplates(t *testing.T) []*Template {
 	t.Cleanup(func() { config.Home = home })
 	list := LoadTemplates()
 	if len(list) == 0 {
-		t.Fatal("nenhum template em " + Root())
+		t.Fatal("no templates in " + Root())
 	}
 	return list
 }
@@ -42,111 +42,111 @@ func subsets(items []string) [][]string {
 	return out
 }
 
-func TestTodoTemplateEstaCompleto(t *testing.T) {
+func TestEveryTemplateIsComplete(t *testing.T) {
 	defer i18n.Set(i18n.Lang())
-	i18n.Set(i18n.EN)
+	i18n.Set(i18n.PT)
 	for _, tpl := range repoTemplates(t) {
 		t.Run(tpl.Key(), func(t *testing.T) {
 			if tpl.Description == "" || i18n.T(tpl.Description) == tpl.Description {
-				t.Errorf("descrição sem tradução em en.go: %q", tpl.Description)
+				t.Errorf("description missing from pt.go: %q", tpl.Description)
 			}
 			if (tpl.Run == "" && len(tpl.Processes) == 0) || tpl.Test == "" || tpl.URL == "" {
-				t.Errorf("run (ou processes), test e url são obrigatórios")
+				t.Errorf("run (or processes), test and url are required")
 			}
 			if len(tpl.Requires) == 0 {
-				t.Errorf("requires vazio: diga que ferramenta roda o projeto")
+				t.Errorf("empty requires: say which tool runs the project")
 			}
 			if tpl.Publish.Kind == "" {
-				t.Errorf("publish.kind vazio")
+				t.Errorf("empty publish.kind")
 			}
 			if len(tpl.Arch) == 0 {
-				t.Errorf("arch vazio")
+				t.Errorf("empty arch")
 			}
 			for _, a := range tpl.Arch {
 				if !slices.Contains(knownArch, a) {
-					t.Errorf("arquitetura fora do vocabulário: %s", a)
+					t.Errorf("architecture outside the vocabulary: %s", a)
 				}
 			}
 			for _, key := range tpl.Requires {
 				if tools.Find(key) == nil {
-					t.Errorf("requires aponta para ferramenta que não existe: %s", key)
+					t.Errorf("requires points to a tool that does not exist: %s", key)
 				}
 			}
 			for _, s := range tpl.Services {
 				if services.FindService(s) == nil {
-					t.Errorf("serviço desconhecido: %s", s)
+					t.Errorf("unknown service: %s", s)
 				}
 			}
 			for s := range tpl.Env {
 				if !slices.Contains(tpl.Services, s) {
-					t.Errorf("env para serviço que o template não oferece: %s", s)
+					t.Errorf("env for a service the template does not offer: %s", s)
 				}
 			}
 			for _, c := range tpl.Conditional {
 				if !slices.Contains(tpl.Services, strings.TrimPrefix(c.When, "!")) {
-					t.Errorf("conditional %s depende de serviço que o template não oferece: %s", c.Path, c.When)
+					t.Errorf("conditional %s depends on a service the template does not offer: %s", c.Path, c.When)
 				}
 				if _, err := fs.Stat(tpl.files, c.Path); err != nil {
-					t.Errorf("conditional aponta para caminho que não existe: %s", c.Path)
+					t.Errorf("conditional points to a path that does not exist: %s", c.Path)
 				}
 			}
 			for _, step := range tpl.Setup {
 				if step.Run == "" {
-					t.Errorf("passo de setup sem run")
+					t.Errorf("setup step without run")
 				}
 				if step.When != "" && !slices.Contains(tpl.Services, strings.TrimPrefix(step.When, "!")) {
-					t.Errorf("setup %q depende de serviço que o template não oferece: %s", step.Run, step.When)
+					t.Errorf("setup %q depends on a service the template does not offer: %s", step.Run, step.When)
 				}
 			}
 			for _, p := range tpl.Processes {
 				if p.Name == "" || p.Run == "" {
-					t.Errorf("processo sem name ou run: %+v", p)
+					t.Errorf("process without name or run: %+v", p)
 				}
 				if p.Dir != "" {
 					if _, err := fs.Stat(tpl.files, p.Dir); err != nil {
-						t.Errorf("processo %s aponta para pasta que não existe: %s", p.Name, p.Dir)
+						t.Errorf("process %s points to a directory that does not exist: %s", p.Name, p.Dir)
 					}
 				}
 			}
 			for _, o := range tpl.Overlays {
 				if !under(o.From, variantsDir) {
-					t.Errorf("overlay fora de %s: %s", variantsDir, o.From)
+					t.Errorf("overlay outside %s: %s", variantsDir, o.From)
 				}
 				if !slices.Contains(tpl.Services, strings.TrimPrefix(o.When, "!")) {
-					t.Errorf("overlay %s depende de serviço que o template não oferece: %s", o.From, o.When)
+					t.Errorf("overlay %s depends on a service the template does not offer: %s", o.From, o.When)
 				}
 				if _, err := fs.Stat(tpl.files, o.From); err != nil {
-					t.Errorf("overlay aponta para pasta que não existe: %s", o.From)
+					t.Errorf("overlay points to a directory that does not exist: %s", o.From)
 				}
 			}
 		})
 	}
 }
 
-func TestTodoTemplateGeraComQualquerCombinacaoDeServicos(t *testing.T) {
+func TestEveryTemplateGeneratesWithAnyServiceCombination(t *testing.T) {
 	for _, tpl := range repoTemplates(t) {
 		for _, withs := range subsets(tpl.Services) {
 			name := tpl.Key() + "+" + strings.Join(withs, ",")
 			t.Run(name, func(t *testing.T) {
-				dest := filepath.Join(t.TempDir(), "minha-loja")
-				r, err := WriteScaffold(tpl, "minha-loja", dest, withs)
+				dest := filepath.Join(t.TempDir(), "my-shop")
+				r, err := WriteScaffold(tpl, "my-shop", dest, withs)
 				if err != nil {
 					t.Fatal(err)
 				}
 				for _, f := range r.Files {
 					if leftoverSample.MatchString(f) || strings.HasPrefix(f, variantsDir) {
-						t.Errorf("nome de exemplo ou variante no caminho: %s", f)
+						t.Errorf("sample name or variant in the path: %s", f)
 					}
 					b, _ := os.ReadFile(filepath.Join(dest, f))
 					if m := leftoverSample.Find(b); m != nil {
-						t.Errorf("%s ainda tem %q", f, m)
+						t.Errorf("%s still has %q", f, m)
 					}
 					if strings.Contains(string(b), "{{.") && f != "romanctl.yaml" {
-						t.Errorf("%s tem marcador de text/template, que os templates não usam mais", f)
+						t.Errorf("%s has a text/template marker, which templates no longer use", f)
 					}
 				}
 				for _, s := range withs {
-					conn, ok := services.FindService(s).Conn("minha_loja")
+					conn, ok := services.FindService(s).Conn("my_shop")
 					if !ok {
 						continue
 					}
@@ -165,7 +165,7 @@ func TestTodoTemplateGeraComQualquerCombinacaoDeServicos(t *testing.T) {
 	}
 }
 
-func TestTodaPastaDeTemplateCarrega(t *testing.T) {
+func TestEveryTemplateDirectoryLoads(t *testing.T) {
 	loaded := map[string]bool{}
 	for _, tpl := range repoTemplates(t) {
 		loaded[tpl.Key()] = true
@@ -174,49 +174,49 @@ func TestTodaPastaDeTemplateCarrega(t *testing.T) {
 	for _, dir := range dirs {
 		key := filepath.Base(filepath.Dir(filepath.Dir(dir))) + "/" + filepath.Base(dir)
 		if !loaded[key] {
-			t.Errorf("%s não carregou: confira o template.yaml", key)
+			t.Errorf("%s did not load: check its template.yaml", key)
 		}
 	}
 }
 
-func TestGrafiasDoNome(t *testing.T) {
-	r := projectReplacer("minha-loja.v2")
+func TestNameSpellings(t *testing.T) {
+	r := projectReplacer("my-shop.v2")
 	in := "SampleApp sampleApp sample_app sample-app SAMPLE_APP Sample App sample app sampleapp com/example/sampleapp"
-	want := "MinhaLojaV2 minhaLojaV2 minha_loja_v2 minha-loja-v2 MINHA_LOJA_V2 Minha Loja V2 minha loja v2 minhalojav2 com/example/minhalojav2"
+	want := "MyShopV2 myShopV2 my_shop_v2 my-shop-v2 MY_SHOP_V2 My Shop V2 my shop v2 myshopv2 com/example/myshopv2"
 	if got := r.Replace(in); got != want {
-		t.Fatalf("obtido %q", got)
+		t.Fatalf("got %q", got)
 	}
-	e := entityReplacer("loja", "ProductCategory", "ProductCategories", "Order")
+	e := entityReplacer("shop", "ProductCategory", "ProductCategories", "Order")
 	in = "SampleItems sampleItems sample_items sample-items sampleitems sample items SampleItem sample-item sample item SampleParents SampleParent SampleApp"
-	want = "ProductCategories productCategories product_categories product-categories productcategories product categories ProductCategory product-category product category Orders Order Loja"
+	want = "ProductCategories productCategories product_categories product-categories productcategories product categories ProductCategory product-category product category Orders Order Shop"
 	if got := e.Replace(in); got != want {
-		t.Fatalf("obtido %q", got)
+		t.Fatalf("got %q", got)
 	}
 }
 
-func TestApelidosDeArquitetura(t *testing.T) {
+func TestArchitectureAliases(t *testing.T) {
 	got, err := normalizeArch([]string{"ports-and-adapters", "vsa", "modulith", "fsd", "eda"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []string{"event-driven", "feature-sliced", "hexagonal", "modular-monolith", "vertical-slice"}
 	if !slices.Equal(got, want) {
-		t.Fatalf("obtido %v", got)
+		t.Fatalf("got %v", got)
 	}
 	for alias, target := range archAliases {
 		if !slices.Contains(knownArch, target) {
-			t.Errorf("apelido %s aponta para arquitetura desconhecida %s", alias, target)
+			t.Errorf("alias %s points to unknown architecture %s", alias, target)
 		}
 	}
 }
 
-func TestSetupAceitaStringOuPassoComWhen(t *testing.T) {
+func TestSetupAcceptsStringOrStepWithWhen(t *testing.T) {
 	var tpl Template
 	if err := yaml.Unmarshal([]byte("setup:\n  - go mod tidy\n  - run: npm ci\n    when: postgres\n  - run: npm install\n    when: \"!postgres\"\n"), &tpl); err != nil {
 		t.Fatal(err)
 	}
 	if got := tpl.setupFor(map[string]bool{}); !slices.Equal(got, []string{"go mod tidy", "npm install"}) {
-		t.Fatalf("sem postgres: %v", got)
+		t.Fatalf("without postgres: %v", got)
 	}
 	if got := tpl.setupFor(map[string]bool{"postgres": true}); !slices.Equal(got, []string{"go mod tidy", "npm ci"}) {
 		t.Fatalf("com postgres: %v", got)

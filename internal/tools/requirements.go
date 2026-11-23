@@ -2,11 +2,11 @@ package tools
 
 import "romanctl/internal/platform"
 
-// requirements diz o que cada ferramenta exige da máquina. O que não está aqui só depende
-// do sistema, da arquitetura e do gerenciador de pacotes.
+// requirements says what each tool demands from the machine. Anything not listed here depends only
+// on the OS, the architecture and the package manager.
 var requirements = map[string][]string{
-	// Motores e o que só funciona com um motor local. Clientes como docker-cli, crictl,
-	// dive e lazydocker ficam de fora, porque servem para uma máquina remota.
+	// Engines and what only works with a local engine. Clients like docker-cli, crictl,
+	// dive and lazydocker are left out, because they serve a remote machine.
 	"docker":          {platform.NeedContainers},
 	"podman":          {platform.NeedContainers},
 	"podman-compose":  {platform.NeedContainers},
@@ -25,7 +25,7 @@ var requirements = map[string][]string{
 	"orbstack":        {platform.NeedVM, platform.NeedGUI},
 	"rancher-desktop": {platform.NeedContainers, platform.NeedGUI},
 
-	// O binário oficial é ligado à glibc: não roda no Alpine.
+	// The official binary links against glibc: it does not run on Alpine.
 	"node": {platform.NeedGlibc}, "rust": {platform.NeedGlibc}, "dart": {platform.NeedGlibc}, "swift": {platform.NeedGlibc},
 	"deno": {platform.NeedGlibc}, "bun": {platform.NeedGlibc}, "uv": {platform.NeedGlibc}, "delta": {platform.NeedGlibc},
 	"eza": {platform.NeedGlibc}, "aws": {platform.NeedGlibc}, "gcloud": {platform.NeedGlibc}, "neovim": {platform.NeedGlibc},

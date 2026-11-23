@@ -28,7 +28,7 @@ type tokenResponse struct {
 	ErrorDescription string `json:"error_description"`
 }
 
-// ErrRejected é a recusa do Keycloak (sessão revogada, usuário bloqueado), diferente de falta de rede.
+// ErrRejected is a refusal from Keycloak (revoked session, blocked user), as opposed to no network.
 type ErrRejected struct{ Code, Description string }
 
 func (e ErrRejected) Error() string {
@@ -62,13 +62,13 @@ func postToken(ctx context.Context, endpoint string, form url.Values) (tokenResp
 	return t, nil
 }
 
-// Token é um access token e o momento em que ele deixa de valer.
+// Token is an access token and the moment it stops being valid.
 type Token struct {
 	AccessToken string
 	Expiry      time.Time
 }
 
-// ClientCredentials troca client_id e client_secret por um access token (sem refresh token).
+// ClientCredentials exchanges client_id and client_secret for an access token (no refresh token).
 func ClientCredentials(ctx context.Context, endpoint, clientID, clientSecret string) (Token, error) {
 	t, err := postToken(ctx, endpoint, url.Values{"grant_type": {"client_credentials"}, "client_id": {clientID}, "client_secret": {clientSecret}})
 	if err != nil {
@@ -90,7 +90,7 @@ func challenge(verifier string) string {
 	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
 
-// LoginOptions: Open recebe o endereço de login e tenta abrir o navegador.
+// LoginOptions: Open receives the login URL and tries to open the browser.
 type LoginOptions struct {
 	Endpoints Endpoints
 	Open      func(url string)
@@ -102,8 +102,8 @@ type callback struct {
 	err  error
 }
 
-// Login faz o authorization code com PKCE (S256) num redirect de loopback, como manda a RFC 8252:
-// uma porta livre em 127.0.0.1 recebe o código, e só quem tem o verifier troca por token.
+// Login runs the authorization code flow with PKCE (S256) on a loopback redirect, per RFC 8252:
+// a free port on 127.0.0.1 receives the code, and only the verifier holder can exchange it for a token.
 func Login(ctx context.Context, opts LoginOptions) (*Session, error) {
 	if opts.Timeout == 0 {
 		opts.Timeout = 5 * time.Minute
@@ -127,19 +127,19 @@ func Login(ctx context.Context, opts LoginOptions) (*Session, error) {
 		var result callback
 		switch {
 		case q.Get("state") != state:
-			result.err = i18n.Errorf("resposta de login com state diferente; tente de novo")
+			result.err = i18n.Errorf("login response with a different state; try again")
 		case q.Get("error") != "":
 			result.err = ErrRejected{q.Get("error"), q.Get("error_description")}
 		case q.Get("code") == "":
-			result.err = i18n.Errorf("o Keycloak não devolveu o código de login")
+			result.err = i18n.Errorf("Keycloak did not return the login code")
 		default:
 			result.code = q.Get("code")
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
-		message := i18n.T("Login feito. Pode fechar esta aba e voltar ao terminal.")
+		message := i18n.T("Signed in. You can close this tab and go back to the terminal.")
 		if result.err != nil {
-			message = i18n.T("O login falhou") + ": " + result.err.Error()
+			message = i18n.T("The login failed") + ": " + result.err.Error()
 		}
 		fmt.Fprintf(w, `<!doctype html><meta charset="utf-8"><title>romanctl</title><body style="font-family:sans-serif;padding:3rem"><h2>romanctl</h2><p>%s</p>`, html.EscapeString(message))
 		select {
@@ -159,7 +159,7 @@ func Login(ctx context.Context, opts LoginOptions) (*Session, error) {
 		"code_challenge":        {challenge(verifier)},
 		"code_challenge_method": {"S256"},
 	}
-	// Com o hint, o Keycloak pula a tela de login e vai direto ao Google.
+	// With the hint, Keycloak skips its login page and goes straight to Google.
 	if ep.IDP != "" && ep.IDP != "-" {
 		query.Set("kc_idp_hint", ep.IDP)
 	}
@@ -174,7 +174,7 @@ func Login(ctx context.Context, opts LoginOptions) (*Session, error) {
 	select {
 	case result = <-done:
 	case <-ctx.Done():
-		return nil, i18n.Errorf("o login não foi concluído a tempo")
+		return nil, i18n.Errorf("the login was not completed in time")
 	}
 	if result.err != nil {
 		return nil, result.err
@@ -196,7 +196,7 @@ func Login(ctx context.Context, opts LoginOptions) (*Session, error) {
 	return s, nil
 }
 
-// Refresh troca o refresh token por um access token novo e grava a sessão.
+// Refresh exchanges the refresh token for a new access token and saves the session.
 func (s *Session) Refresh(ctx context.Context) error {
 	t, err := postToken(ctx, s.endpoints().oidc("token"), url.Values{
 		"grant_type":    {"refresh_token"},
@@ -212,7 +212,7 @@ func (s *Session) Refresh(ctx context.Context) error {
 	return Save(s)
 }
 
-// Revoke encerra a sessão offline no Keycloak; o logout local acontece mesmo se falhar.
+// Revoke ends the offline session in Keycloak; the local logout happens even if it fails.
 func (s *Session) Revoke(ctx context.Context) error {
 	form := url.Values{"client_id": {s.ClientID}, "token": {s.RefreshToken}, "token_type_hint": {"refresh_token"}}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.endpoints().oidc("revoke"), strings.NewReader(form.Encode()))

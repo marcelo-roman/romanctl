@@ -17,12 +17,12 @@ func TestSensitive(t *testing.T) {
 	got := sensitive([]string{".env", "api/.env.production", ".env.example", "certs/server.key", "app.pem", "id_rsa", "main.go", "keys.go", "docs/.env.sample"})
 	want := []string{".env", "api/.env.production", "certs/server.key", "app.pem", "id_rsa"}
 	if !slices.Equal(got, want) {
-		t.Fatalf("obtido %v", got)
+		t.Fatalf("got %v", got)
 	}
 }
 
-func TestTodoTipoGeraArquivosValidos(t *testing.T) {
-	data := fileData{"Name": "Loja", "Lower": "loja", "API": "src/Loja.Api", "Dll": "Loja.Api", "Main": ".", "Module": "loja", "Bin": "loja", "Dist": "loja", "Web": "apps/web", "Database": "loja"}
+func TestEveryKindGeneratesValidFiles(t *testing.T) {
+	data := fileData{"Name": "Shop", "Lower": "shop", "API": "src/Shop.Api", "Dll": "Shop.Api", "Main": ".", "Module": "shop", "Bin": "shop", "Dist": "shop", "Web": "apps/web", "Database": "shop"}
 	for _, kind := range Kinds() {
 		files, err := render(kind, data)
 		if err != nil {
@@ -30,25 +30,25 @@ func TestTodoTipoGeraArquivosValidos(t *testing.T) {
 		}
 		for _, want := range []string{"Dockerfile", ".dockerignore", ".github/workflows/ci.yml"} {
 			if _, ok := files[want]; !ok {
-				t.Errorf("%s: falta %s", kind, want)
+				t.Errorf("%s: missing %s", kind, want)
 			}
 		}
 		var workflow map[string]any
 		if err := yaml.Unmarshal(files[".github/workflows/ci.yml"], &workflow); err != nil || workflow["jobs"] == nil {
-			t.Errorf("%s: workflow inválido: %v", kind, err)
+			t.Errorf("%s: invalid workflow: %v", kind, err)
 		}
 	}
 	files, _ := render("dotnet-solution", data)
-	if !strings.Contains(string(files["Dockerfile"]), `dotnet publish src/Loja.Api`) || !strings.Contains(string(files["Dockerfile"]), `"Loja.Api.dll"`) {
+	if !strings.Contains(string(files["Dockerfile"]), `dotnet publish src/Shop.Api`) || !strings.Contains(string(files["Dockerfile"]), `"Shop.Api.dll"`) {
 		t.Fatalf("Dockerfile: %s", files["Dockerfile"])
 	}
 }
 
-// fakeGH simula o GitHub com um repositório local. O git continua sendo o de verdade.
+// fakeGH simulates GitHub with a local repository. git itself is still the real one.
 func fakeGH(t *testing.T, signedIn bool) (remote string, calls string) {
 	t.Helper()
 	bin := t.TempDir()
-	remote = filepath.Join(t.TempDir(), "remoto.git")
+	remote = filepath.Join(t.TempDir(), "remote.git")
 	calls = filepath.Join(bin, "calls")
 	auth := "exit 0"
 	if !signedIn {
@@ -66,15 +66,15 @@ func fakeGH(t *testing.T, signedIn bool) (remote string, calls string) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("GIT_CONFIG_GLOBAL", filepath.Join(home, "gitconfig"))
-	os.WriteFile(filepath.Join(home, "gitconfig"), []byte("[user]\n\tname = Teste\n\temail = t@e.st\n[init]\n\tdefaultBranch = main\n"), 0o644)
+	os.WriteFile(filepath.Join(home, "gitconfig"), []byte("[user]\n\tname = Test\n\temail = t@e.st\n[init]\n\tdefaultBranch = main\n"), 0o644)
 	return remote, calls
 }
 
 func goProject(t *testing.T) string {
 	t.Helper()
-	dir := filepath.Join(t.TempDir(), "loja")
+	dir := filepath.Join(t.TempDir(), "shop")
 	os.MkdirAll(dir, 0o755)
-	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module loja\n"), 0o644)
+	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module shop\n"), 0o644)
 	os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n"), 0o644)
 	return dir
 }
@@ -88,7 +88,7 @@ func remoteFiles(t *testing.T, remote string) []string {
 	return strings.Fields(string(out))
 }
 
-func TestPublicaEmRepositorioPrivadoPorPadrao(t *testing.T) {
+func TestPublishesToPrivateRepositoryByDefault(t *testing.T) {
 	remote, calls := fakeGH(t, true)
 	dir := goProject(t)
 	result, err := Run(dir, Options{})
@@ -101,33 +101,33 @@ func TestPublicaEmRepositorioPrivadoPorPadrao(t *testing.T) {
 	got := remoteFiles(t, remote)
 	for _, want := range []string{"main.go", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml"} {
 		if !slices.Contains(got, want) {
-			t.Errorf("faltou %s no remoto: %v", want, got)
+			t.Errorf("%s missing from the remote: %v", want, got)
 		}
 	}
 	log, _ := os.ReadFile(calls)
 	if !strings.Contains(string(log), "--private") || strings.Contains(string(log), "--public") {
-		t.Fatalf("visibilidade errada: %s", log)
+		t.Fatalf("wrong visibility: %s", log)
 	}
 }
 
-func TestPublicoSoQuandoPedido(t *testing.T) {
+func TestPublicOnlyWhenRequested(t *testing.T) {
 	_, calls := fakeGH(t, true)
-	if _, err := Run(goProject(t), Options{Public: true, Description: "Uma loja"}); err != nil {
+	if _, err := Run(goProject(t), Options{Public: true, Description: "A shop"}); err != nil {
 		t.Fatal(err)
 	}
 	log, _ := os.ReadFile(calls)
-	if !strings.Contains(string(log), "--public") || !strings.Contains(string(log), "--description Uma loja") {
+	if !strings.Contains(string(log), "--public") || !strings.Contains(string(log), "--description A shop") {
 		t.Fatalf("%s", log)
 	}
 }
 
-func TestSegundaPublicacaoSoEnvia(t *testing.T) {
+func TestSecondPublishOnlyPushes(t *testing.T) {
 	remote, calls := fakeGH(t, true)
 	dir := goProject(t)
 	if _, err := Run(dir, Options{}); err != nil {
 		t.Fatal(err)
 	}
-	os.WriteFile(filepath.Join(dir, "novo.go"), []byte("package main\n"), 0o644)
+	os.WriteFile(filepath.Join(dir, "new.go"), []byte("package main\n"), 0o644)
 	os.WriteFile(calls, nil, 0o644)
 	result, err := Run(dir, Options{})
 	if err != nil {
@@ -138,39 +138,39 @@ func TestSegundaPublicacaoSoEnvia(t *testing.T) {
 	}
 	log, _ := os.ReadFile(calls)
 	if strings.Contains(string(log), "repo create") {
-		t.Fatalf("não deveria criar outro repositório: %s", log)
+		t.Fatalf("should not create another repository: %s", log)
 	}
-	if !slices.Contains(remoteFiles(t, remote), "novo.go") {
-		t.Fatal("novo.go não chegou ao remoto")
+	if !slices.Contains(remoteFiles(t, remote), "new.go") {
+		t.Fatal("new.go did not reach the remote")
 	}
 }
 
-func TestSegredoCancelaAntesDoCommit(t *testing.T) {
+func TestSecretCancelsBeforeCommit(t *testing.T) {
 	_, calls := fakeGH(t, true)
 	dir := goProject(t)
-	os.WriteFile(filepath.Join(dir, ".env"), []byte("SENHA=123\n"), 0o644)
+	os.WriteFile(filepath.Join(dir, ".env"), []byte("PASSWORD=123\n"), 0o644)
 	_, err := Run(dir, Options{})
 	if err == nil || !strings.Contains(err.Error(), ".env") {
-		t.Fatalf("erro: %v", err)
+		t.Fatalf("error: %v", err)
 	}
 	log, _ := os.ReadFile(calls)
 	if strings.Contains(string(log), "repo create") {
-		t.Fatal("não deveria ter criado o repositório")
+		t.Fatal("should not have created the repository")
 	}
-	if out, _ := exec.Command("git", "-C", dir, "log", "--oneline").CombinedOutput(); strings.Contains(string(out), "Publica") {
-		t.Fatalf("não deveria ter feito commit: %s", out)
+	if out, _ := exec.Command("git", "-C", dir, "log", "--oneline").CombinedOutput(); strings.Contains(string(out), "Publish") {
+		t.Fatalf("should not have committed: %s", out)
 	}
-	// Com o arquivo no .gitignore, a publicação segue.
+	// With the file in .gitignore, publishing goes ahead.
 	os.WriteFile(filepath.Join(dir, ".gitignore"), []byte(".env\n"), 0o644)
 	if _, err := Run(dir, Options{}); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestNaoSobrescreveOQueExiste(t *testing.T) {
+func TestDoesNotOverwriteExistingFiles(t *testing.T) {
 	remote, _ := fakeGH(t, true)
 	dir := goProject(t)
-	mine := "FROM meu-proprio\n"
+	mine := "FROM my-own\n"
 	os.WriteFile(filepath.Join(dir, "Dockerfile"), []byte(mine), 0o644)
 	result, err := Run(dir, Options{})
 	if err != nil {
@@ -181,12 +181,12 @@ func TestNaoSobrescreveOQueExiste(t *testing.T) {
 	}
 	b, _ := os.ReadFile(filepath.Join(dir, "Dockerfile"))
 	if string(b) != mine {
-		t.Fatalf("sobrescreveu: %s", b)
+		t.Fatalf("overwrote: %s", b)
 	}
 	_ = remote
 }
 
-func TestSemCI(t *testing.T) {
+func TestNoCI(t *testing.T) {
 	remote, _ := fakeGH(t, true)
 	if _, err := Run(goProject(t), Options{NoCI: true}); err != nil {
 		t.Fatal(err)
@@ -196,7 +196,7 @@ func TestSemCI(t *testing.T) {
 	}
 }
 
-func TestSimulacaoNaoMudaNada(t *testing.T) {
+func TestDryRunChangesNothing(t *testing.T) {
 	_, calls := fakeGH(t, true)
 	dir := goProject(t)
 	result, err := Plan(dir, Options{DryRun: true})
@@ -207,33 +207,33 @@ func TestSimulacaoNaoMudaNada(t *testing.T) {
 		t.Fatalf("%+v", result)
 	}
 	if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
-		t.Fatal("criou .git")
+		t.Fatal("created .git")
 	}
 	if _, err := os.Stat(filepath.Join(dir, "Dockerfile")); err == nil {
-		t.Fatal("criou Dockerfile")
+		t.Fatal("created Dockerfile")
 	}
 	log, _ := os.ReadFile(calls)
 	if strings.Contains(string(log), "repo create") {
-		t.Fatal("criou repositório")
+		t.Fatal("created a repository")
 	}
 }
 
-func TestSemLoginExplica(t *testing.T) {
+func TestWithoutLoginExplains(t *testing.T) {
 	fakeGH(t, false)
 	if _, err := Plan(goProject(t), Options{}); err == nil || !strings.Contains(err.Error(), "gh auth login") {
-		t.Fatalf("erro: %v", err)
+		t.Fatalf("error: %v", err)
 	}
 }
 
-func TestTodoTemplateTemPublicacao(t *testing.T) {
+func TestEveryTemplateHasPublishKind(t *testing.T) {
 	for _, tpl := range scaffold.LoadTemplates() {
-		dest := filepath.Join(t.TempDir(), "minha-loja")
-		if _, err := scaffold.WriteScaffold(tpl, "minha-loja", dest, nil); err != nil {
+		dest := filepath.Join(t.TempDir(), "my-shop")
+		if _, err := scaffold.WriteScaffold(tpl, "my-shop", dest, nil); err != nil {
 			t.Fatalf("%s: %v", tpl.Key(), err)
 		}
 		kind, data := KindOf(dest)
 		if !slices.Contains(Kinds(), kind) {
-			t.Errorf("%s: publish.kind %q não existe (existem: %v)", tpl.Key(), kind, Kinds())
+			t.Errorf("%s: publish.kind %q does not exist (available: %v)", tpl.Key(), kind, Kinds())
 			continue
 		}
 		if _, err := render(kind, data); err != nil {

@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-// Tipos cujo gerador precisa de internet; sem rede, são copiados de um template.
+// Types whose generator needs internet; offline, they are copied from a template.
 var OfflineTemplates = []string{"react", "react-ts", "next"}
 
 var OfflineRoot = filepath.Join(config.DataDir, "offline")
 
 var TemplatesDir = filepath.Join(OfflineRoot, "templates")
 
-// offlineMode é definido por "new": faz o npm usar só o cache.
+// offlineMode is set by "new": it makes npm use only the cache.
 var offlineMode bool
 
 func npmInstall(dir string, pkgs ...string) error {
@@ -42,14 +42,14 @@ func isTemplated(key string) bool {
 	return false
 }
 
-// createFromTemplate copia um template pronto, com node_modules, e ajusta o nome.
+// createFromTemplate copies a ready template, with node_modules, and adjusts the name.
 func createFromTemplate(key, name, path string) error {
 	if !HasTemplate(key) {
-		return i18n.Errorf("sem internet e sem template de %q — rode com internet: romanctl offline prep", key)
+		return i18n.Errorf("no internet and no template for %q — run with internet: romanctl offline prep", key)
 	}
-	ui.Infof("Usando o template offline de %s", key)
+	ui.Infof("Using the offline template for %s", key)
 	if out, err := sys.Output("cp", "-a", filepath.Join(TemplatesDir, key), path); err != nil {
-		return i18n.Errorf("cópia do template: %v %s", err, out)
+		return i18n.Errorf("copying the template: %v %s", err, out)
 	}
 	if err := renameNpmProject(path, key, name); err != nil {
 		return err

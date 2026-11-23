@@ -24,8 +24,8 @@ var httpClient = &http.Client{Transport: &http.Transport{
 	TLSHandshakeTimeout:   20 * time.Second,
 }}
 
-// httpGet repete erros temporários do servidor, comuns em downloads do GitHub. headers vem em
-// pares de nome e valor.
+// httpGet retries temporary server errors, common in GitHub downloads. headers come in
+// name/value pairs.
 func httpGet(url string, headers ...string) (*http.Response, error) {
 	var lastErr error
 	for attempt := 0; attempt < httpAttempts; attempt++ {
@@ -43,8 +43,8 @@ func httpGet(url string, headers ...string) (*http.Response, error) {
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			if strings.Contains(err.Error(), "x509") {
-				// Certificado não melhora repetindo. Comum em imagens mínimas de container.
-				return nil, i18n.Errorf("%v; instale os certificados raiz, como o pacote ca-certificates", err)
+				// Retrying does not fix a certificate. Common in minimal container images.
+				return nil, i18n.Errorf("%v; install the root certificates, such as the ca-certificates package", err)
 			}
 			lastErr = err
 			continue
@@ -86,11 +86,11 @@ func fetchJSONWith(url string, v any, headers ...string) error {
 	return json.NewDecoder(resp.Body).Decode(v)
 }
 
-// download grava a URL em dir e confere o SHA-256. Sem checksum publicado pelo
-// fornecedor, wantSum vem vazio e o usuário é avisado.
+// download saves the URL into dir and verifies the SHA-256. Without a checksum published by the
+// vendor, wantSum is empty and the user is warned.
 func download(url, dir, wantSum string) (string, error) {
 	file := filepath.Join(dir, path.Base(strings.SplitN(url, "?", 2)[0]))
-	ui.Infof("Baixando %s", path.Base(file))
+	ui.Infof("Downloading %s", path.Base(file))
 	resp, err := httpGet(url)
 	if err != nil {
 		return "", err
@@ -108,16 +108,16 @@ func download(url, dir, wantSum string) (string, error) {
 	got := hex.EncodeToString(hash.Sum(nil))
 	switch {
 	case wantSum == "":
-		ui.Warnf("O fornecedor não publica checksum de %s: conferido só o HTTPS", path.Base(file))
+		ui.Warnf("The vendor does not publish a checksum for %s: only HTTPS was verified", path.Base(file))
 	case !strings.EqualFold(got, wantSum):
-		return "", i18n.Errorf("checksum de %s não confere (esperado %s, obtido %s)", path.Base(file), wantSum, got)
+		return "", i18n.Errorf("checksum of %s does not match (expected %s, got %s)", path.Base(file), wantSum, got)
 	default:
-		ui.Infof("Checksum SHA-256 conferido")
+		ui.Infof("SHA-256 checksum verified")
 	}
 	return file, nil
 }
 
-// sumFromFile acha o hash de filename num arquivo no formato "hash  nome".
+// sumFromFile finds filename's hash in a file in the "hash  name" format.
 func sumFromFile(url, filename string) (string, error) {
 	text, err := fetchText(url)
 	if err != nil {
@@ -130,21 +130,21 @@ func sumFromFile(url, filename string) (string, error) {
 			return fields[0], nil
 		}
 	}
-	// Arquivo só com o hash, como kubectl.sha256.
+	// A file with only the hash, like kubectl.sha256.
 	if fields := strings.Fields(text); len(lines) == 1 && len(fields) >= 1 {
 		return fields[0], nil
 	}
-	return "", i18n.Errorf("%s não aparece em %s", filename, url)
+	return "", i18n.Errorf("%s does not appear in %s", filename, url)
 }
 
-// githubLatestTag segue o redirecionamento de /releases/latest, sem gastar o limite da API.
+// githubLatestTag follows the /releases/latest redirect, without consuming API rate limit.
 func githubLatestTag(repo string) (string, error) {
 	client := &http.Client{
 		Timeout:       30 * time.Second,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 	url := "https://github.com/" + repo + "/releases/latest"
-	// Repositório renomeado responde 301 para o novo endereço de /releases/latest.
+	// A renamed repository answers 301 to the new /releases/latest address.
 	for hops := 0; hops < 5; hops++ {
 		resp, err := client.Get(url)
 		if err != nil {
@@ -152,7 +152,7 @@ func githubLatestTag(repo string) (string, error) {
 		}
 		resp.Body.Close()
 		location := resp.Header.Get("Location")
-		// A tag pode ter barra, como kustomize/v5.7.1.
+		// The tag may contain a slash, like kustomize/v5.7.1.
 		if _, tag, found := strings.Cut(location, "/releases/tag/"); found && tag != "" {
 			return tag, nil
 		}
@@ -161,10 +161,10 @@ func githubLatestTag(repo string) (string, error) {
 		}
 		url = location
 	}
-	return "", i18n.Errorf("não achei a última versão de %s", repo)
+	return "", i18n.Errorf("could not find the latest version of %s", repo)
 }
 
-// githubAssetSum lê o SHA-256 que o GitHub calcula para cada arquivo de uma versão.
+// githubAssetSum reads the SHA-256 GitHub computes for each file of a release.
 func githubAssetSum(repo, tag, asset string) (string, error) {
 	var release struct {
 		Assets []struct {
@@ -180,7 +180,7 @@ func githubAssetSum(repo, tag, asset string) (string, error) {
 			return strings.TrimPrefix(a.Digest, "sha256:"), nil
 		}
 	}
-	return "", i18n.Errorf("%s não aparece na versão %s de %s", asset, tag, repo)
+	return "", i18n.Errorf("%s does not appear in version %s of %s", asset, tag, repo)
 }
 
 func extractTar(file, dest string, strip int) error {
@@ -203,7 +203,7 @@ func extractZip(file, dest string) error {
 	for _, f := range r.File {
 		target := filepath.Join(dest, f.Name)
 		if !strings.HasPrefix(target, root) {
-			return i18n.Errorf("caminho inseguro no zip: %s", f.Name)
+			return i18n.Errorf("unsafe path in zip: %s", f.Name)
 		}
 		if f.FileInfo().IsDir() {
 			if err := os.MkdirAll(target, 0o755); err != nil {
@@ -243,7 +243,7 @@ func writeZipEntry(f *zip.File, target string) error {
 	return err
 }
 
-// swapDir troca dest por src de uma vez, para uma falha não deixar a ferramenta pela metade.
+// swapDir replaces dest with src at once, so a failure never leaves the tool half-installed.
 func swapDir(src, dest string) error {
 	if err := os.RemoveAll(dest); err != nil {
 		return err
@@ -251,7 +251,7 @@ func swapDir(src, dest string) error {
 	return os.Rename(src, dest)
 }
 
-// link publica binários em /usr/local/bin.
+// link publishes binaries to /usr/local/bin.
 func link(paths ...string) error {
 	if err := os.MkdirAll(binDir, 0o755); err != nil {
 		return err
@@ -282,7 +282,7 @@ func installBinary(src, name string) error {
 	return os.WriteFile(target, b, 0o755)
 }
 
-// tempNear cria o diretório de trabalho ao lado do destino, para o Rename final funcionar.
+// tempNear creates the working directory next to the destination, so the final Rename works.
 func tempNear(dest string) (string, error) {
 	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 		return "", err

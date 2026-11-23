@@ -28,10 +28,10 @@ func opt(name string) string { return platform.Current.Opt(name) }
 
 var (
 	aptUpdated bool
-	// Outro apt rodando (em outra sessão, por exemplo) não é erro: espera a trava.
+	// Another apt running (in another session, for example) is not an error: wait for the lock.
 	aptLock = []string{"-o", "DPkg::Lock::Timeout=600"}
 	aptEnv  = []string{"DEBIAN_FRONTEND=noninteractive"}
-	// Remover estes pacotes quebraria o Ubuntu ou o próprio apt.
+	// Removing these packages would break Ubuntu or apt itself.
 	aptProtected = regexp.MustCompile(`^(apt|dpkg|bash|coreutils|libc6|libc-bin|login|passwd|sed|grep|tar|gzip|findutils|perl-base|base-files|base-passwd|python3|python3-minimal|python3\.\d+|python3\.\d+-minimal|ubuntu-.*|sudo)$`)
 	aptRemv      = regexp.MustCompile(`(?m)^Remv (\S+)`)
 )
@@ -43,7 +43,7 @@ func privileged(env []string, command ...string) error {
 
 func pkgInstall(pkgs []string) error {
 	if len(pkgs) == 0 {
-		return i18n.Errorf("nenhum pacote definido para esta distribuição")
+		return i18n.Errorf("no package defined for this distribution")
 	}
 	ui.Infof("%s install %s", platform.Current.Manager, strings.Join(pkgs, " "))
 	switch platform.Current.Manager {
@@ -60,7 +60,7 @@ func pkgInstall(pkgs []string) error {
 	case platform.Brew:
 		return brewInstall(pkgs, false)
 	}
-	return i18n.Errorf("nenhum gerenciador de pacotes reconhecido nesta máquina")
+	return i18n.Errorf("no recognized package manager on this machine")
 }
 
 func pkgRemove(pkgs []string) error {
@@ -87,7 +87,7 @@ func pkgRemove(pkgs []string) error {
 
 func brewInstall(names []string, cask bool) error {
 	if len(names) == 0 {
-		return i18n.Errorf("não há fórmula do Homebrew para esta ferramenta")
+		return i18n.Errorf("there is no Homebrew formula for this tool")
 	}
 	args := []string{"install"}
 	if cask {
@@ -113,7 +113,7 @@ func aptInstall(pkgs ...string) error {
 	args := slices.Concat([]string{"apt-get"}, aptLock, []string{"install", "-y", "--no-install-recommends"}, pkgs)
 	err := privileged(aptEnv, args...)
 	if err != nil && !aptUpdated {
-		ui.Infof("Atualizando a lista de pacotes e tentando de novo...")
+		ui.Infof("Updating the package list and trying again...")
 		aptUpdated = true
 		if uerr := privileged(aptEnv, slices.Concat([]string{"apt-get"}, aptLock, []string{"update"})...); uerr != nil {
 			return uerr
@@ -128,8 +128,8 @@ func aptIsInstalled(pkg string) bool {
 	return err == nil && strings.Contains(out, "install ok installed")
 }
 
-// aptRemove simula antes para não levar nada vital junto. O autoremove só atinge
-// pacotes que o apt instalou como dependência, nunca os pedidos explicitamente.
+// aptRemove simulates first so nothing vital goes along. autoremove only affects
+// packages apt installed as dependencies, never the explicitly requested ones.
 func aptRemove(pkgs []string) error {
 	var present []string
 	for _, p := range pkgs {
@@ -143,7 +143,7 @@ func aptRemove(pkgs []string) error {
 	sim := slices.Concat([]string{"-s", "remove", "--autoremove"}, present)
 	out, err := sys.OutputEnv(aptEnv, "apt-get", sim...)
 	if err != nil {
-		return i18n.Errorf("simulação do apt: %v\n%s", err, sys.Tail(out, 8))
+		return i18n.Errorf("apt simulation: %v\n%s", err, sys.Tail(out, 8))
 	}
 	manualOut, err := sys.Output("apt-mark", "showmanual")
 	if err != nil {
@@ -154,13 +154,13 @@ func aptRemove(pkgs []string) error {
 		removed = append(removed, m[1])
 	}
 	if blocked := aptBlocked(removed, present, strings.Fields(manualOut)); len(blocked) > 0 {
-		return i18n.Errorf("remoção recusada: levaria junto %s", strings.Join(blocked, ", "))
+		return i18n.Errorf("removal refused: it would also take %s", strings.Join(blocked, ", "))
 	}
 	return privileged(aptEnv, slices.Concat([]string{"apt-get"}, aptLock, []string{"remove", "-y", "--autoremove"}, present)...)
 }
 
-// aptBlocked lista o que não pode sair junto: pacotes vitais e qualquer pacote instalado
-// explicitamente que não foi pedido. Remover perl, por exemplo, levaria o git.
+// aptBlocked lists what must not go along: vital packages and any explicitly installed package
+// that was not requested. Removing perl, for example, would take git with it.
 func aptBlocked(removed, requested, manual []string) []string {
 	var blocked []string
 	for _, pkg := range removed {
@@ -173,7 +173,7 @@ func aptBlocked(removed, requested, manual []string) []string {
 	return blocked
 }
 
-// ---------------------------------------------------------------- remoção
+// ---------------------------------------------------------------- removal
 
 func removalPath(p string) string {
 	if filepath.IsAbs(p) {
@@ -218,9 +218,9 @@ func (t *Tool) remove() error {
 	return nil
 }
 
-// ---------------------------------------------------------------- construtores do catálogo
+// ---------------------------------------------------------------- catalog builders
 
-// pkgTool usa o gerenciador de pacotes da máquina; .on() troca nomes por distribuição.
+// pkgTool uses the machine's package manager; .on() swaps names per distribution.
 func pkgTool(key, name, group, desc, bin string, pkgs ...string) *Tool {
 	return &Tool{Key: key, Name: name, Group: group, Description: desc, Version: []string{bin, "--version"},
 		Pkgs: map[string][]string{"*": pkgs}, Brew: pkgs}
@@ -231,10 +231,10 @@ func npmTool(key, name, group, desc, pkg string, bins ...string) *Tool {
 		Portable: true, Npm: pkg, RemoveNpm: pkg, RemovePaths: bins, Install: func() error { return npmInstall(pkg, bins) }}
 }
 
-// npmInstall aceita "pacote" ou "pacote@versão".
+// npmInstall accepts "package" or "package@version".
 func npmInstall(spec string, bins []string) error {
 	if !sys.Have("npm") {
-		return i18n.Errorf("precisa do Node: romanctl tools install node")
+		return i18n.Errorf("needs Node: romanctl tools install node")
 	}
 	ui.Infof("npm install -g %s", spec)
 	if err := sys.Quiet("", nil, "npm", "install", "-g", spec); err != nil {
@@ -251,7 +251,7 @@ func npmInstall(spec string, bins []string) error {
 	return link(paths...)
 }
 
-// venvTool isola cada ferramenta Python no próprio ambiente, sem mexer no Python do sistema.
+// venvTool isolates each Python tool in its own environment, without touching the system Python.
 func venvTool(key, name, group, desc, pkg string, bins ...string) *Tool {
 	dest := filepath.Join(venvDir, key)
 	return &Tool{Key: key, Name: name, Group: group, Description: desc, Version: []string{bins[0], "--version"}, Portable: true, PyPI: pkg,
@@ -259,7 +259,7 @@ func venvTool(key, name, group, desc, pkg string, bins ...string) *Tool {
 }
 
 func installVenv(dest, pkg string, bins []string) error {
-	// No Debian e no Ubuntu, o venv fica num pacote separado.
+	// On Debian and Ubuntu, venv lives in a separate package.
 	if platform.Current.Manager == platform.Apt {
 		if err := aptInstall("python3-venv"); err != nil {
 			return err
@@ -269,7 +269,7 @@ func installVenv(dest, pkg string, bins []string) error {
 	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 		return err
 	}
-	ui.Infof("Criando o ambiente Python e instalando %s...", pkg)
+	ui.Infof("Creating the Python environment and installing %s...", pkg)
 	if err := sys.Quiet("", nil, "python3", "-m", "venv", dest); err != nil {
 		return err
 	}
@@ -284,15 +284,15 @@ func installVenv(dest, pkg string, bins []string) error {
 	return link(paths...)
 }
 
-// Release descreve um binário para Linux publicado no GitHub. Em Asset e Sums, {tag} e
-// {ver} viram a versão, com e sem o "v", e {arch}, {uarch}, {xarch} e {x64} a arquitetura.
-// {m} vem de Map, para os projetos que usam um nome próprio. Bins aceita "origem=destino".
+// Release describes a Linux binary published on GitHub. In Asset and Sums, {tag} and
+// {ver} become the version, with and without the "v", and {arch}, {uarch}, {xarch} and {x64} the
+// architecture. {m} comes from Map, for projects that use their own name. Bins accepts "source=target".
 type Release struct {
 	Repo  string
 	Asset string
-	Sums  string // lista de checksums; vazio se o projeto não publica
+	Sums  string // checksums list; empty if the project does not publish one
 	Bins  []string
-	Map   map[string]string // arquitetura → valor de {m}
+	Map   map[string]string // architecture → value of {m}
 }
 
 func releaseTool(key, name, group, desc string, r Release) *Tool {
@@ -342,7 +342,7 @@ func assetVars(r Release, tag, ver string, p platform.Info) *strings.Replacer {
 		"{arch}", p.Arch, "{uarch}", p.UArch(), "{xarch}", p.XArch(), "{x64}", p.X64(), "{m}", r.Map[p.Arch])
 }
 
-// installFromURL aceita binário solto, .tar.* ou .zip e procura os binários dentro.
+// installFromURL accepts a bare binary, .tar.* or .zip and looks for the binaries inside.
 func installFromURL(url, sum string, bins []string) error {
 	tmp, err := os.MkdirTemp("", "romanctl-")
 	if err != nil {
@@ -388,12 +388,12 @@ func findFile(root, name string) (string, error) {
 		return nil
 	})
 	if err == nil && found == "" {
-		err = i18n.Errorf("%s não está no pacote baixado", name)
+		err = i18n.Errorf("%s is not in the downloaded package", name)
 	}
 	return found, err
 }
 
-// installToOpt extrai um pacote inteiro numa pasta, para ferramentas com vários arquivos.
+// installToOpt extracts a whole package into a directory, for multi-file tools.
 func installToOpt(url, sum, dest string, strip int, bins ...string) error {
 	tmp, err := tempNear(dest)
 	if err != nil {
@@ -425,7 +425,7 @@ func installToOpt(url, sum, dest string, strip int, bins ...string) error {
 	return link(paths...)
 }
 
-// hashicorpTool cobre os produtos da HashiCorp, que seguem o mesmo padrão de download.
+// hashicorpTool covers HashiCorp products, which follow the same download pattern.
 func hashicorpTool(key, name, group, desc string) *Tool {
 	latest := func() (string, error) { return hashicorpLatest(key) }
 	install := func(want string) error {

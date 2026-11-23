@@ -4,13 +4,13 @@ import "testing"
 
 func TestIsProot(t *testing.T) {
 	if !isProot("Linux version 6.17.0-PRoot-Distro", "") {
-		t.Error("não detectou proot")
+		t.Error("did not detect proot")
 	}
 	if isProot("Linux version 6.8.0-generic", "") {
-		t.Error("detectou proot em Linux comum")
+		t.Error("detected proot on plain Linux")
 	}
 	if isProot("6.17.0-PRoot-Distro", "0") || !isProot("generic", "1") {
-		t.Error("variável de ambiente deveria ter prioridade")
+		t.Error("the environment variable should take precedence")
 	}
 }
 
@@ -36,7 +36,7 @@ func TestDetectManager(t *testing.T) {
 	}
 	for _, c := range cases {
 		if got := detectManager(c.goos, only(c.bins...)); got != c.want {
-			t.Errorf("%s %v: obtido %q, esperado %q", c.goos, c.bins, got, c.want)
+			t.Errorf("%s %v: got %q, want %q", c.goos, c.bins, got, c.want)
 		}
 	}
 }
@@ -46,15 +46,15 @@ func TestInstallDirs(t *testing.T) {
 		t.Errorf("root: %s %s", bin, opt)
 	}
 	if bin, opt := installDirs(false, "/home/ana"); bin != "/home/ana/.local/bin" || opt != "/home/ana/.local/share/romanctl/tools" {
-		t.Errorf("usuário: %s %s", bin, opt)
+		t.Errorf("user: %s %s", bin, opt)
 	}
 }
 
-func TestArquiteturas(t *testing.T) {
+func TestArchitectures(t *testing.T) {
 	amd, arm := Info{Arch: "amd64"}, Info{Arch: "arm64"}
 	if amd.UArch() != "x86_64" || arm.UArch() != "aarch64" || amd.XArch() != "x86_64" || arm.XArch() != "arm64" ||
 		amd.X64() != "x64" || arm.X64() != "arm64" {
-		t.Error("nomes de arquitetura errados")
+		t.Error("wrong architecture names")
 	}
 }
 
@@ -74,7 +74,7 @@ func fakeProbes(paths []string, env map[string]string, musl, hv bool) probes {
 	}
 }
 
-func TestCapacidades(t *testing.T) {
+func TestCapabilities(t *testing.T) {
 	kernel := []string{"/proc/self/ns/pid", "/sys/fs/cgroup"}
 	cases := []struct {
 		name                string
@@ -84,13 +84,13 @@ func TestCapacidades(t *testing.T) {
 		libc                string
 	}{
 		{"desktop Linux", Info{OS: "linux"}, fakeProbes(append(kernel, "/dev/kvm"), map[string]string{"WAYLAND_DISPLAY": "wayland-0"}, false, false), true, true, true, "glibc"},
-		{"servidor", Info{OS: "linux"}, fakeProbes(kernel, nil, false, false), true, false, false, "glibc"},
+		{"server", Info{OS: "linux"}, fakeProbes(kernel, nil, false, false), true, false, false, "glibc"},
 		{"proot", Info{OS: "linux", Proot: true}, fakeProbes(append(kernel, "/dev/kvm"), map[string]string{"DISPLAY": ":0"}, false, false), false, false, false, "glibc"},
 		{"Android", Info{OS: "linux"}, fakeProbes(append(kernel, "/system/bin/app_process"), nil, false, false), false, false, false, "glibc"},
 		{"Alpine", Info{OS: "linux"}, fakeProbes(kernel, nil, true, false), true, false, false, "musl"},
 		{"Mac", Info{OS: "darwin"}, fakeProbes(nil, nil, false, true), true, true, true, ""},
-		{"Mac em VM sem aninhamento", Info{OS: "darwin"}, fakeProbes(nil, nil, false, false), false, false, true, ""},
-		{"forçado", Info{OS: "linux"}, fakeProbes(nil, map[string]string{"ROMANCTL_CONTAINERS": "1", "ROMANCTL_GUI": "1", "ROMANCTL_VM": "1"}, false, false), true, true, true, "glibc"},
+		{"Mac in VM without nesting", Info{OS: "darwin"}, fakeProbes(nil, nil, false, false), false, false, true, ""},
+		{"forced", Info{OS: "linux"}, fakeProbes(nil, map[string]string{"ROMANCTL_CONTAINERS": "1", "ROMANCTL_GUI": "1", "ROMANCTL_VM": "1"}, false, false), true, true, true, "glibc"},
 	}
 	for _, c := range cases {
 		i := c.info
@@ -108,7 +108,7 @@ func TestMissing(t *testing.T) {
 			t.Errorf("%s: %s", need, why)
 		}
 		if (Info{Libc: "musl"}).Missing(need) == "" {
-			t.Errorf("%s deveria faltar", need)
+			t.Errorf("%s should be missing", need)
 		}
 	}
 }

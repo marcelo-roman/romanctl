@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// projetos que estavam em "run" e cujo processo morreu.
+// crashedProjects returns the projects that were in "run" and whose process died.
 func crashedProjects(st state.RunState) []string {
 	var names []string
 	for name, pid := range st.Projects {
@@ -33,14 +33,14 @@ func RestoreRun() error {
 	}
 	sort.Strings(downed)
 	if len(st.Services) == 0 && len(crashed) == 0 && len(downed) == 0 {
-		ui.Infof("Nada para restaurar: nenhum serviço estava ligado.")
+		ui.Infof("Nothing to restore: no service was running.")
 		return nil
 	}
 	var failed []string
 	for _, key := range st.Services {
 		s := FindService(key)
 		if s == nil {
-			ui.Warnf("Serviço desconhecido no estado: %s", key)
+			ui.Warnf("Unknown service in the state: %s", key)
 			continue
 		}
 		if err := s.Start(); err != nil {
@@ -50,7 +50,7 @@ func RestoreRun() error {
 	}
 	if len(crashed) > 0 {
 		fmt.Println()
-		ui.Warnf("Estes projetos estavam rodando e precisam de um terminal próprio:")
+		ui.Warnf("These projects were running and need their own terminal:")
 		for _, name := range crashed {
 			i18n.Printf("    romanctl run %s\n", name)
 			state.MarkProject(name, false)
@@ -58,39 +58,39 @@ func RestoreRun() error {
 	}
 	if len(downed) > 0 {
 		fmt.Println()
-		ui.Warnf("Estes projetos estavam no ar; para subir de novo:")
+		ui.Warnf("These projects were up; to bring them up again:")
 		for _, name := range downed {
 			fmt.Printf("    romanctl up -d %s\n", name)
 		}
 	}
 	if len(failed) > 0 {
-		return i18n.Errorf("não subiram: %s", strings.Join(failed, ", "))
+		return i18n.Errorf("did not start: %s", strings.Join(failed, ", "))
 	}
 	return nil
 }
 
 func restoreStatus() {
 	st := state.ReadState()
-	fmt.Println(ui.STitle.Render(i18n.T("Estado salvo")))
+	fmt.Println(ui.STitle.Render(i18n.T("Saved state")))
 	if st.Updated != "" {
-		i18n.Printf("  %-14s %s\n", i18n.T("Atualizado em"), st.Updated)
+		i18n.Printf("  %-14s %s\n", i18n.T("Updated on"), st.Updated)
 	}
 	if len(st.Services) == 0 {
-		i18n.Printf("  %-14s %s\n", i18n.T("Serviços"), ui.SGray.Render("nenhum"))
+		i18n.Printf("  %-14s %s\n", i18n.T("Services"), ui.SGray.Render(i18n.T("none")))
 	}
 	for _, key := range st.Services {
 		s := FindService(key)
 		if s == nil {
 			continue
 		}
-		state := ui.SRed.Render(i18n.T("caiu"))
+		state := ui.SRed.Render(i18n.T("crashed"))
 		if s.Running() {
-			state = ui.SGreen.Render(i18n.T("rodando"))
+			state = ui.SGreen.Render(i18n.T("running"))
 		}
 		i18n.Printf("  %-14s %s\n", s.Name, state)
 	}
 	for _, name := range crashedProjects(st) {
-		i18n.Printf("  %-14s %s\n", name, ui.SRed.Render(i18n.T("projeto caiu")))
+		i18n.Printf("  %-14s %s\n", name, ui.SRed.Render(i18n.T("project crashed")))
 	}
 }
 
@@ -112,21 +112,21 @@ func RestoreCommand(sub string) error {
 		if err := state.UpdateState(func(st *state.RunState) { st.Services = keys }); err != nil {
 			return err
 		}
-		ui.Okf("Estado salvo: %s", orNone(keys))
+		ui.Okf("State saved: %s", orNone(keys))
 		return nil
 	case "clear", "limpar":
 		if err := state.UpdateState(func(st *state.RunState) { st.Services, st.Projects = nil, nil }); err != nil {
 			return err
 		}
-		ui.Okf("Estado limpo: o restore não vai subir nada")
+		ui.Okf("State cleared: restore will not start anything")
 		return nil
 	}
-	return i18n.Errorf("use: romanctl restore [status|save|clear]")
+	return i18n.Errorf("usage: romanctl restore [status|save|clear]")
 }
 
 func orNone(keys []string) string {
 	if len(keys) == 0 {
-		return i18n.T("nenhum serviço")
+		return i18n.T("no services")
 	}
 	return strings.Join(keys, ", ")
 }

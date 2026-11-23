@@ -21,19 +21,19 @@ type fakeBackend struct {
 
 func (f *fakeBackend) Header() string { return "linux/arm64" }
 func (f *fakeBackend) Services() []Row {
-	return []Row{{Key: "postgres", Status: "parado", Columns: []string{"postgres", "PostgreSQL", "parado", "pg://"}},
-		{Key: "redis", Status: "rodando", Columns: []string{"redis", "Redis", "rodando", "redis://"}},
-		{Key: "kafka", Status: "nao-instalado", Columns: []string{"kafka", "Kafka", "não instalado", ""}},
-		{Key: "docker", Status: "rodando", Group: engineGroup, Columns: []string{"docker", "Docker", "rodando", "unix:///var/run/docker.sock"}}}
+	return []Row{{Key: "postgres", Status: "stopped", Columns: []string{"postgres", "PostgreSQL", "stopped", "pg://"}},
+		{Key: "redis", Status: "running", Columns: []string{"redis", "Redis", "running", "redis://"}},
+		{Key: "kafka", Status: "not-installed", Columns: []string{"kafka", "Kafka", "not installed", ""}},
+		{Key: "docker", Status: "running", Group: engineGroup, Columns: []string{"docker", "Docker", "running", "unix:///var/run/docker.sock"}}}
 }
 func (f *fakeBackend) Projects() []Row {
-	return []Row{{Key: "loja", Status: "parado", Columns: []string{"loja", "dotnet", "parado", "http://x", "01/01"}, Detail: [][2]string{{"Pasta", "/p/loja"}}},
-		{Key: "site", Status: "rodando", Columns: []string{"site", "next", "rodando", "http://y", "01/01"}}}
+	return []Row{{Key: "shop", Status: "stopped", Columns: []string{"shop", "dotnet", "stopped", "http://x", "01/01"}, Detail: [][2]string{{"Folder", "/p/shop"}}},
+		{Key: "site", Status: "running", Columns: []string{"site", "next", "running", "http://y", "01/01"}}}
 }
 func (f *fakeBackend) Tools() []Row {
-	return []Row{{Key: "kubectl", Status: "instalado", Group: "k8s", Columns: []string{"kubectl", "k8s", "instalado", "v1.0.0", "", "CLI"}},
-		{Key: "helm", Status: "disponivel", Group: "k8s", Columns: []string{"helm", "k8s", "disponível", "", "", "Pacotes"}},
-		{Key: "psql", Status: "disponivel", Group: "db", Columns: []string{"psql", "db", "disponível", "", "", "Cliente"}}}
+	return []Row{{Key: "kubectl", Status: "installed", Group: "k8s", Columns: []string{"kubectl", "k8s", "installed", "v1.0.0", "", "CLI"}},
+		{Key: "helm", Status: "available", Group: "k8s", Columns: []string{"helm", "k8s", "available", "", "", "Packages"}},
+		{Key: "psql", Status: "available", Group: "db", Columns: []string{"psql", "db", "available", "", "", "Client"}}}
 }
 func (f *fakeBackend) System() sysinfo.Snapshot {
 	return sysinfo.Snapshot{Memory: sysinfo.Memory{Total: 1 << 33, Available: 1 << 32}, Disk: sysinfo.Disk{Size: 1 << 34, Free: 1 << 33},
@@ -41,18 +41,18 @@ func (f *fakeBackend) System() sysinfo.Snapshot {
 }
 func (f *fakeBackend) Upstream(key string) tools.Upstream {
 	f.upstreams = append(f.upstreams, key)
-	return tools.Upstream{Latest: "2.0.0", Source: "GitHub releases", URL: "https://github.com/x/" + key, Readme: "# " + key + "\n\nGuia de uso do " + key + "."}
+	return tools.Upstream{Latest: "2.0.0", Source: "GitHub releases", URL: "https://github.com/x/" + key, Readme: "# " + key + "\n\nUsage guide for " + key + "."}
 }
 func (f *fakeBackend) Latest(key string) tools.Upstream {
 	return tools.Upstream{Latest: "2.0.0", Source: "GitHub releases"}
 }
 func (f *fakeBackend) Versions(key string) ([]tools.Version, error) {
 	if key == "psql" {
-		return nil, errors.New("o apt instala só a versão atual do repositório")
+		return nil, errors.New("apt only installs the current version from the repository")
 	}
 	return []tools.Version{{ID: "v2.0.0", Label: "2.0.0"}, {ID: "v1.9.0", Label: "1.9.0"}, {ID: "v1.0.0", Label: "1.0.0"}}, nil
 }
-func (f *fakeBackend) Logs(view, key string) string { return "linha 1\nlinha 2\n" + key }
+func (f *fakeBackend) Logs(view, key string) string { return "line 1\nline 2\n" + key }
 func (f *fakeBackend) Command(args ...string) *exec.Cmd {
 	f.commands = append(f.commands, args)
 	return exec.Command("true")
@@ -67,7 +67,7 @@ func setup(t *testing.T) (*Model, *fakeBackend) {
 	return m, f
 }
 
-// load executa o carregamento de forma síncrona.
+// load runs the loading synchronously.
 func load(m *Model, view string) {
 	if msg := m.load(view)(); msg != nil {
 		m.Update(msg)
@@ -107,9 +107,9 @@ func key(m *Model, keys ...string) tea.Cmd {
 
 func screen(m *Model) string { return ansi.Strip(m.View()) }
 
-func TestTrocaDeTela(t *testing.T) {
+func TestSwitchScreen(t *testing.T) {
 	m, _ := setup(t)
-	if !strings.Contains(screen(m), "loja") {
+	if !strings.Contains(screen(m), "shop") {
 		t.Fatal(screen(m))
 	}
 	key(m, "tab")
@@ -130,30 +130,30 @@ func TestTrocaDeTela(t *testing.T) {
 	}
 }
 
-func TestComandos(t *testing.T) {
+func TestCommands(t *testing.T) {
 	m, _ := setup(t)
 	for text, want := range map[string]string{"svc": viewServices, "tools": viewTools, "sys": viewSystem, "prj": viewProjects, "ser": viewServices} {
 		key(m, ":", text, "enter")
 		if m.view != want {
-			t.Errorf(":%s foi para %s", text, m.view)
+			t.Errorf(":%s went to %s", text, m.view)
 		}
 	}
-	key(m, ":", "nao-existe", "enter")
-	if !strings.Contains(screen(m), "nao-existe") {
+	key(m, ":", "does-not-exist", "enter")
+	if !strings.Contains(screen(m), "does-not-exist") {
 		t.Fatal(screen(m))
 	}
 	key(m, ":", "s", "e", "tab")
 	if m.command != "services" {
-		t.Fatalf("completar: %q", m.command)
+		t.Fatalf("complete: %q", m.command)
 	}
 	key(m, "esc")
 	cmd := key(m, ":", "q", "enter")
 	if !m.quit || cmd == nil {
-		t.Fatal("não saiu")
+		t.Fatal("did not quit")
 	}
 }
 
-func TestComandoDeCategoria(t *testing.T) {
+func TestCategoryCommand(t *testing.T) {
 	m, _ := setup(t)
 	key(m, ":", "db", "enter")
 	if m.view != viewTools {
@@ -166,7 +166,7 @@ func TestComandoDeCategoria(t *testing.T) {
 	}
 }
 
-func TestFiltro(t *testing.T) {
+func TestFilter(t *testing.T) {
 	m, _ := setup(t)
 	key(m, "/", "si")
 	if rows := m.visible(); len(rows) != 1 || rows[0].Key != "site" {
@@ -181,16 +181,16 @@ func TestFiltro(t *testing.T) {
 		t.Fatal(m.filter)
 	}
 	key(m, "/", "zzz")
-	if !strings.Contains(screen(m), "Nada encontrado") {
+	if !strings.Contains(screen(m), "Nothing found") {
 		t.Fatal(screen(m))
 	}
 }
 
-func TestTeclasQueChegamJuntas(t *testing.T) {
+func TestKeysArrivingTogether(t *testing.T) {
 	m, _ := setup(t)
 	m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("/si")})
 	if m.mode != modeFilter || m.filter != "si" {
-		t.Fatalf("modo %v, filtro %q", m.mode, m.filter)
+		t.Fatalf("mode %v, filter %q", m.mode, m.filter)
 	}
 	m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(":svc")})
@@ -200,7 +200,7 @@ func TestTeclasQueChegamJuntas(t *testing.T) {
 	}
 }
 
-func TestLetrasDoFiltroNaoDisparamAcoes(t *testing.T) {
+func TestFilterLettersDoNotTriggerActions(t *testing.T) {
 	m, f := setup(t)
 	key(m, "/", "u", "r", "x", "q")
 	if len(f.commands) != 0 || m.quit {
@@ -208,92 +208,92 @@ func TestLetrasDoFiltroNaoDisparamAcoes(t *testing.T) {
 	}
 	key(m, "esc", ":", "u", "q")
 	if m.quit || len(f.commands) != 0 {
-		t.Fatal("o comando também não dispara teclas")
+		t.Fatal("the command does not trigger keys either")
 	}
 }
 
-func TestAcaoRodaEmSegundoPlanoComEstadoNaLinha(t *testing.T) {
+func TestActionRunsInBackgroundWithStateOnRow(t *testing.T) {
 	m, f := setup(t)
 	cmd := key(m, "u")
-	if m.running["projects/loja"] == "" {
-		t.Fatal("sem andamento")
+	if m.running["projects/shop"] == "" {
+		t.Fatal("no progress")
 	}
-	if !strings.Contains(screen(m), "subir") {
+	if !strings.Contains(screen(m), "bring up") {
 		t.Fatal(screen(m))
 	}
 	if cmd2 := key(m, "u"); cmd2 != nil {
-		t.Fatal("repetir enquanto roda não deveria disparar de novo")
+		t.Fatal("repeating while running should not fire again")
 	}
 	msg := cmd()
-	if got := strings.Join(f.commands[0], " "); got != "up loja -d" {
+	if got := strings.Join(f.commands[0], " "); got != "up shop -d" {
 		t.Fatal(got)
 	}
 	m.Update(msg)
-	if m.running["projects/loja"] != "" || !strings.Contains(screen(m), "concluído") {
+	if m.running["projects/shop"] != "" || !strings.Contains(screen(m), "done") {
 		t.Fatal(screen(m))
 	}
 }
 
-func TestFalhaApareceNoRodape(t *testing.T) {
+func TestFailureShowsInFooter(t *testing.T) {
 	m, _ := setup(t)
-	m.Update(doneMsg{id: "projects/loja", label: "up", err: exec.ErrNotFound, output: "x\n✘ a porta 5080 está em uso\n"})
-	if !strings.Contains(screen(m), "porta 5080") {
+	m.Update(doneMsg{id: "projects/shop", label: "up", err: exec.ErrNotFound, output: "x\n✘ port 5080 is in use\n"})
+	if !strings.Contains(screen(m), "port 5080") {
 		t.Fatal(screen(m))
 	}
 }
 
-func TestAcoesDependemDoEstado(t *testing.T) {
+func TestActionsDependOnState(t *testing.T) {
 	m, _ := setup(t)
 	load(m, viewServices)
 	key(m, "2")
 	load(m, viewServices)
 	view := screen(m)
-	if !hasHint(view, "s", "iniciar") || hasHint(view, "x", "parar") {
-		t.Fatalf("parado:\n%s", view)
+	if !hasHint(view, "s", "start") || hasHint(view, "x", "stop") {
+		t.Fatalf("stopped:\n%s", view)
 	}
 	key(m, "down")
 	view = screen(m)
-	if !hasHint(view, "x", "parar") || hasHint(view, "s", "iniciar") {
-		t.Fatalf("rodando:\n%s", view)
+	if !hasHint(view, "x", "stop") || hasHint(view, "s", "start") {
+		t.Fatalf("running:\n%s", view)
 	}
 	cmd := key(m, "s")
 	if cmd != nil {
-		t.Fatal("iniciar o que já roda deveria ser ignorado")
+		t.Fatal("starting what is already running should be ignored")
 	}
 }
 
-func TestRemoverPedeConfirmacao(t *testing.T) {
+func TestRemoveAsksForConfirmation(t *testing.T) {
 	m, f := setup(t)
 	if cmd := key(m, "ctrl+d"); cmd != nil {
-		t.Fatal("não pode remover direto")
+		t.Fatal("must not remove right away")
 	}
-	if m.mode != modeConfirm || !strings.Contains(screen(m), "loja") {
+	if m.mode != modeConfirm || !strings.Contains(screen(m), "shop") {
 		t.Fatal(screen(m))
 	}
 	key(m, "n")
 	if m.mode != modeTable || len(f.commands) != 0 {
-		t.Fatal("n deveria cancelar")
+		t.Fatal("n should cancel")
 	}
 	key(m, "ctrl+d")
 	key(m, "enter")
 	if len(f.commands) != 0 {
-		t.Fatal("Enter não confirma: o padrão é não")
+		t.Fatal("Enter does not confirm: the default is no")
 	}
 	key(m, "ctrl+d")
 	cmd := key(m, "y")
 	if cmd == nil {
-		t.Fatal("y deveria confirmar")
+		t.Fatal("y should confirm")
 	}
 	cmd()
-	if got := strings.Join(f.commands[0], " "); got != "rm loja --yes" {
+	if got := strings.Join(f.commands[0], " "); got != "rm shop --yes" {
 		t.Fatal(got)
 	}
 }
 
-func TestEnterMostraAcoes(t *testing.T) {
+func TestEnterShowsActions(t *testing.T) {
 	m, f := setup(t)
 	key(m, "enter")
-	if m.mode != modeActions || !strings.Contains(screen(m), "publicar") {
+	if m.mode != modeActions || !strings.Contains(screen(m), "publish") {
 		t.Fatal(screen(m))
 	}
 	key(m, "esc")
@@ -303,15 +303,15 @@ func TestEnterMostraAcoes(t *testing.T) {
 	key(m, "enter")
 	cmd := key(m, "enter")
 	if m.mode != modeTable || cmd == nil {
-		t.Fatal("Enter deveria executar a primeira ação")
+		t.Fatal("Enter should run the first action")
 	}
 	cmd()
-	if got := strings.Join(f.commands[0], " "); got != "up loja -d" {
+	if got := strings.Join(f.commands[0], " "); got != "up shop -d" {
 		t.Fatal(got)
 	}
 }
 
-func TestCategorias(t *testing.T) {
+func TestCategories(t *testing.T) {
 	m, _ := setup(t)
 	key(m, "3")
 	load(m, viewTools)
@@ -339,7 +339,7 @@ func TestLogs(t *testing.T) {
 		t.Fatal(m.mode)
 	}
 	m.Update(cmd())
-	if !strings.Contains(screen(m), "linha 2") {
+	if !strings.Contains(screen(m), "line 2") {
 		t.Fatal(screen(m))
 	}
 	key(m, "esc")
@@ -348,14 +348,14 @@ func TestLogs(t *testing.T) {
 	}
 }
 
-func TestDetalhesEAjuda(t *testing.T) {
+func TestDetailsAndHelp(t *testing.T) {
 	m, _ := setup(t)
 	key(m, "d")
-	if !strings.Contains(screen(m), "/p/loja") {
+	if !strings.Contains(screen(m), "/p/shop") {
 		t.Fatal(screen(m))
 	}
 	key(m, "esc", "?")
-	if !strings.Contains(screen(m), "NAVEGAR") {
+	if !strings.Contains(screen(m), "NAVIGATE") {
 		t.Fatal(screen(m))
 	}
 	key(m, "esc")
@@ -364,23 +364,23 @@ func TestDetalhesEAjuda(t *testing.T) {
 	}
 }
 
-func TestSistema(t *testing.T) {
+func TestSystem(t *testing.T) {
 	m, _ := setup(t)
 	key(m, "4")
 	load(m, viewSystem)
 	view := screen(m)
-	for _, want := range []string{"Memória", "Bateria", "80%", "claude", "#"} {
+	for _, want := range []string{"Memory", "Battery", "80%", "claude", "#"} {
 		if !strings.Contains(view, want) {
-			t.Errorf("faltou %q:\n%s", want, view)
+			t.Errorf("missing %q:\n%s", want, view)
 		}
 	}
 }
 
-func TestListaLongaEmTelaPequenaCabe(t *testing.T) {
+func TestLongListFitsSmallScreen(t *testing.T) {
 	m, _ := setup(t)
 	var many []Row
 	for i := 0; i < 200; i++ {
-		many = append(many, Row{Key: "item", Status: "parado", Columns: []string{"item", "t", "parado", "url muito longa aqui para estourar a largura da tela pequena do celular", "x"}})
+		many = append(many, Row{Key: "item", Status: "stopped", Columns: []string{"item", "t", "stopped", "a very long url here to overflow the width of the small phone screen", "x"}})
 	}
 	m.rows[viewProjects] = many
 	for _, size := range [][2]int{{80, 24}, {40, 12}, {200, 60}} {
@@ -390,41 +390,41 @@ func TestListaLongaEmTelaPequenaCabe(t *testing.T) {
 		}
 		lines := strings.Split(screen(m), "\n")
 		if len(lines) != size[1] {
-			t.Errorf("%dx%d: %d linhas", size[0], size[1], len(lines))
+			t.Errorf("%dx%d: %d lines", size[0], size[1], len(lines))
 		}
 		for _, l := range lines {
 			if w := len([]rune(l)); w > size[0] {
-				t.Errorf("%dx%d: linha de %d: %q", size[0], size[1], w, l)
+				t.Errorf("%dx%d: line of %d: %q", size[0], size[1], w, l)
 			}
 		}
 	}
 }
 
-func TestSemIcones(t *testing.T) {
+func TestNoIcons(t *testing.T) {
 	m, _ := setup(t)
 	for _, v := range []string{"1", "2", "3", "4", "?"} {
 		key(m, v)
 		load(m, m.view)
 		for _, r := range screen(m) {
 			if r >= 0x2190 && r != 0x2190 && r != 0x2192 && !isBoxDrawing(r) {
-				t.Errorf("tela %s tem o símbolo %q", v, r)
+				t.Errorf("screen %s has the symbol %q", v, r)
 			}
 		}
 		key(m, "esc")
 	}
 }
 
-func TestCtrlCSaiDeQualquerLugar(t *testing.T) {
+func TestCtrlCQuitsFromAnywhere(t *testing.T) {
 	for _, keys := range [][]string{{"/"}, {":"}, {"?"}, {"d"}, {"l"}, {"enter"}, {"ctrl+d"}} {
 		m, _ := setup(t)
 		key(m, keys...)
 		if cmd := key(m, "ctrl+c"); cmd == nil || !m.quit {
-			t.Errorf("%v: não saiu", keys)
+			t.Errorf("%v: did not quit", keys)
 		}
 	}
 }
 
-// A moldura não é ícone: o desenho de caixa existe em qualquer terminal.
+// The frame is not an icon: box drawing exists in every terminal.
 func isBoxDrawing(r rune) bool { return r >= 0x2500 && r <= 0x257F }
 
 func hasHint(view, key, label string) bool {
@@ -438,26 +438,26 @@ func toolsView(t *testing.T) (*Model, *fakeBackend) {
 	return m, f
 }
 
-func TestVersaoDisponivelNaLista(t *testing.T) {
+func TestAvailableVersionInList(t *testing.T) {
 	m, f := toolsView(t)
 	cmd := m.fetchUpstream("kubectl")
 	m.Update(cmd())
-	if len(f.upstreams) != 1 || !regexp.MustCompile(`kubectl\s+k8s\s+instalado\s+v1\.0\.0\s+2\.0\.0`).MatchString(screen(m)) {
+	if len(f.upstreams) != 1 || !regexp.MustCompile(`kubectl\s+k8s\s+installed\s+v1\.0\.0\s+2\.0\.0`).MatchString(screen(m)) {
 		t.Fatal(screen(m))
 	}
 	if m.fetchUpstream("kubectl") != nil {
-		t.Fatal("consultou duas vezes a mesma ferramenta")
+		t.Fatal("queried the same tool twice")
 	}
 }
 
-func TestListaMostraSempreAUltima(t *testing.T) {
+func TestListAlwaysShowsLatest(t *testing.T) {
 	m, _ := toolsView(t)
-	if !strings.Contains(screen(m), "ÚLTIMA") || !strings.Contains(screen(m), "...") {
+	if !strings.Contains(screen(m), "LATEST") || !strings.Contains(screen(m), "...") {
 		t.Fatal(screen(m))
 	}
 	cmd := m.fetchLatest()
 	if cmd != nil {
-		t.Fatal("a lista já pediu as últimas ao carregar; não pede de novo")
+		t.Fatal("the list already asked for the latest on load; it does not ask again")
 	}
 	for _, r := range m.rows[viewTools] {
 		m.Update(latestMsg{r.Key, tools.Upstream{Latest: "2.0.0"}})
@@ -467,21 +467,21 @@ func TestListaMostraSempreAUltima(t *testing.T) {
 	}
 }
 
-func TestEnterEscolheOutraVersao(t *testing.T) {
+func TestEnterChoosesAnotherVersion(t *testing.T) {
 	m, f := toolsView(t)
 	cmd := key(m, "enter")
 	if m.mode != modeVersions || cmd == nil {
-		t.Fatal("Enter em Ferramentas abre as versões")
+		t.Fatal("Enter in Tools opens the versions")
 	}
 	m.Update(cmd())
 	view := screen(m)
-	for _, want := range []string{"versões(kubectl)", "2.0.0", "última", "1.0.0", "instalada"} {
+	for _, want := range []string{"versions(kubectl)", "2.0.0", "latest", "1.0.0", "installed"} {
 		if !strings.Contains(view, want) {
-			t.Errorf("faltou %q:\n%s", want, view)
+			t.Errorf("missing %q:\n%s", want, view)
 		}
 	}
 	key(m, "down", "enter")
-	if m.mode != modeConfirm || !strings.Contains(screen(m), "Instalar kubectl 1.9.0?") {
+	if m.mode != modeConfirm || !strings.Contains(screen(m), "Install kubectl 1.9.0?") {
 		t.Fatal(screen(m))
 	}
 	run := key(m, "y")
@@ -491,16 +491,16 @@ func TestEnterEscolheOutraVersao(t *testing.T) {
 	}
 }
 
-func TestFerramentaSemOutrasVersoes(t *testing.T) {
+func TestToolWithoutOtherVersions(t *testing.T) {
 	m, _ := toolsView(t)
 	key(m, "G")
 	cmd := key(m, "enter")
 	m.Update(cmd())
-	if !strings.Contains(screen(m), "só a versão atual") {
+	if !strings.Contains(screen(m), "only installs the current version") {
 		t.Fatal(screen(m))
 	}
 	if key(m, "enter"); m.mode != modeVersions {
-		t.Fatal("sem versões, Enter não faz nada")
+		t.Fatal("without versions, Enter does nothing")
 	}
 	key(m, "esc")
 	if m.mode != modeTable {
@@ -508,34 +508,34 @@ func TestFerramentaSemOutrasVersoes(t *testing.T) {
 	}
 }
 
-func TestSoConsultaQuandoOCursorPara(t *testing.T) {
+func TestQueriesOnlyWhenCursorSettles(t *testing.T) {
 	m, f := toolsView(t)
 	key(m, "down", "down")
 	if len(f.upstreams) != 0 {
-		t.Fatal("mover o cursor não pode ir à rede")
+		t.Fatal("moving the cursor must not hit the network")
 	}
 	m.Update(settleMsg{"helm"})
 	if len(f.upstreams) != 0 {
-		t.Fatal("helm já não está selecionado")
+		t.Fatal("helm is no longer selected")
 	}
 	cmd := func() tea.Cmd { _, c := m.Update(settleMsg{"psql"}); return c }()
 	if cmd == nil {
-		t.Fatal("psql está selecionado e deveria ser consultado")
+		t.Fatal("psql is selected and should be queried")
 	}
 }
 
-func TestInstalarMostraVersaoEOrigem(t *testing.T) {
+func TestInstallShowsVersionAndSource(t *testing.T) {
 	m, f := toolsView(t)
 	key(m, "down")
 	cmd := key(m, "i")
 	if m.mode != modeConfirm || cmd == nil {
-		t.Fatal("instalar pede confirmação e consulta a versão")
+		t.Fatal("install asks for confirmation and queries the version")
 	}
 	m.Update(cmd())
 	view := screen(m)
-	for _, want := range []string{"Instalar helm?", "2.0.0", "GitHub releases"} {
+	for _, want := range []string{"Install helm?", "2.0.0", "GitHub releases"} {
 		if !strings.Contains(view, want) {
-			t.Errorf("faltou %q:\n%s", want, view)
+			t.Errorf("missing %q:\n%s", want, view)
 		}
 	}
 	run := key(m, "y")
@@ -545,19 +545,19 @@ func TestInstalarMostraVersaoEOrigem(t *testing.T) {
 	}
 }
 
-func TestDetalhesDaFerramentaTemReadme(t *testing.T) {
+func TestToolDetailsHaveReadme(t *testing.T) {
 	m, _ := toolsView(t)
 	cmd := key(m, "d")
 	m.Update(cmd())
 	view := screen(m)
-	for _, want := range []string{"README", "Guia de uso do kubectl", "github.com/x/kubectl", "atualização disponível"} {
+	for _, want := range []string{"README", "Usage guide for kubectl", "github.com/x/kubectl", "update available"} {
 		if !strings.Contains(view, want) {
-			t.Errorf("faltou %q:\n%s", want, view)
+			t.Errorf("missing %q:\n%s", want, view)
 		}
 	}
 }
 
-func TestPararODockerAvisaEUsaOTerminal(t *testing.T) {
+func TestStoppingDockerWarnsAndUsesTerminal(t *testing.T) {
 	m, f := setup(t)
 	key(m, "2")
 	load(m, viewServices)
@@ -565,17 +565,17 @@ func TestPararODockerAvisaEUsaOTerminal(t *testing.T) {
 	if r, _ := m.selected(); r.Key != "docker" {
 		t.Fatal(r.Key)
 	}
-	if !hasHint(screen(m), "x", "parar") {
+	if !hasHint(screen(m), "x", "stop") {
 		t.Fatal(screen(m))
 	}
 	if cmd := key(m, "x"); cmd != nil || m.mode != modeConfirm {
-		t.Fatal("parar o Docker precisa de confirmação")
+		t.Fatal("stopping Docker needs confirmation")
 	}
-	if !strings.Contains(screen(m), "todos os containers") {
+	if !strings.Contains(screen(m), "every container") {
 		t.Fatal(screen(m))
 	}
 	cmd := key(m, "y")
 	if cmd == nil || len(f.commands) != 1 || strings.Join(f.commands[0], " ") != "stop docker --yes" {
-		t.Fatalf("deveria tomar o terminal com stop docker --yes: %v", f.commands)
+		t.Fatalf("should take over the terminal with stop docker --yes: %v", f.commands)
 	}
 }

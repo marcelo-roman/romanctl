@@ -11,23 +11,23 @@ import (
 	"romanctl/internal/sys"
 )
 
-// containerSpec descreve um serviço que roda em Docker ou Podman. As portas ficam só em
-// 127.0.0.1 e os dados, num volume nomeado, então sobrevivem a parar o serviço.
+// containerSpec describes a service that runs in Docker or Podman. Ports bind only to
+// 127.0.0.1 and data lives in a named volume, so it survives stopping the service.
 type containerSpec struct {
 	Key     string
 	Name    string
 	Aliases []string
 	Image   string
 	URL     string
-	Ports   []string // host:container; a primeira indica quando o serviço está pronto
+	Ports   []string // host:container; the first one signals when the service is ready
 	Env     []string
-	Volume  string // pasta de dados dentro do container
+	Volume  string // data directory inside the container
 	Args    []string
-	Arches  []string  // vazio significa todas
-	Ready   readiness // como saber que está pronto, além de a porta abrir
+	Arches  []string  // empty means all
+	Ready   readiness // how to tell it is ready, beyond the port opening
 }
 
-// containerEngine devolve o motor disponível, preferindo o Docker.
+// containerEngine returns the available engine, preferring Docker.
 func containerEngine() string {
 	for _, bin := range []string{"docker", "podman"} {
 		if sys.Have(bin) {
@@ -39,13 +39,13 @@ func containerEngine() string {
 
 func containerName(key string) string { return "romanctl-" + key }
 
-// engineState é uma leitura do motor: o painel e o status perguntam por vários serviços de uma
-// vez, e cada pergunta separada ao Docker custava uma chamada.
+// engineState is one reading of the engine: the dashboard and status ask about several services at
+// once, and each separate question to Docker cost a call.
 type engineState struct {
 	at         time.Time
-	up         bool              // o daemon respondeu
-	images     map[string]bool   // repositório:tag baixados
-	containers map[string]string // nome → estado (running, exited...)
+	up         bool              // the daemon answered
+	images     map[string]bool   // pulled repository:tag
+	containers map[string]string // name → state (running, exited...)
 }
 
 var (
@@ -79,14 +79,14 @@ func readEngine() engineState {
 	return st
 }
 
-// forgetEngine faz a próxima pergunta ler o motor de novo, depois de mudar algo nele.
+// forgetEngine makes the next question read the engine again, after something changed in it.
 func forgetEngine() {
 	engineMu.Lock()
 	engineSeen = engineState{}
 	engineMu.Unlock()
 }
 
-// imageRef completa a referência como o Docker lista: "redis" vira "redis:latest".
+// imageRef completes the reference the way Docker lists it: "redis" becomes "redis:latest".
 func imageRef(image string) string {
 	if strings.Contains(image[strings.LastIndex(image, "/")+1:], ":") {
 		return image
@@ -97,7 +97,7 @@ func imageRef(image string) string {
 func engineOutput(args ...string) (string, error) {
 	engine := containerEngine()
 	if engine == "" {
-		return "", i18n.Errorf("instale um motor de containers: romanctl tools install docker")
+		return "", i18n.Errorf("install a container engine: romanctl tools install docker")
 	}
 	return sys.Output(engine, args...)
 }
@@ -126,7 +126,7 @@ func runArgs(c containerSpec) []string {
 	return append(args, c.Args...)
 }
 
-// createArgs são os mesmos de runArgs, para criar o container sem ligá-lo.
+// createArgs are the same as runArgs, to create the container without starting it.
 func createArgs(c containerSpec) []string { return append([]string{"create"}, runArgs(c)[2:]...) }
 
 func supportedArch(c containerSpec, arch string) bool {
@@ -146,14 +146,14 @@ func containerService(c containerSpec) *Service {
 	s := &Service{Key: c.Key, Name: c.Name, Aliases: c.Aliases, URL: func() string { return c.URL }}
 	switch {
 	case platform.Current.Proot:
-		s.Unsupported = i18n.T("o proot não roda containers; use uma máquina com Docker")
+		s.Unsupported = i18n.T("proot cannot run containers; use a machine with Docker")
 	case !supportedArch(c, platform.Current.Arch):
-		s.Unsupported = i18n.Sprintf("a imagem %s não existe para %s", c.Image, platform.Current.Arch)
+		s.Unsupported = i18n.Sprintf("image %s does not exist for %s", c.Image, platform.Current.Arch)
 	}
 	s.LogCmd = func() []string { return []string{containerEngine(), "logs", "-f", "--tail", "50", name} }
 	s.LogTail = func() []string { return []string{containerEngine(), "logs", "--tail", "300", name} }
-	// Instalado é o container do romanctl existir. Ter o Docker não basta, e nem a imagem: ela
-	// pode ter sido baixada por outro projeto da máquina.
+	// Installed means romanctl's container exists. Having Docker is not enough, nor is the image: it
+	// may have been pulled by another project on the machine.
 	s.Installed = func() bool {
 		if s.Unsupported != "" || containerEngine() == "" {
 			return false
@@ -190,7 +190,7 @@ func containerService(c containerSpec) *Service {
 			return nil
 		}
 		if !sys.WaitUntil(90*time.Second, func() bool { return c.Ready(hostPort(c.Ports[0])) }) {
-			return i18n.Errorf("%s abriu a porta, mas não respondeu a tempo", c.Name)
+			return i18n.Errorf("%s opened its port but did not answer in time", c.Name)
 		}
 		return nil
 	}
@@ -198,7 +198,7 @@ func containerService(c containerSpec) *Service {
 		for _, mapping := range c.Ports {
 			port := hostPort(mapping)
 			if owner := portOwner(port, name); owner != "" {
-				return i18n.Sprintf("o container %s também publica a porta %s: o app pode estar falando com ele, e não com o %s", owner, port, c.Name)
+				return i18n.Sprintf("container %s also publishes port %s: the app may be talking to it instead of %s", owner, port, c.Name)
 			}
 		}
 		return ""
@@ -220,7 +220,7 @@ func containerService(c containerSpec) *Service {
 				return i18n.Errorf("%v: %s", err, sys.Tail(out, 4))
 			}
 		}
-		// Cria o container parado: é ele que marca o serviço como instalado nesta máquina.
+		// Creates the container stopped: it is what marks the service as installed on this machine.
 		if out, err := engineOutput(createArgs(c)...); err != nil {
 			return i18n.Errorf("%v: %s", err, sys.Tail(out, 4))
 		}
@@ -231,8 +231,8 @@ func containerService(c containerSpec) *Service {
 
 var checkPorts = portsFree
 
-// portsFree impede ligar o serviço com a porta já ocupada: o app falaria com outro programa, e esperar
-// a porta abrir daria certo na hora, sem o container ter subido.
+// portsFree prevents starting the service with its port already taken: the app would talk to another
+// program, and waiting for the port to open would succeed at once, without the container being up.
 func portsFree(c containerSpec, name string) error {
 	for _, mapping := range c.Ports {
 		port := hostPort(mapping)
@@ -242,9 +242,9 @@ func portsFree(c containerSpec, name string) error {
 		}
 		conn.Close()
 		if owner := portOwner(port, name); owner != "" {
-			return i18n.Errorf("a porta %s já está em uso pelo container %s; pare-o antes de ligar o %s", port, owner, c.Name)
+			return i18n.Errorf("port %s is already used by container %s; stop it before starting %s", port, owner, c.Name)
 		}
-		return i18n.Errorf("a porta %s já está em uso por outro programa; libere-a antes de ligar o %s", port, c.Name)
+		return i18n.Errorf("port %s is already used by another program; free it before starting %s", port, c.Name)
 	}
 	return nil
 }
@@ -272,7 +272,7 @@ func waitPort(port string, timeout time.Duration) error {
 		return true
 	})
 	if !ok {
-		return i18n.Errorf("a porta %s não abriu a tempo", port)
+		return i18n.Errorf("port %s did not open in time", port)
 	}
 	return nil
 }
@@ -287,7 +287,7 @@ var (
 		URL: "redis://127.0.0.1:6379", Ports: []string{"6379:6379"}, Volume: "/data"}
 )
 
-// Serviços que só existem em container.
+// Services that only exist as containers.
 func containerOnly() []*Service {
 	specs := []containerSpec{
 		{Key: "mysql", Name: "MySQL", Image: "mysql:8.4", URL: "mysql://root:mysql@127.0.0.1:3306",
@@ -298,7 +298,7 @@ func containerOnly() []*Service {
 			URL: "Server=127.0.0.1,1433;User Id=sa;Password=Romanctl!Dev1;TrustServerCertificate=True", Ports: []string{"1433:1433"},
 			Env: []string{"ACCEPT_EULA=Y", "MSSQL_SA_PASSWORD=Romanctl!Dev1", "MSSQL_PID=Developer"}, Volume: "/var/opt/mssql", Arches: []string{"amd64"}},
 		{Key: "rabbitmq", Name: "RabbitMQ", Aliases: []string{"rabbit"}, Image: "rabbitmq:4-management",
-			URL: i18n.T("amqp://guest:guest@127.0.0.1:5672 (painel: http://127.0.0.1:15672)"), Ports: []string{"5672:5672", "15672:15672"}, Volume: "/var/lib/rabbitmq", Ready: amqpReady},
+			URL: i18n.T("amqp://guest:guest@127.0.0.1:5672 (dashboard: http://127.0.0.1:15672)"), Ports: []string{"5672:5672", "15672:15672"}, Volume: "/var/lib/rabbitmq", Ready: amqpReady},
 		{Key: "kafka", Name: "Kafka", Image: "apache/kafka:4.1.0", URL: "127.0.0.1:9092", Ports: []string{"9092:9092"}, Volume: "/var/lib/kafka/data"},
 	}
 	var out []*Service

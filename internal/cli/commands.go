@@ -9,10 +9,10 @@ import (
 	"romanctl/internal/ui"
 )
 
-// fullScreen são os comandos que tomam a tela: na volta, a lista aparece direto, sem pausa.
+// fullScreen lists the commands that take over the screen: on return, the list shows right away, without a pause.
 var fullScreen = []string{"ui", "menu"}
 
-// commandOptions monta a lista a partir da mesma tabela da ajuda, nas seções de romanctl help.
+// commandOptions builds the list from the same table as the help, in the sections of romanctl help.
 func commandOptions() []ui.Option {
 	var out []ui.Option
 	for _, g := range usageGroups {
@@ -30,14 +30,14 @@ func commandOptions() []ui.Option {
 	return out
 }
 
-// commandMenu é o que romanctl faz sem argumentos: a lista de comandos, com filtro, e Enter
-// roda o escolhido, perguntando o que faltar.
+// commandMenu is what romanctl does without arguments: the filterable command list, where Enter
+// runs the chosen one, asking for whatever is missing.
 func commandMenu() error {
 	cursor := ""
 	for {
 		fmt.Print("\033[H\033[2J")
-		picked, err := ui.Pick(ui.PickConfig{Title: i18n.T("Comandos"), Initial: cursor, NoLeft: true, Options: commandOptions(),
-			Subtitle: "romanctl " + version + "  " + i18n.T("digite para filtrar, Enter roda, Esc sai; romanctl ui abre o painel")})
+		picked, err := ui.Pick(ui.PickConfig{Title: i18n.T("Commands"), Initial: cursor, NoLeft: true, Options: commandOptions(),
+			Subtitle: "romanctl " + version + "  " + i18n.T("type to filter, Enter runs, Esc exits; romanctl ui opens the panel")})
 		if err != nil {
 			if ui.IsAbort(err) {
 				fmt.Print("\033[H\033[2J")

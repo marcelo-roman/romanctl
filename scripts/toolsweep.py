@@ -16,7 +16,7 @@ def installed():
 before = installed()
 all_ = [x["key"] for x in run("tools", "list")[0]]
 targets = only or [k for k in all_ if k not in before]
-print(f"{len(all_)} no catálogo, {len(before)} já instaladas, {len(targets)} a testar", flush=True)
+print(f"{len(all_)} in the catalog, {len(before)} already installed, {len(targets)} to test", flush=True)
 ok, bad = [], []
 for k in targets:
     t = time.time()
@@ -38,5 +38,5 @@ for k in targets:
     print(f"✔ {k:15} {int(time.time()-t):4}s  {ver}", flush=True)
     ok.append(k)
 after = installed()
-print(f"\nOK {len(ok)}, FALHAS {len(bad)}: {' '.join(bad)}")
-print("sumiram:", sorted(before - after), " sobraram:", sorted(after - before))
+print(f"\nOK {len(ok)}, FAILED {len(bad)}: {' '.join(bad)}")
+print("vanished:", sorted(before - after), " left over:", sorted(after - before))

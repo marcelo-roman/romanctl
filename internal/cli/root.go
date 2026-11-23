@@ -19,12 +19,12 @@ import (
 	"strings"
 )
 
-// version vem da tag na release (-ldflags "-X romanctl/internal/cli.version=..."); o valor
-// abaixo vale para quem compila do código.
+// version comes from the release tag (-ldflags "-X romanctl/internal/cli.version=..."); the value
+// below applies to builds from source.
 var version = "0.5.2"
 
-// pathWithBin coloca a pasta do romanctl no fim: o PATH da pessoa continua mandando, e
-// um programa que ela escolheu nunca é trocado pelo que o romanctl instalou.
+// pathWithBin appends romanctl's folder: the user's PATH still wins, and a program
+// they chose is never replaced by one romanctl installed.
 func pathWithBin(current, bin string) string {
 	if slices.Contains(filepath.SplitList(current), bin) {
 		return current
@@ -40,10 +40,10 @@ func Main() {
 		os.Exit(projects.SuperviseHere())
 	}
 	if p := platform.Current; p.OS != "linux" && p.OS != "darwin" {
-		ui.Failf("romanctl só funciona em Linux e macOS (aqui: %s)", p.OS)
+		ui.Failf("romanctl only works on Linux and macOS (here: %s)", p.OS)
 		os.Exit(1)
 	}
-	// O que o romanctl instala precisa ser encontrado mesmo fora do PATH do usuário.
+	// What romanctl installs must be found even outside the user's PATH.
 	os.Setenv("ROMANCTL_ORIGINAL_PATH", os.Getenv("PATH"))
 	os.Setenv("PATH", pathWithBin(os.Getenv("PATH"), platform.Current.BinDir))
 	args, flags := splitFlags(os.Args[1:])
@@ -51,14 +51,14 @@ func Main() {
 	scaffold.Version = version
 	var err error
 	if flags["help"] || flags["h"] {
-		// Vem antes de tudo: "--help" nunca executa o comando, nem com argumentos inválidos.
+		// Comes first: "--help" never runs the command, not even with invalid arguments.
 		printHelp(args)
 		return
 	}
 	if flagError != nil {
 		err = flagError
 	} else if len(args) == 0 {
-		// Sem terminal não há lista: mostra a ajuda, em vez de falhar.
+		// Without a terminal there is no list: show the help instead of failing.
 		if !ui.Interactive() {
 			usage()
 		} else if err = requireLogin(); err == nil {
@@ -72,7 +72,7 @@ func Main() {
 		err = dispatch(args, flags)
 	}
 	if ui.IsAbort(err) {
-		ui.Infof("Cancelado")
+		ui.Infof("Cancelled")
 		return
 	}
 	if errors.Is(err, ui.ErrReported) {
@@ -99,7 +99,10 @@ var valueFlags = map[string]bool{"stack": true, "arch": true, "with": true, "sec
 var flagVals = map[string]string{}
 
 var boolFlags = map[string]bool{"json": true, "y": true, "yes": true, "force": true, "app": true,
-	"open": true, "all": true, "public": true, "no-ci": true, "list": true, "plain": true, "d": true, "detach": true, "check": true, "no-run": true, "keep-services": true, "sem-git": true, "offline": true, "dry-run": true, "no-readme": true, "h": true, "help": true}
+	"open": true, "all": true, "public": true, "no-ci": true, "list": true, "plain": true, "d": true, "detach": true, "check": true, "no-run": true, "keep-services": true, "no-git": true, "offline": true, "dry-run": true, "no-readme": true, "h": true, "help": true}
+
+// flagAliases keeps older flag spellings working.
+var flagAliases = map[string]string{"sem-git": "no-git"}
 
 var flagError error
 
@@ -112,9 +115,12 @@ func splitFlags(in []string) (args []string, flags map[string]bool) {
 			continue
 		}
 		name, value, hasValue := strings.Cut(strings.TrimLeft(a, "-"), "=")
+		if alias, ok := flagAliases[name]; ok {
+			name = alias
+		}
 		switch {
 		case !valueFlags[name] && !boolFlags[name]:
-			flagError = ui.Usagef("opção desconhecida: %s", a)
+			flagError = ui.Usagef("unknown option: %s", a)
 		case !valueFlags[name]:
 			flags[name] = true
 		case hasValue:
@@ -123,7 +129,7 @@ func splitFlags(in []string) (args []string, flags map[string]bool) {
 			i++
 			flagVals[name] = in[i]
 		default:
-			flagError = ui.Usagef("a opção --%s precisa de um valor", name)
+			flagError = ui.Usagef("option --%s needs a value", name)
 		}
 	}
 	return
@@ -187,11 +193,11 @@ func dispatch(args []string, flags map[string]bool) error {
 		}
 		s := services.FindService(arg(args, 1))
 		if s == nil {
-			// Também acompanha o log de um projeto levantado com up -d.
+			// Also follows the log of a project brought up with up -d.
 			if e, ok := state.ReadState().Ups[arg(args, 1)]; ok && e.Log != "" {
 				return services.TailFile(e.Log)
 			}
-			return ui.Usagef("informe o serviço (veja: romanctl status)")
+			return ui.Usagef("specify the service (see: romanctl status)")
 		}
 		return services.TailLog(s)
 	case "new", "novo", "create":
@@ -209,9 +215,9 @@ func dispatch(args []string, flags map[string]bool) error {
 			return menuRemoveProject()
 		}
 		if !flags["y"] && !flags["yes"] {
-			ok, err := ui.Confirm(i18n.Sprintf("Remover %s/%s? Isso apaga TODOS os arquivos.", config.ProjDir, args[1]))
+			ok, err := ui.Confirm(i18n.Sprintf("Remove %s/%s? This deletes ALL files.", config.ProjDir, args[1]))
 			if err != nil || !ok {
-				ui.Infof("Cancelado")
+				ui.Infof("Cancelled")
 				return nil
 			}
 		}
@@ -249,7 +255,7 @@ func dispatch(args []string, flags map[string]bool) error {
 		return downCommand(args[1:], flags)
 	case "ui", "painel", "tui":
 		if !ui.Interactive() {
-			return ui.Usagef("o painel precisa de um terminal")
+			return ui.Usagef("the panel needs a terminal")
 		}
 		return tui.Run(version)
 	case "menu":
@@ -271,19 +277,19 @@ func dispatch(args []string, flags map[string]bool) error {
 	case "doctor", "info":
 		doctor()
 	default:
-		return ui.Usagef("comando desconhecido: %s (veja: romanctl help)", args[0])
+		return ui.Usagef("unknown command: %s (see: romanctl help)", args[0])
 	}
 	return nil
 }
 
 func eachService(name string, f func(*services.Service) error) error {
 	if name == "" {
-		return ui.Usagef("informe o serviço (veja: romanctl status) ou all")
+		return ui.Usagef("specify the service (see: romanctl status) or all")
 	}
 	if name == "all" || name == "tudo" {
 		var failed bool
 		for _, s := range services.All {
-			// O motor fica fora: parar o Docker derrubaria containers que não são do romanctl.
+			// The engine stays out: stopping Docker would bring down containers that are not romanctl's.
 			if s.Unsupported != "" || s.Engine || !s.Installed() {
 				continue
 			}
@@ -293,28 +299,28 @@ func eachService(name string, f func(*services.Service) error) error {
 			}
 		}
 		if failed {
-			return i18n.Errorf("algum serviço falhou")
+			return i18n.Errorf("some service failed")
 		}
 		return nil
 	}
 	s := services.FindService(name)
 	if s == nil {
-		return ui.Usagef("serviço desconhecido %q (veja: romanctl status)", name)
+		return ui.Usagef("unknown service %q (see: romanctl status)", name)
 	}
 	return f(s)
 }
 
-// confirmWarning pede confirmação antes de parar um serviço que leva outras coisas junto, como
-// o Docker. Sem terminal, só segue com --yes.
+// confirmWarning asks for confirmation before stopping a service that takes other things down with it,
+// such as Docker. Without a terminal, it only proceeds with --yes.
 func confirmWarning(name string, flags map[string]bool) error {
 	s := services.FindService(name)
 	if s == nil || s.Warning == "" || flags["y"] || flags["yes"] {
 		return nil
 	}
 	if !ui.Interactive() {
-		return ui.Usagef("%s: %s; confirme com --yes", s.Name, s.Warning)
+		return ui.Usagef("%s: %s; confirm with --yes", s.Name, s.Warning)
 	}
-	ok, err := ui.Confirm(i18n.Sprintf("%s: %s. Continuar?", s.Name, s.Warning))
+	ok, err := ui.Confirm(i18n.Sprintf("%s: %s. Continue?", s.Name, s.Warning))
 	if err != nil {
 		return err
 	}

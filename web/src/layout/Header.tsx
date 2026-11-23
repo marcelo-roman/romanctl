@@ -29,8 +29,8 @@ function LanguageSwitch() {
     <label className="lang-switch">
       <span className="sr-only">{t("header.language")}</span>
       <select className="select select-sm" value={lang} onChange={(event) => setLang(event.target.value as Lang)}>
-        <option value="pt">PT</option>
         <option value="en">EN</option>
+        <option value="pt">PT</option>
       </select>
     </label>
   );

@@ -21,7 +21,7 @@ import (
 	"unicode"
 )
 
-// templateData é o que os textos de template.yaml e generator.yaml enxergam, como next.
+// templateData is what template.yaml and generator.yaml texts see, like next.
 type templateData struct {
 	Name     string
 	Lower    string
@@ -81,7 +81,7 @@ func renderAny(name, text string, data any) (string, error) {
 	return out.String(), nil
 }
 
-// buildOutputs são pastas que os testes do template na própria pasta deixam para trás.
+// buildOutputs are directories left behind by running a template's tests in place.
 var buildOutputs = map[string]bool{".git": true, "node_modules": true, "bin": true, "obj": true, "target": true,
 	".venv": true, "__pycache__": true, ".pytest_cache": true, ".mypy_cache": true, ".ruff_cache": true, "dist": true,
 	".next": true, ".gradle": true, "build": true, "coverage": true, ".turbo": true, "vendor": true, "var": true, ".kotlin": true}
@@ -90,7 +90,7 @@ var localFiles = map[string]bool{".env": true, "coverage.out": true, ".DS_Store"
 
 func under(p, dir string) bool { return p == dir || strings.HasPrefix(p, dir+"/") }
 
-// walkSource lê os arquivos de uma pasta do template, sem os artefatos de build.
+// walkSource reads the files of a template directory, skipping build artifacts.
 func walkSource(fsys fs.FS, root string, visit func(rel string, f sourceFile) error) error {
 	return fs.WalkDir(fsys, root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -133,7 +133,7 @@ func excluded(conditional []conditionalPath, p string, withs map[string]bool) bo
 	return false
 }
 
-// renderTemplate copia a raiz do template, aplica as variantes que valem e troca o nome de exemplo.
+// renderTemplate copies the template root, applies the matching variants and replaces the sample name.
 func renderTemplate(t *Template, name string, withs map[string]bool) ([]generatedFile, error) {
 	files := map[string]sourceFile{}
 	var order []string
@@ -175,20 +175,20 @@ func validateScaffold(t *Template, name string, withs []string) error {
 		return ui.Usagef("%v", err)
 	}
 	if pascal := projects.DotnetName(name); pascal == "" || !unicode.IsLetter(rune(pascal[0])) {
-		return ui.Usagef("o nome precisa começar com letra, porque vira namespace e pacote: %q", name)
+		return ui.Usagef("the name must start with a letter, because it becomes a namespace and a package: %q", name)
 	}
 	for _, s := range withs {
 		if services.FindService(s) == nil {
-			return ui.Usagef("serviço desconhecido %q", s)
+			return ui.Usagef("unknown service %q", s)
 		}
 		if !slices.Contains(t.Services, services.FindService(s).Key) {
-			return ui.Usagef("o template %s não oferece %q (oferece: %s)", t.Key(), s, strings.Join(t.Services, ", "))
+			return ui.Usagef("template %s does not offer %q (it offers: %s)", t.Key(), s, strings.Join(t.Services, ", "))
 		}
 	}
 	return nil
 }
 
-// ScaffoldResult é o que "new" informa, inclusive em --dry-run e --json.
+// ScaffoldResult is what "new" reports, including with --dry-run and --json.
 type ScaffoldResult struct {
 	OK       bool             `json:"ok"`
 	DryRun   bool             `json:"dryRun"`
@@ -199,7 +199,7 @@ type ScaffoldResult struct {
 	Setup    string           `json:"setup,omitempty"`
 }
 
-// Options são as escolhas de new para um template.
+// Options are new's choices for a template.
 type Options struct {
 	Git, DryRun, Offline bool
 }
@@ -228,8 +228,8 @@ func buildManifest(t *Template, name string, withs []string) manifest.Project {
 	return m
 }
 
-// writeScaffold grava numa pasta temporária e só depois move, para nunca deixar
-// um projeto pela metade.
+// writeScaffold writes to a temporary directory and only then moves it, so it never leaves
+// a half-written project.
 func WriteScaffold(t *Template, name, dest string, withs []string) (ScaffoldResult, error) {
 	files, err := renderTemplate(t, name, newTemplateData(name, withs).Services)
 	if err != nil {
@@ -255,7 +255,7 @@ func WriteScaffold(t *Template, name, dest string, withs []string) (ScaffoldResu
 	if err := os.MkdirAll(parent, 0o755); err != nil {
 		return result, err
 	}
-	tmp, err := os.MkdirTemp(parent, ".gerando-")
+	tmp, err := os.MkdirTemp(parent, ".generating-")
 	if err != nil {
 		return result, err
 	}
@@ -294,11 +294,11 @@ func ScaffoldProject(t *Template, name string, withs []string, opts Options) err
 	dest := filepath.Join(config.ProjDir, name)
 	target := dest
 	if opts.DryRun {
-		target = "" // writeScaffold só lista os arquivos, sem gravar nada
+		target = "" // writeScaffold only lists the files, writing nothing
 	}
 	result, err := WriteScaffold(t, name, target, withs)
 	if err != nil {
-		return i18n.Errorf("falha ao gerar %s: %w", name, err)
+		return i18n.Errorf("failed to generate %s: %w", name, err)
 	}
 	result.Path, result.DryRun = dest, opts.DryRun
 	if opts.DryRun {
@@ -306,7 +306,7 @@ func ScaffoldProject(t *Template, name string, withs []string, opts Options) err
 		if ui.JSONOutput {
 			return ui.PrintJSON(result)
 		}
-		ui.Infof("Simulação: nada foi gravado. Seriam criados %d arquivos em %s:", len(result.Files), dest)
+		ui.Infof("Dry run: nothing was written. It would create %d files in %s:", len(result.Files), dest)
 		for _, f := range result.Files {
 			fmt.Println("  " + f)
 		}
@@ -320,18 +320,18 @@ func ScaffoldProject(t *Template, name string, withs []string, opts Options) err
 	if ui.JSONOutput {
 		return ui.PrintJSON(result)
 	}
-	ui.Okf("Projeto %s criado com o template %s (%d arquivos)", ui.SBoldTxt.Render(name), t.Key(), len(result.Files))
-	i18n.Printf("   Pasta:   %s\n   Rodar:   romanctl run %s\n   Testar:  cd %s && %s\n   Abrir:   romanctl code %s\n",
+	ui.Okf("Project %s created with template %s (%d files)", ui.SBoldTxt.Render(name), t.Key(), len(result.Files))
+	i18n.Printf("   Folder:  %s\n   Run:     romanctl run %s\n   Test:    cd %s && %s\n   Open:    romanctl code %s\n",
 		dest, name, dest, result.Manifest.Test, name)
 	for _, s := range withs {
 		if svc := services.FindService(s); svc != nil && !svc.Running() {
-			ui.Warnf("%s não está rodando. Antes de rodar o projeto: romanctl start %s", svc.Name, svc.Key)
+			ui.Warnf("%s is not running. Before running the project: romanctl start %s", svc.Name, svc.Key)
 		}
 	}
 	return nil
 }
 
-// SplitServices lê --with, aceitando apelidos como pg e mongodb.
+// SplitServices reads --with, accepting aliases like pg and mongodb.
 func SplitServices(withFlag string) []string {
 	var out []string
 	for _, s := range splitList(withFlag) {

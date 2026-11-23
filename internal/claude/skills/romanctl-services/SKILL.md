@@ -1,79 +1,79 @@
 ---
 name: romanctl-services
-description: Liga, desliga, reinicia, instala e acompanha os serviços locais do romanctl — o daemon do Docker, os bancos e filas em container (PostgreSQL, MongoDB, Redis, MySQL, MariaDB, SQL Server, RabbitMQ, Kafka) e o code-server. Use quando o usuário precisar de um banco ou fila local, de uma connection string, quiser saber o que está rodando, ou ligar e desligar o Docker.
+description: Starts, stops, restarts, installs and monitors romanctl's local services — the Docker daemon, the databases and queues in containers (PostgreSQL, MongoDB, Redis, MySQL, MariaDB, SQL Server, RabbitMQ, Kafka) and code-server. Use when the user needs a local database or queue, a connection string, wants to know what is running, or wants to start or stop Docker.
 ---
 
-# Serviços pelo romanctl
+# Services through romanctl
 
-Siga as regras gerais da skill `romanctl`. Use estes comandos em vez de `docker run` ou
-`docker compose` para bancos e filas de desenvolvimento.
+Follow the general rules of the `romanctl` skill. Use these commands instead of `docker run` or
+`docker compose` for development databases and queues.
 
-Chaves: `docker`, `code`, `postgres`, `mongo`, `redis`, `mysql`, `mariadb`, `sqlserver`,
+Keys: `docker`, `code`, `postgres`, `mongo`, `redis`, `mysql`, `mariadb`, `sqlserver`,
 `rabbitmq`, `kafka`.
 
-## Estado e conexão
+## State and connection
 
 ```bash
-romanctl status --json         # só o que está instalado nesta máquina
-romanctl status --all --json   # inclui o que dá para instalar
+romanctl status --json         # only what is installed on this machine
+romanctl status --all --json   # includes what can be installed
 ```
 
-Cada item traz `installed`, `running`, `url` (a connection string ou endereço, com usuário e
-senha de desenvolvimento), `wanted` (o romanctl quer que esteja ligado), `engine` (é o
-daemon do Docker) e `unsupported`. Use o `url` para configurar o projeto.
+Each item has `installed`, `running`, `url` (the connection string or address, with development
+user and password), `wanted` (romanctl wants it running), `engine` (it is the
+Docker daemon) and `unsupported`. Use the `url` to configure the project.
 
-Um serviço em container só conta como instalado quando o container `romanctl-<serviço>`
-existe. Ter o Docker, ou a imagem baixada por outro projeto, não basta: se o serviço não
-aparece em `status --json`, instale antes de usar.
+A container service only counts as installed when the `romanctl-<service>` container
+exists. Having Docker, or the image pulled by another project, is not enough: if the service does not
+show up in `status --json`, install it before using it.
 
-## Ligar e desligar
+## Start and stop
 
 ```bash
-romanctl install <serviço>     # baixa a imagem, se faltar, e cria o container parado; uma vez
-romanctl start <serviço>
-romanctl stop <serviço>
-romanctl restart <serviço>
-romanctl start all             # todos os instalados
+romanctl install <service>     # pulls the image, if missing, and creates the container stopped; once
+romanctl start <service>
+romanctl stop <service>
+romanctl restart <service>
+romanctl start all             # all installed ones
 ```
 
-Sem argumento, esses comandos abririam uma lista: sempre informe o serviço ou `all`. `all`
-nunca inclui o Docker.
-Num projeto, prefira `romanctl up <projeto>` (skill `romanctl-dev`), que liga só o que o
-projeto usa e sabe desligar depois.
+Without an argument, these commands would open a picker: always pass the service or `all`. `all`
+never includes Docker.
+In a project, prefer `romanctl up <project>` (`romanctl-dev` skill), which starts only what the
+project uses and knows how to stop it afterwards.
 
-`stop` de um serviço que um projeto no ar usa derruba aquele projeto por baixo; confira
-`romanctl list --json` (`up.services`) antes e avise o usuário.
+`stop` on a service that a running project uses brings that project down underneath it; check
+`romanctl list --json` (`up.services`) first and warn the user.
 
-## O Docker
+## Docker
 
-O daemon aparece como o serviço `docker`. `running: false` nele explica por que nenhum
-container sobe; diga isso ao usuário antes de tentar outra coisa.
+The daemon shows up as the `docker` service. `running: false` on it explains why no
+container starts; tell the user that before trying anything else.
 
 ```bash
-romanctl start docker              # systemd ou service, com sudo
-romanctl stop docker --yes         # derruba TODOS os containers da máquina
+romanctl start docker              # systemd or service, with sudo
+romanctl stop docker --yes         # brings down ALL containers on the machine
 ```
 
-- Ligar e desligar pede `sudo`. Sem terminal, falha com "precisa da senha do sudo": peça ao
-  usuário para rodar `! romanctl start docker`.
-- **Parar o Docker derruba todos os containers da máquina**, inclusive os de outros projetos
-  que não são do romanctl. Só com pedido explícito, depois de avisar; o romanctl recusa sem
-  `--yes` fora de um terminal.
-- Com o Docker Desktop, o daemon é ligado e desligado pelo Docker Desktop.
+- Starting and stopping asks for `sudo`. Without a terminal, it fails with "needs the sudo password": ask the
+  user to run `! romanctl start docker`.
+- **Stopping Docker brings down all containers on the machine**, including those of other projects
+  that are not romanctl's. Only on explicit request, after warning; romanctl refuses without
+  `--yes` outside a terminal.
+- With Docker Desktop, the daemon is started and stopped by Docker Desktop.
 
 ## Logs
 
-`romanctl logs <serviço>` segue o log e não termina:
+`romanctl logs <service>` follows the log and does not exit:
 
 ```bash
 timeout 15 romanctl logs postgres
 ```
 
-## Depois de uma queda ou reboot
+## After a crash or reboot
 
 ```bash
-romanctl restore status     # o que estava salvo como ligado e o que caiu
-romanctl restore            # sobe de novo; sem terminal, restaura direto
-romanctl restore save       # grava o que está rodando agora como o estado
-romanctl restore clear      # esquece o estado
+romanctl restore status     # what was saved as running and what went down
+romanctl restore            # starts it again; without a terminal, restores directly
+romanctl restore save       # records what is running now as the state
+romanctl restore clear      # forgets the state
 ```

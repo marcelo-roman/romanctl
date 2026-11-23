@@ -4,7 +4,7 @@ export const testToken = "test-token-123";
 
 export const info: Info = {
   version: "9.9.9",
-  lang: "pt",
+  lang: "en",
   platform: { os: "linux", arch: "amd64", wsl: true },
   projectsDir: "/tmp/proj",
   templates: { installed: true, ref: "v1.2.0", path: "/tmp/templates" },
@@ -23,14 +23,14 @@ export const system: SystemSnapshot = {
 
 export const projects: Project[] = [
   {
-    name: "loja",
-    path: "/tmp/proj/loja",
+    name: "store",
+    path: "/tmp/proj/store",
     type: "go/hexagonal-ddd",
     modified: "2026-11-10T12:00:00Z",
     url: "http://localhost:8090",
-    manifest: { name: "loja", stack: "go", template: "hexagonal-ddd", arch: ["ddd", "hexagonal"], services: [], url: "http://localhost:8090" },
+    manifest: { name: "store", stack: "go", template: "hexagonal-ddd", arch: ["ddd", "hexagonal"], services: [], url: "http://localhost:8090" },
     target: "go/hexagonal-ddd",
-    generators: [{ kind: "resource", description: "CRUD completo", aliases: ["crud"], needsIn: false }],
+    generators: [{ kind: "resource", description: "Full CRUD", aliases: ["crud"], needsIn: false }],
   },
   {
     name: "site",
@@ -53,7 +53,7 @@ export const catalog: Catalog = {
       id: "clean-ddd-cqrs",
       stack: "dotnet",
       arch: ["clean", "cqrs", "ddd"],
-      description: "API .NET com Clean Architecture",
+      description: "Clean Architecture .NET API",
       services: ["postgres"],
       requires: ["dotnet"],
       url: "http://localhost:5080",
@@ -62,18 +62,18 @@ export const catalog: Catalog = {
       id: "hexagonal-ddd",
       stack: "go",
       arch: ["ddd", "hexagonal"],
-      description: "API Go hexagonal com DDD",
+      description: "Hexagonal Go API with DDD",
       services: ["postgres", "redis"],
       requires: ["go"],
       url: "http://localhost:8090",
     },
   ],
   simpleTypes: [
-    { type: "node", description: "Node.js (básico)" },
-    { type: "go", description: "Go (básico)" },
+    { type: "node", description: "Node.js (basic)" },
+    { type: "go", description: "Go (basic)" },
   ],
   generators: {
-    "go/hexagonal-ddd": [{ kind: "resource", description: "CRUD completo", aliases: ["crud"], needsIn: false }],
+    "go/hexagonal-ddd": [{ kind: "resource", description: "Full CRUD", aliases: ["crud"], needsIn: false }],
   },
 };
 
@@ -84,14 +84,14 @@ export const services: Service[] = [
 
 export const tools: ToolList = {
   groups: [
-    { key: "sdk", title: "Linguagens" },
+    { key: "sdk", title: "Languages" },
     { key: "k8s", title: "Kubernetes" },
   ],
   tools: [
-    { key: "node", name: "Node.js", group: "sdk", description: "Versão LTS", installed: true, version: "v24.1.0", latest: "v24.2.0" },
-    { key: "go", name: "Go", group: "sdk", description: "Última estável", installed: false, version: "" },
-    { key: "kubectl", name: "kubectl", group: "k8s", description: "CLI do Kubernetes", installed: true, version: "1.31.0", latest: "1.31.0" },
-    { key: "helm", name: "Helm", group: "k8s", description: "Gerenciador de pacotes", installed: false, version: "", unavailable: "só existe para macOS" },
+    { key: "node", name: "Node.js", group: "sdk", description: "LTS version", installed: true, version: "v24.1.0", latest: "v24.2.0" },
+    { key: "go", name: "Go", group: "sdk", description: "Latest stable", installed: false, version: "" },
+    { key: "kubectl", name: "kubectl", group: "k8s", description: "Kubernetes CLI", installed: true, version: "1.31.0", latest: "1.31.0" },
+    { key: "helm", name: "Helm", group: "k8s", description: "Package manager", installed: false, version: "", unavailable: "only available on macOS" },
   ],
 };
 
@@ -99,8 +99,8 @@ export function job(overrides: Partial<Job> = {}): Job {
   return {
     id: "1",
     action: "project.up",
-    title: "Subir loja",
-    args: ["up", "loja", "-d"],
+    title: "Start store",
+    args: ["up", "store", "-d"],
     status: "running",
     started: "2026-11-10T12:00:00Z",
     lines: [],

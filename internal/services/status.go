@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-// StatusJSON lista o que está instalado; com all, também o que dá para instalar.
+// StatusJSON lists what is installed; with all, also what can be installed.
 func StatusJSON(all bool) []map[string]any {
 	out := []map[string]any{}
 	for _, s := range All {
@@ -27,7 +27,7 @@ func StatusJSON(all bool) []map[string]any {
 	return out
 }
 
-// Available são os serviços que rodam aqui e ainda não foram instalados.
+// Available returns the services that run here and are not installed yet.
 func Available() []*Service {
 	var out []*Service
 	for _, s := range All {
@@ -38,12 +38,12 @@ func Available() []*Service {
 	return out
 }
 
-// PrintStatus mostra só o que está instalado: um banco que nunca foi baixado não é um serviço
-// desta máquina. O que dá para instalar vem numa linha, ou na lista com all.
+// PrintStatus shows only what is installed: a database that was never pulled is not a service of
+// this machine. What can be installed comes in one line, or in the list with all.
 func PrintStatus(all bool) {
 	labels := make([]string, len(All))
 	installed := make([]bool, len(All))
-	ui.Spin(i18n.T("Verificando serviços..."), func(func(string)) {
+	ui.Spin(i18n.T("Checking services..."), func(func(string)) {
 		var wg sync.WaitGroup
 		for i, s := range All {
 			if s.Unsupported != "" {
@@ -58,7 +58,7 @@ func PrintStatus(all bool) {
 		}
 		wg.Wait()
 	})
-	fmt.Println(ui.STitle.Render(i18n.T("Serviços")))
+	fmt.Println(ui.STitle.Render(i18n.T("Services")))
 	var available []string
 	shown := 0
 	for i, s := range All {
@@ -72,15 +72,15 @@ func PrintStatus(all bool) {
 		}
 	}
 	if shown == 0 {
-		fmt.Println("  " + ui.SGray.Render(i18n.T("nenhum instalado")))
+		fmt.Println("  " + ui.SGray.Render(i18n.T("none installed")))
 	}
 	if len(available) > 0 {
-		fmt.Println("  " + ui.SGray.Render(i18n.Sprintf("Para instalar: %s  (romanctl install <serviço>)", strings.Join(available, ", "))))
+		fmt.Println("  " + ui.SGray.Render(i18n.Sprintf("To install: %s  (romanctl install <service>)", strings.Join(available, ", "))))
 	}
 	printUps()
 }
 
-// printUps mostra os projetos levantados com romanctl up.
+// printUps shows the projects brought up with romanctl up.
 func printUps() {
 	ups := state.ReadState().Ups
 	if len(ups) == 0 {
@@ -91,15 +91,15 @@ func printUps() {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	fmt.Println("\n" + ui.STitle.Render(i18n.T("Projetos no ar")))
+	fmt.Println("\n" + ui.STitle.Render(i18n.T("Projects up")))
 	for _, name := range names {
 		e := ups[name]
-		label := ui.SGray.Render(i18n.T("só os serviços"))
+		label := ui.SGray.Render(i18n.T("services only"))
 		switch {
 		case e.Alive():
-			label = ui.SGreen.Render(i18n.T("rodando")) + "  " + e.URL
+			label = ui.SGreen.Render(i18n.T("running")) + "  " + e.URL
 		case e.PID != 0:
-			label = ui.SRed.Render(i18n.T("caiu")) + ui.SGray.Render("  (romanctl up -d "+name+")")
+			label = ui.SRed.Render(i18n.T("crashed")) + ui.SGray.Render("  (romanctl up -d "+name+")")
 		}
 		fmt.Printf("  %-12s %s\n", name, label)
 	}
@@ -108,15 +108,15 @@ func printUps() {
 func statusLabel(s *Service) string {
 	switch {
 	case !s.Installed() && s.Engine:
-		return ui.SGray.Render(i18n.T("não instalado")) + ui.SGray.Render("  (romanctl tools install docker)")
+		return ui.SGray.Render(i18n.T("not installed")) + ui.SGray.Render("  (romanctl tools install docker)")
 	case !s.Installed():
-		return ui.SGray.Render(i18n.T("não instalado")) + ui.SGray.Render("  (romanctl install "+s.Key+")")
+		return ui.SGray.Render(i18n.T("not installed")) + ui.SGray.Render("  (romanctl install "+s.Key+")")
 	case s.Running():
-		return ui.SGreen.Render(i18n.T("rodando")) + "  " + s.URL()
+		return ui.SGreen.Render(i18n.T("running")) + "  " + s.URL()
 	case state.WantsRunning(s.Key):
-		return ui.SRed.Render(i18n.T("caiu")) + ui.SGray.Render("  (romanctl restore)")
+		return ui.SRed.Render(i18n.T("crashed")) + ui.SGray.Render("  (romanctl restore)")
 	}
-	return ui.SRed.Render(i18n.T("parado"))
+	return ui.SRed.Render(i18n.T("stopped"))
 }
 
 func TailLog(s *Service) error {
@@ -129,9 +129,9 @@ func TailLog(s *Service) error {
 		return nil
 	}
 	if !sys.Exists(s.LogFile) {
-		return i18n.Errorf("ainda não há log em %s", s.LogFile)
+		return i18n.Errorf("no log in %s yet", s.LogFile)
 	}
-	ui.Infof("%s  (Ctrl+C para sair)", s.LogFile)
+	ui.Infof("%s  (Ctrl+C to exit)", s.LogFile)
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
 	defer signal.Stop(sig)
@@ -139,12 +139,12 @@ func TailLog(s *Service) error {
 	return nil
 }
 
-// TailFile acompanha um arquivo de log; Ctrl+C sai.
+// TailFile follows a log file; Ctrl+C exits.
 func TailFile(path string) error {
 	if !sys.Exists(path) {
-		return i18n.Errorf("ainda não há log em %s", path)
+		return i18n.Errorf("no log in %s yet", path)
 	}
-	ui.Infof("%s  (Ctrl+C para sair)", path)
+	ui.Infof("%s  (Ctrl+C to exit)", path)
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
 	defer signal.Stop(sig)

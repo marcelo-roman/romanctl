@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-// Vocabulário reconhecido, mesmo quando ainda não há template para a combinação.
+// Recognized vocabulary, even when there is no template for the combination yet.
 var knownArch = []string{"bff", "clean", "cqrs", "ddd", "event-driven", "event-sourcing", "feature-sliced", "hexagonal",
 	"layered", "microservices", "modular-monolith", "trpc", "vertical-slice"}
 
@@ -40,7 +40,7 @@ type conditionalPath struct {
 	When string `yaml:"when"`
 }
 
-// overlay é uma pasta, normalmente em _variants, cujos arquivos substituem os da raiz quando When vale.
+// overlay is a directory, usually under _variants, whose files replace the root's when When holds.
 type overlay struct {
 	From string `yaml:"from"`
 	When string `yaml:"when"`
@@ -48,8 +48,8 @@ type overlay struct {
 
 const variantsDir = "_variants"
 
-// setupStep é um comando do preparo. Em YAML, uma string ou {run, when}: when restringe o passo a
-// uma variante, como npm ci com postgres e npm install sem ele, para reconciliar o lockfile.
+// setupStep is a setup command. In YAML, a string or {run, when}: when restricts the step to a
+// variant, like npm ci with postgres and npm install without it, to reconcile the lockfile.
 type setupStep struct {
 	Run  string `yaml:"run" json:"run"`
 	When string `yaml:"when" json:"when,omitempty"`
@@ -64,7 +64,7 @@ func (s *setupStep) UnmarshalYAML(node *yaml.Node) error {
 	return node.Decode((*plain)(s))
 }
 
-// setupFor são os comandos do preparo que valem para os serviços escolhidos.
+// setupFor returns the setup commands that apply to the chosen services.
 func (t *Template) setupFor(withs map[string]bool) []string {
 	var out []string
 	for _, step := range t.Setup {
@@ -75,7 +75,7 @@ func (t *Template) setupFor(withs map[string]bool) []string {
 	return out
 }
 
-// Template é uma pasta com template.yaml e os arquivos a gerar.
+// Template is a directory with template.yaml and the files to generate.
 type Template struct {
 	ID          string             `yaml:"id" json:"id"`
 	Stack       string             `yaml:"stack" json:"stack"`
@@ -100,7 +100,7 @@ func (t *Template) Key() string { return t.Stack + "/" + t.ID }
 
 func userTemplatesDir() string { return filepath.Join(config.Home, ".config", "romanctl", "templates") }
 
-// LoadTemplates lê os templates do romanctl; os do usuário têm prioridade.
+// LoadTemplates reads romanctl's templates; the user's take precedence.
 func LoadTemplates() []*Template {
 	ensureInstalled()
 	found := map[string]*Template{}
@@ -113,7 +113,7 @@ func LoadTemplates() []*Template {
 			}
 			var t Template
 			if err := yaml.Unmarshal(b, &t); err != nil {
-				ui.Warnf("Template inválido %s: %v", manifest, err)
+				ui.Warnf("Invalid template %s: %v", manifest, err)
 				continue
 			}
 			dir := path.Dir(manifest)
@@ -128,7 +128,7 @@ func LoadTemplates() []*Template {
 		}
 	}
 	load(os.DirFS(Root()), projectsPattern, "romanctl")
-	load(os.DirFS(userTemplatesDir()), "*/*/template.yaml", "usuario")
+	load(os.DirFS(userTemplatesDir()), "*/*/template.yaml", "user")
 
 	list := make([]*Template, 0, len(found))
 	for _, t := range found {
@@ -155,7 +155,7 @@ func normalizeArch(in []string) ([]string, error) {
 			a = alias
 		}
 		if !slices.Contains(knownArch, a) {
-			return nil, ui.Usagef("arquitetura desconhecida %q (conhecidas: %s)", a, strings.Join(knownArch, ", "))
+			return nil, ui.Usagef("unknown architecture %q (known: %s)", a, strings.Join(knownArch, ", "))
 		}
 		if !slices.Contains(out, a) {
 			out = append(out, a)
@@ -171,7 +171,7 @@ func describeTemplates(templates []*Template) string {
 		lines = append(lines, i18n.Sprintf("  --stack %s --arch %s", t.Stack, strings.Join(t.Arch, ",")))
 	}
 	if len(lines) == 0 {
-		return i18n.T("  nenhum")
+		return i18n.T("  none")
 	}
 	return strings.Join(lines, "\n")
 }
@@ -179,21 +179,21 @@ func describeTemplates(templates []*Template) string {
 func findTemplate(stack string, arch []string) (*Template, error) {
 	all := LoadTemplates()
 	if stack == "" {
-		return nil, ui.Usagef("informe --stack. Combinações disponíveis:\n%s", describeTemplates(all))
+		return nil, ui.Usagef("specify --stack. Available combinations:\n%s", describeTemplates(all))
 	}
 	if len(arch) == 0 {
-		return nil, ui.Usagef("informe --arch. Combinações disponíveis:\n%s", describeTemplates(all))
+		return nil, ui.Usagef("specify --arch. Available combinations:\n%s", describeTemplates(all))
 	}
 	for _, t := range all {
 		if t.Stack == stack && slices.Equal(t.Arch, arch) {
 			return t, nil
 		}
 	}
-	return nil, ui.Usagef("ainda não existe template para --stack %s --arch %s. Combinações disponíveis:\n%s",
+	return nil, ui.Usagef("there is no template yet for --stack %s --arch %s. Available combinations:\n%s",
 		stack, strings.Join(arch, ","), describeTemplates(all))
 }
 
-// MatchTemplates filtra pelo que já foi informado; os campos vazios não restringem.
+// MatchTemplates filters by what was given; empty fields do not restrict.
 func MatchTemplates(stack, archFlag string) ([]*Template, error) {
 	arch, err := normalizeArch(splitList(archFlag))
 	if err != nil {
@@ -211,7 +211,7 @@ func MatchTemplates(stack, archFlag string) ([]*Template, error) {
 	return out, nil
 }
 
-// FindByKey acha o template de um projeto pelo stack e pelo id gravados no romanctl.yaml.
+// FindByKey finds a project's template by the stack and id stored in romanctl.yaml.
 func FindByKey(stack, id string) *Template {
 	for _, t := range LoadTemplates() {
 		if t.Stack == stack && t.ID == id {
@@ -221,5 +221,5 @@ func FindByKey(stack, id string) *Template {
 	return nil
 }
 
-// AvailableCombinations descreve os templates, para mensagens de erro.
+// AvailableCombinations describes the templates, for error messages.
 func AvailableCombinations() string { return describeTemplates(LoadTemplates()) }

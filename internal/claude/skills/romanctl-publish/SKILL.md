@@ -1,36 +1,36 @@
 ---
 name: romanctl-publish
-description: Publica um projeto no GitHub pelo romanctl — gera CI (GitHub Actions) e Dockerfile conforme o template, recusa arquivos sensíveis como .env, faz o commit e cria o repositório (privado por padrão) com o gh. Use quando o usuário pedir para publicar, subir para o GitHub ou criar o repositório de um projeto.
+description: Publishes a project to GitHub through romanctl — generates CI (GitHub Actions) and a Dockerfile according to the template, refuses sensitive files such as .env, commits and creates the repository (private by default) with gh. Use when the user asks to publish, push to GitHub or create a project's repository.
 ---
 
-# Publicação pelo romanctl
+# Publishing through romanctl
 
-Siga as regras gerais da skill `romanctl`. Publicar é uma ação externa: **só com pedido
-explícito do usuário**, e mostre o plano antes.
+Follow the general rules of the `romanctl` skill. Publishing is an external action: **only on the user's
+explicit request**, and show the plan first.
 
-## 1. Plano
-
-```bash
-romanctl publish <projeto> --dry-run --json
-```
-
-Mostra `name`, `public`, `remoteExists`, `remote` e os arquivos que seriam gerados
-(`generated`). Repasse ao usuário: nome do repositório, se é público ou privado, e o que
-entra de CI e Dockerfile.
-
-## 2. Publicar
+## 1. Plan
 
 ```bash
-romanctl publish <projeto> --yes --json
-romanctl publish <projeto> --yes --description "Loja de exemplo" --json
-romanctl publish <projeto> --yes --public --json   # só se o usuário pedir público
-romanctl publish <projeto> --yes --no-ci --json    # sem CI nem Dockerfile
+romanctl publish <project> --dry-run --json
 ```
 
-- Sem terminal, `--yes` é obrigatório; ele também pula as perguntas de visibilidade, então o
-  repositório sai **privado** a menos que você passe `--public`.
-- O resultado traz `url` do repositório e `committed`.
-- Se o romanctl recusar por causa de um arquivo sensível (`.env`, chaves), não force nem
-  apague o arquivo: diga ao usuário qual é e sugira pô-lo no `.gitignore`.
-- Precisa do `gh` autenticado. Se faltar: `romanctl tools install gh --yes` e peça ao
-  usuário para rodar `! gh auth login`, que é interativo.
+Shows `name`, `public`, `remoteExists`, `remote` and the files that would be generated
+(`generated`). Pass this on to the user: repository name, whether it is public or private, and what
+CI and Dockerfile it includes.
+
+## 2. Publish
+
+```bash
+romanctl publish <project> --yes --json
+romanctl publish <project> --yes --description "Sample store" --json
+romanctl publish <project> --yes --public --json   # only if the user asks for public
+romanctl publish <project> --yes --no-ci --json    # no CI or Dockerfile
+```
+
+- Without a terminal, `--yes` is required; it also skips the visibility questions, so the
+  repository is created **private** unless you pass `--public`.
+- The result has the repository `url` and `committed`.
+- If romanctl refuses because of a sensitive file (`.env`, keys), do not force it or
+  delete the file: tell the user which one it is and suggest adding it to `.gitignore`.
+- Requires an authenticated `gh`. If it is missing: `romanctl tools install gh --yes` and ask the
+  user to run `! gh auth login`, which is interactive.

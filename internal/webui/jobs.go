@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// Job é uma ação da interface que roda o próprio romanctl com --json, como a CLI faria.
+// Job is a UI action that runs romanctl itself with --json, as the CLI would.
 type Job struct {
 	ID       string          `json:"id"`
 	Action   string          `json:"action"`
@@ -129,7 +129,7 @@ func (s *jobStore) finish(j *Job, stdout []byte, err error) {
 	}
 }
 
-// lastJSON acha o documento JSON da saída padrão; a CLI imprime um só no fim.
+// lastJSON finds the JSON document in stdout; the CLI prints a single one at the end.
 func lastJSON(b []byte) json.RawMessage {
 	b = bytes.TrimSpace(b)
 	if len(b) == 0 {

@@ -17,9 +17,9 @@ export function translate(lang: Lang, key: MessageKey, vars?: Vars): string {
 }
 
 export const I18nContext = createContext<I18n>({
-  lang: "pt",
+  lang: "en",
   setLang: () => undefined,
-  t: (key, vars) => translate("pt", key, vars),
+  t: (key, vars) => translate("en", key, vars),
 });
 
 export function useI18n(): I18n {

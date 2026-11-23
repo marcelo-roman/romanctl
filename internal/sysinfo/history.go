@@ -13,7 +13,7 @@ import (
 
 const historyLimit = 3000
 
-// Reading é uma linha do histórico de bateria.
+// Reading is one line of the battery history.
 type Reading struct {
 	At      time.Time `json:"at"`
 	Percent float64   `json:"percent"`
@@ -24,7 +24,7 @@ type Reading struct {
 
 func historyPath() string { return filepath.Join(config.DataDir, "bateria.jsonl") }
 
-// RecordAndRate grava a leitura e completa a bateria com a queda real medida.
+// RecordAndRate stores the reading and fills in the battery with the actual measured drop.
 func RecordAndRate(b *Battery, now time.Time) {
 	history := loadHistory()
 	history = append(history, Reading{now, b.Percent, b.Status, b.ChargeAh, b.Power})
@@ -39,7 +39,7 @@ func RecordAndRate(b *Battery, now time.Time) {
 	}
 	b.RatePerHour, b.RateWindowMins = rate, window
 	if b.Status == "discharging" && b.HoursLeft == 0 {
-		b.HoursLeft, b.HoursBasis = b.Percent/rate, i18n.T("queda medida pelo histórico")
+		b.HoursLeft, b.HoursBasis = b.Percent/rate, i18n.T("drain measured from history")
 	}
 }
 
@@ -78,8 +78,8 @@ func saveHistory(history []Reading) {
 	}
 }
 
-// dischargeRate mede a queda em %/h no trecho mais recente de descarga contínua.
-// Exige ao menos 15 minutos e 1%, porque abaixo disso o resultado é só ruído.
+// dischargeRate measures the drop in %/h over the latest stretch of continuous discharge.
+// It requires at least 15 minutes and 1%, because below that the result is just noise.
 func dischargeRate(history []Reading) (perHour, minutes float64) {
 	if len(history) < 2 {
 		return 0, 0

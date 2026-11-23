@@ -18,7 +18,7 @@ func addCommand(args []string, flags map[string]bool) error {
 	}
 	target := scaffold.TargetOf(path)
 	if target == "" {
-		return ui.Usagef("não há geradores para este tipo de projeto: %s", path)
+		return ui.Usagef("there are no generators for this type of project: %s", path)
 	}
 	if flags["list"] {
 		return addList(target, path)
@@ -28,7 +28,7 @@ func addCommand(args []string, flags map[string]bool) error {
 		return addInteractive(path, target, kind, name, in, flags)
 	}
 	if kind == "" || name == "" {
-		return ui.Usagef("informe o tipo e o nome: romanctl add <tipo> <nome>; veja com: romanctl add --list")
+		return ui.Usagef("specify the type and name: romanctl add <type> <name>; see with: romanctl add --list")
 	}
 	return runAdd(path, scaffold.AddOptions{Kind: kind, Name: name, In: in, Plural: flagVals["plural"], Force: flags["force"], DryRun: flags["dry-run"]})
 }
@@ -46,7 +46,7 @@ func addList(target, path string) error {
 	if ui.JSONOutput {
 		return ui.PrintJSON(map[string]any{"project": path, "target": target, "generators": list})
 	}
-	i18n.Printf("Geradores para %s (%s):\n", path, target)
+	i18n.Printf("Generators for %s (%s):\n", path, target)
 	for _, g := range list {
 		suffix := ""
 		if g.NeedsIn {
@@ -59,8 +59,8 @@ func addList(target, path string) error {
 
 func addInteractive(path, target, kind, name, in string, flags map[string]bool) error {
 	list := scaffold.LoadGenerators(target)
-	// Um passo já respondido por argumento não entra: se entrasse, o Esc voltaria para um
-	// passo que se pula sozinho, e a pessoa ficaria presa no seguinte.
+	// A step already answered by an argument is left out: otherwise Esc would go back to a
+	// step that skips itself, and the user would be stuck on the next one.
 	var steps []func() error
 	if kind == "" {
 		steps = append(steps, func() error {
@@ -68,7 +68,7 @@ func addInteractive(path, target, kind, name, in string, flags map[string]bool) 
 			for _, g := range list {
 				opts = append(opts, ui.Opt(fmt.Sprintf("%-14s %s", g.Kind, ui.SGray.Render(i18n.T(g.Description))), g.Kind))
 			}
-			v, err := ui.PickOne(i18n.Sprintf("O que adicionar em %s?", target), opts)
+			v, err := ui.PickOne(i18n.Sprintf("What to add to %s?", target), opts)
 			if err == nil {
 				kind = v
 			}
@@ -77,23 +77,23 @@ func addInteractive(path, target, kind, name, in string, flags map[string]bool) 
 	}
 	if name == "" {
 		steps = append(steps, func() error {
-			return ui.Ask(false, huh.NewInput().Title(i18n.T("Nome")).Placeholder("Product").Description(i18n.T("Esc volta · Ctrl+C cancela")).
+			return ui.Ask(false, huh.NewInput().Title(i18n.T("Name")).Placeholder("Product").Description(i18n.T("Esc goes back · Ctrl+C cancels")).
 				Validate(func(v string) error {
 					if scaffold.Pascal(v) == "" {
-						return i18n.Errorf("informe um nome")
+						return i18n.Errorf("enter a name")
 					}
 					return nil
 				}).Value(&name))
 		})
 	}
 	if in == "" {
-		// Só se sabe se o agregado é necessário depois de escolhido o tipo.
+		// Whether the aggregate is needed is only known after the type is chosen.
 		steps = append(steps, func() error {
 			g := scaffold.FindGenerator(list, kind)
 			if g == nil || !g.NeedsIn {
 				return ui.ErrSkip
 			}
-			return ui.Ask(false, huh.NewInput().Title(i18n.T("Em qual agregado?")).Placeholder("Product").Description(i18n.T("Esc volta · Ctrl+C cancela")).Value(&in))
+			return ui.Ask(false, huh.NewInput().Title(i18n.T("In which aggregate?")).Placeholder("Product").Description(i18n.T("Esc goes back · Ctrl+C cancels")).Value(&in))
 		})
 	}
 	if err := ui.Wizard(steps...); err != nil {
@@ -111,9 +111,9 @@ func runAdd(path string, opts scaffold.AddOptions) error {
 		return ui.PrintJSON(result)
 	}
 	if result.DryRun {
-		ui.Infof("Simulação: nada foi gravado. Seriam criados %d arquivos:", len(result.Files))
+		ui.Infof("Dry run: nothing was written. It would create %d files:", len(result.Files))
 	} else {
-		ui.Okf("%s %s: %d arquivo(s) criado(s) em %s", result.Kind, result.Name, len(result.Files), path)
+		ui.Okf("%s %s: %d file(s) created in %s", result.Kind, result.Name, len(result.Files), path)
 	}
 	for _, f := range result.Files {
 		fmt.Println("  + " + f)
@@ -122,7 +122,7 @@ func runAdd(path string, opts scaffold.AddOptions) error {
 		fmt.Println("  ~ " + f)
 	}
 	if len(result.Manual) > 0 {
-		ui.Warnf("Não achei onde registrar; faça à mão:")
+		ui.Warnf("Could not find where to register it; do it by hand:")
 		for _, m := range result.Manual {
 			fmt.Println("    " + m)
 		}
@@ -135,7 +135,7 @@ func runAdd(path string, opts scaffold.AddOptions) error {
 
 func menuAdd() error {
 	var name string
-	if err := pickProject(i18n.T("Adicionar em qual projeto?"), &name); err != nil {
+	if err := pickProject(i18n.T("Add to which project?"), &name); err != nil {
 		return err
 	}
 	path, err := projects.ProjectPath(name)
@@ -144,14 +144,14 @@ func menuAdd() error {
 	}
 	target := scaffold.TargetOf(path)
 	if target == "" {
-		return ui.Usagef("não há geradores para este tipo de projeto: %s", path)
+		return ui.Usagef("there are no generators for this type of project: %s", path)
 	}
 	return addInteractive(path, target, "", "", "", map[string]bool{})
 }
 
 func menuPublish() error {
 	var name string
-	if err := pickProject(i18n.T("Publicar qual projeto?"), &name); err != nil {
+	if err := pickProject(i18n.T("Which project to publish?"), &name); err != nil {
 		return err
 	}
 	return publishCommand([]string{name}, map[string]bool{})

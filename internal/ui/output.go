@@ -19,7 +19,7 @@ func PrintJSON(v any) error {
 	return enc.Encode(v)
 }
 
-// usageError indica uso incorreto: sai com código 2, separado de falha de execução.
+// usageError signals incorrect usage: exits with code 2, distinct from an execution failure.
 type usageError struct{ msg string }
 
 func (e usageError) Error() string { return e.msg }
@@ -45,7 +45,7 @@ var STitle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("13"))
 
 var SBoldTxt = lipgloss.NewStyle().Bold(true)
 
-// messages é para onde vão as mensagens: em --json, o stdout fica só com o JSON.
+// messages is where messages go: with --json, stdout carries only the JSON.
 func messages() io.Writer {
 	if JSONOutput {
 		return os.Stderr
@@ -53,8 +53,8 @@ func messages() io.Writer {
 	return os.Stdout
 }
 
-// ErrReported indica uma falha que já foi informada na saída.
-var ErrReported = errors.New(i18n.T("falha já informada"))
+// ErrReported signals a failure that was already reported on the output.
+var ErrReported = errors.New(i18n.T("failure already reported"))
 
 func Okf(f string, a ...any) { emit(SGreen.Render("✔ ") + i18n.Sprintf(f, a...)) }
 
@@ -64,7 +64,7 @@ func Infof(f string, a ...any) { emit(SBlue.Render("• ") + i18n.Sprintf(f, a..
 
 func Warnf(f string, a ...any) { emit(SYellow.Render("! ") + i18n.Sprintf(f, a...)) }
 
-// emit escreve uma mensagem sem misturá-la com a animação do Spin.
+// emit writes a message without mixing it with the Spin animation.
 func emit(line string) {
 	if silent {
 		return
@@ -77,5 +77,5 @@ func emit(line string) {
 
 var silent bool
 
-// SetSilent descarta as mensagens: um painel de tela cheia não pode ter a tela riscada.
+// SetSilent discards messages: a full-screen panel must not have its screen scribbled on.
 func SetSilent(on bool) { silent = on }

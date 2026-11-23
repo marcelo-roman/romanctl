@@ -12,7 +12,7 @@ func webUICommand(flags map[string]bool) error {
 	if v := flagVals["port"]; v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 1 || n > 65535 {
-			return ui.Usagef("porta inválida: %s", v)
+			return ui.Usagef("invalid port: %s", v)
 		}
 		port = n
 	}

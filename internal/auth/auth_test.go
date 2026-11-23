@@ -22,7 +22,7 @@ func jwt(claims map[string]any) string {
 	return enc([]byte(`{"alg":"none"}`)) + "." + enc(body) + ".sig"
 }
 
-// fakeKeycloak imita o que o romanctl usa do Keycloak: auth (já logado), token e revoke.
+// fakeKeycloak mimics what romanctl uses from Keycloak: auth (already logged in), token and revoke.
 type fakeKeycloak struct {
 	mu        sync.Mutex
 	server    *httptest.Server
@@ -123,7 +123,7 @@ func login(t *testing.T, k *fakeKeycloak) *Session {
 	return s
 }
 
-func TestLoginComPKCEGuardaASessaoSoParaODono(t *testing.T) {
+func TestLoginWithPKCEStoresSessionOwnerOnly(t *testing.T) {
 	isolate(t)
 	k := newFakeKeycloak(t)
 	s := login(t, k)
@@ -132,42 +132,42 @@ func TestLoginComPKCEGuardaASessaoSoParaODono(t *testing.T) {
 	}
 	info, err := os.Stat(SessionPath())
 	if err != nil || info.Mode().Perm() != 0o600 {
-		t.Fatalf("permissão da sessão: %v %v", info.Mode(), err)
+		t.Fatalf("session permission: %v %v", info.Mode(), err)
 	}
 	if err := Require(context.Background()); err != nil {
-		t.Fatalf("sessão nova deveria passar: %v", err)
+		t.Fatalf("a fresh session should pass: %v", err)
 	}
 }
 
-func TestSemSessaoACLINaoRoda(t *testing.T) {
+func TestWithoutSessionCLIDoesNotRun(t *testing.T) {
 	isolate(t)
 	if err := Require(context.Background()); !errors.Is(err, ErrNotLoggedIn) {
 		t.Fatalf("%v", err)
 	}
 }
 
-func TestSessaoAntigaEConferidaERevogadaSai(t *testing.T) {
+func TestOldSessionIsCheckedAndRevokedIsOut(t *testing.T) {
 	isolate(t)
 	k := newFakeKeycloak(t)
 	s := login(t, k)
 	s.ValidatedAt = time.Now().Add(-13 * time.Hour)
 	Save(s)
 	if err := Require(context.Background()); err != nil || k.refreshes != 1 {
-		t.Fatalf("deveria renovar: %v (%d)", err, k.refreshes)
+		t.Fatalf("should refresh: %v (%d)", err, k.refreshes)
 	}
 	s, _ = Load()
 	s.ValidatedAt = time.Now().Add(-13 * time.Hour)
 	Save(s)
 	k.reject = true
 	if err := Require(context.Background()); !errors.Is(err, ErrExpired) {
-		t.Fatalf("sessão revogada deveria sair: %v", err)
+		t.Fatalf("a revoked session should be out: %v", err)
 	}
 	if _, err := Load(); !errors.Is(err, ErrNotLoggedIn) {
-		t.Fatal("a sessão revogada deveria ser apagada")
+		t.Fatal("the revoked session should be deleted")
 	}
 }
 
-func TestSemRedeASessaoSalvaBasta(t *testing.T) {
+func TestOfflineSavedSessionIsEnough(t *testing.T) {
 	isolate(t)
 	k := newFakeKeycloak(t)
 	s := login(t, k)
@@ -175,16 +175,16 @@ func TestSemRedeASessaoSalvaBasta(t *testing.T) {
 	s.Issuer = "http://127.0.0.1:1/realms/private"
 	Save(s)
 	if err := Require(context.Background()); err != nil {
-		t.Fatalf("sem rede, a sessão salva deveria bastar: %v", err)
+		t.Fatalf("offline, the saved session should be enough: %v", err)
 	}
 	s.RefreshExpiry = time.Now().Add(-time.Minute)
 	Save(s)
 	if err := Require(context.Background()); !errors.Is(err, ErrExpired) {
-		t.Fatalf("refresh vencido deveria pedir login: %v", err)
+		t.Fatalf("an expired refresh should ask for login: %v", err)
 	}
 }
 
-func TestAccessTokenRenovaPertoDeVencerELogoutRevoga(t *testing.T) {
+func TestAccessTokenRefreshesNearExpiryAndLogoutRevokes(t *testing.T) {
 	isolate(t)
 	k := newFakeKeycloak(t)
 	s := login(t, k)
@@ -199,32 +199,32 @@ func TestAccessTokenRenovaPertoDeVencerELogoutRevoga(t *testing.T) {
 	}
 }
 
-func TestClientDeServicoSubstituiOLogin(t *testing.T) {
+func TestServiceClientReplacesLogin(t *testing.T) {
 	isolate(t)
 	k := newFakeKeycloak(t)
 	t.Setenv("ROMANCTL_AUTH_ISSUER", k.endpoints().Issuer)
 	t.Setenv("ROMANCTL_CLIENT_ID", "iam-api-ci")
-	t.Setenv("ROMANCTL_CLIENT_SECRET", "errado")
+	t.Setenv("ROMANCTL_CLIENT_SECRET", "wrong")
 	service.session = nil
 	if err := Require(context.Background()); err == nil {
-		t.Fatal("secret errado deveria falhar")
+		t.Fatal("a wrong secret should fail")
 	}
 	t.Setenv("ROMANCTL_CLIENT_SECRET", "s3cret")
 	if err := Require(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(SessionPath()); !os.IsNotExist(err) {
-		t.Fatal("o client de serviço não grava sessão em disco")
+		t.Fatal("the service client does not write a session to disk")
 	}
 }
 
-func TestStateDiferenteEhRecusado(t *testing.T) {
+func TestMismatchedStateIsRejected(t *testing.T) {
 	isolate(t)
 	k := newFakeKeycloak(t)
 	_, err := Login(context.Background(), LoginOptions{Endpoints: k.endpoints(), Timeout: 5 * time.Second, Open: func(u string) {
 		parsed, _ := url.Parse(u)
 		redirect := parsed.Query().Get("redirect_uri")
-		go http.Get(redirect + "?code=the-code&state=forjado")
+		go http.Get(redirect + "?code=the-code&state=forged")
 	}})
 	if err == nil || !strings.Contains(err.Error(), "state") {
 		t.Fatalf("%v", err)

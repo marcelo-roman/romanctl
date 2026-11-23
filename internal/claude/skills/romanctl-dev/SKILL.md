@@ -1,62 +1,62 @@
 ---
 name: romanctl-dev
-description: Sobe e derruba o ambiente de desenvolvimento de um projeto pelo romanctl (serviços em Docker, banco, .env e o app em segundo plano), e lê os logs do app. Use para rodar, testar no navegador, reiniciar ou parar um projeto, ou quando o usuário disser "sobe", "roda", "derruba", "para o projeto" ou "o que está no ar".
+description: Starts and stops a project's development environment through romanctl (Docker services, database, .env and the app in the background), and reads the app logs. Use to run, test in the browser, restart or stop a project, or when the user says "start it", "run it", "bring it down", "stop the project" or "what is running".
 ---
 
-# Ciclo de desenvolvimento pelo romanctl
+# Development cycle through romanctl
 
-Siga as regras gerais da skill `romanctl`. O projeto pode ser passado pelo nome; sem nome,
-o romanctl usa o projeto da pasta atual.
+Follow the general rules of the `romanctl` skill. The project can be passed by name; without a name,
+romanctl uses the project in the current folder.
 
-## Subir
+## Start
 
 ```bash
-romanctl up <projeto> -d --json        # serviços + banco + .env + app em segundo plano
-romanctl up <projeto> --no-run --json  # só o ambiente (serviços, banco, .env), sem o app
+romanctl up <project> -d --json        # services + database + .env + app in the background
+romanctl up <project> --no-run --json  # only the environment (services, database, .env), without the app
 ```
 
-- **Sempre `-d` ou `--no-run`.** Sem eles, o comando só termina quando o app para.
-- `-d` espera o app responder. O JSON traz `url`, `pid`, `log`, `services`,
-  `startedNow` (o que foi ligado agora), `envAdded` (variáveis que entraram no `.env`) e
+- **Always `-d` or `--no-run`.** Without them, the command only returns when the app stops.
+- `-d` waits for the app to respond. The JSON has `url`, `pid`, `log`, `services`,
+  `startedNow` (what was started now), `envAdded` (variables added to `.env`) and
   `alreadyUp`.
-- O `.env` só ganha o que falta; o que o usuário mudou fica. Não sobrescreva o `.env` à mão
-  com valores do romanctl.
-- Porta ocupada é recusada citando quem a usa: repasse ao usuário em vez de matar processos.
-- Sem terminal, `up` não instala serviço sozinho: se falhar com "não está instalado — rode:
-  romanctl install <serviço>", rode esse `install` e repita o `up`.
+- `.env` only gets what is missing; whatever the user changed stays. Do not overwrite `.env` by hand
+  with romanctl values.
+- A busy port is refused, naming who is using it: pass that on to the user instead of killing processes.
+- Without a terminal, `up` does not install a service by itself: if it fails with "is not installed — run:
+  romanctl install <service>", run that `install` and repeat the `up`.
 
-## Conferir o que está no ar
+## Check what is running
 
 ```bash
-romanctl list --json      # projetos; os que estão no ar têm up.alive, up.url e up.services
-romanctl status --json    # serviços: installed, running, url
+romanctl list --json      # projects; the running ones have up.alive, up.url and up.services
+romanctl status --json    # services: installed, running, url
 ```
 
-Para testar o app, use a `url` devolvida pelo `up` (por exemplo com `curl`).
+To test the app, use the `url` returned by `up` (for example with `curl`).
 
 ## Logs
 
-`romanctl logs <projeto>` **segue o log e não termina**. Prefira ler o arquivo: o caminho
-vem no campo `log` do `up -d --json`.
+`romanctl logs <project>` **follows the log and does not exit**. Prefer reading the file: the path
+comes in the `log` field of `up -d --json`.
 
 ```bash
 tail -n 100 <log>
-timeout 15 romanctl logs <projeto>     # se precisar seguir por um tempo
+timeout 15 romanctl logs <project>     # if you need to follow it for a while
 ```
 
-## Derrubar
+## Stop
 
 ```bash
-romanctl down <projeto> --json                  # app + serviços que só ele usava
-romanctl down <projeto> --keep-services --json  # só o app
-romanctl down --all --json                      # tudo que o romanctl subiu
+romanctl down <project> --json                  # app + services only it was using
+romanctl down <project> --keep-services --json  # only the app
+romanctl down --all --json                      # everything romanctl started
 ```
 
-O `down` não desliga serviço que já estava ligado antes do `up` nem serviço que outro
-projeto usa: o JSON separa `servicesStopped` de `servicesKept`.
+`down` does not stop a service that was already running before `up`, nor a service another
+project uses: the JSON separates `servicesStopped` from `servicesKept`.
 
-## Reiniciar o app depois de mudar código
+## Restart the app after changing code
 
 ```bash
-romanctl down <projeto> --keep-services --json && romanctl up <projeto> -d --json
+romanctl down <project> --keep-services --json && romanctl up <project> -d --json
 ```

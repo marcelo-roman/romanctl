@@ -71,7 +71,7 @@ func postgres() *Service {
 	}
 	s.start = func() error {
 		bin := PgBin()
-		// Sobrou de uma queda: se o PID foi reaproveitado, o postgres se recusaria a subir.
+		// Left over from a crash: if the PID was reused, postgres would refuse to start.
 		os.Remove(filepath.Join(data, "postmaster.pid"))
 		os.Remove(filepath.Join(pgSock, ".s.PGSQL.5432"))
 		os.Remove(filepath.Join(pgSock, ".s.PGSQL.5432.lock"))
@@ -79,14 +79,14 @@ func postgres() *Service {
 		os.MkdirAll(config.LogDir, 0o777)
 		os.Chmod(config.LogDir, 0o777)
 		if !sys.Exists(filepath.Join(data, "PG_VERSION")) {
-			ui.Infof("Primeira execução: criando o cluster em %s", data)
+			ui.Infof("First run: creating the cluster in %s", data)
 			if err := os.MkdirAll(data, 0o700); err != nil {
 				return err
 			}
 			os.Chmod(data, 0o700)
 			if err := asPostgres(bin + "/initdb -D " + data +
 				" -U postgres --auth=trust -E UTF8 --locale=C.UTF-8 >/dev/null"); err != nil {
-				return i18n.Errorf("initdb falhou: %w", err)
+				return i18n.Errorf("initdb failed: %w", err)
 			}
 		}
 		return asPostgres(i18n.Sprintf("%s/pg_ctl -D %s -l %s -o '-c listen_addresses=127.0.0.1 -c unix_socket_directories=%s' -w start >/dev/null",

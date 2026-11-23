@@ -1,4 +1,4 @@
-// Package publish leva um projeto para o GitHub, com CI e Dockerfile.
+// Package publish takes a project to GitHub, with CI and a Dockerfile.
 package publish
 
 import (
@@ -24,13 +24,13 @@ import (
 //go:embed all:files
 var embedded embed.FS
 
-// Options são as escolhas do comando publish.
+// Options are the publish command's choices.
 type Options struct {
 	Public, NoCI, DryRun bool
 	Description          string
 }
 
-// Result descreve o que foi feito ou, em uma simulação, o que seria feito.
+// Result describes what was done or, in a dry run, what would be done.
 type Result struct {
 	OK        bool     `json:"ok"`
 	DryRun    bool     `json:"dryRun"`
@@ -44,10 +44,10 @@ type Result struct {
 	Committed bool     `json:"committed"`
 }
 
-// fileData são os valores dos arquivos de CI e Dockerfile: Name, Lower e o que o template definir.
+// fileData holds the values for the CI and Dockerfile files: Name, Lower and whatever the template defines.
 type fileData map[string]string
 
-// Kinds são os conjuntos de CI e Dockerfile que existem.
+// Kinds are the existing CI and Dockerfile sets.
 func Kinds() []string {
 	entries, _ := fs.ReadDir(embedded, "files")
 	var out []string
@@ -59,7 +59,7 @@ func Kinds() []string {
 	return out
 }
 
-// KindOf diz qual conjunto de CI e Dockerfile serve para o projeto.
+// KindOf says which CI and Dockerfile set fits the project.
 func KindOf(projectPath string) (string, fileData) {
 	base := filepath.Base(projectPath)
 	data := fileData{"Name": projects.DotnetName(base), "Lower": base, "Dll": "", "Main": "."}
@@ -105,7 +105,7 @@ func render(kind string, data fileData) (map[string][]byte, error) {
 		if err != nil {
 			return err
 		}
-		// Os workflows usam ${{ }}, então aqui o delimitador é outro.
+		// Workflows use ${{ }}, so a different delimiter is used here.
 		tpl, err := template.New(p).Delims("[[", "]]").Option("missingkey=error").Parse(string(b))
 		if err != nil {
 			return err
@@ -128,26 +128,26 @@ func remoteURL(projectPath string) string {
 	return out
 }
 
-// Plan confere os pré-requisitos e descreve o que será feito, sem mudar nada.
+// Plan checks the prerequisites and describes what will be done, without changing anything.
 func Plan(projectPath string, opts Options) (Result, error) {
 	name := filepath.Base(projectPath)
 	result := Result{Name: name, Path: projectPath, Public: opts.Public, DryRun: opts.DryRun, Generated: []string{}, Remote: remoteURL(projectPath)}
 	result.Exists = result.Remote != ""
 	kind, data := KindOf(projectPath)
 	if kind == "" {
-		return result, ui.Usagef("não sei publicar este tipo de projeto: %s", projectPath)
+		return result, ui.Usagef("I don't know how to publish this type of project: %s", projectPath)
 	}
 	if !sys.Have("gh") {
-		return result, i18n.Errorf("precisa do GitHub CLI: romanctl tools install gh")
+		return result, i18n.Errorf("needs the GitHub CLI: romanctl tools install gh")
 	}
 	if !sys.Have("git") {
-		return result, i18n.Errorf("precisa do Git: romanctl tools install git")
+		return result, i18n.Errorf("needs Git: romanctl tools install git")
 	}
 	if out, err := sys.Output("gh", "auth", "status"); err != nil {
-		return result, i18n.Errorf("entre no GitHub antes: gh auth login (%s)", sys.Tail(out, 1))
+		return result, i18n.Errorf("sign in to GitHub first: gh auth login (%s)", sys.Tail(out, 1))
 	}
 	if email, _ := sys.OutputIn(projectPath, "git", "config", "user.email"); email == "" {
-		return result, i18n.Errorf("configure o Git antes: git config --global user.name \"Nome\" e git config --global user.email \"voce@exemplo.com\"")
+		return result, i18n.Errorf("configure Git first: git config --global user.name \"Name\" and git config --global user.email \"you@example.com\"")
 	}
 	if opts.NoCI {
 		result.OK = opts.DryRun
@@ -158,7 +158,7 @@ func Plan(projectPath string, opts Options) (Result, error) {
 		return result, err
 	}
 	for p := range files {
-		// O que já existe é da pessoa: nunca é sobrescrito.
+		// What already exists belongs to the user: it is never overwritten.
 		if _, err := os.Stat(filepath.Join(projectPath, filepath.FromSlash(p))); err != nil {
 			result.Generated = append(result.Generated, p)
 		}
@@ -170,7 +170,7 @@ func Plan(projectPath string, opts Options) (Result, error) {
 
 var sensitiveFile = regexp.MustCompile(`(^|/)(\.env(\.[^/]*)?|id_rsa|id_ed25519|credentials\.json|[^/]*\.(pem|key|p12|pfx))$`)
 
-// sensitive lista arquivos que não devem ir para um repositório. Modelos de .env são a exceção.
+// sensitive lists files that must not go into a repository. .env templates are the exception.
 func sensitive(names []string) []string {
 	var found []string
 	for _, n := range names {
@@ -181,7 +181,7 @@ func sensitive(names []string) []string {
 	return found
 }
 
-// Run executa a publicação. Os segredos são conferidos antes do commit.
+// Run performs the publication. Secrets are checked before the commit.
 func Run(projectPath string, opts Options) (Result, error) {
 	result, err := Plan(projectPath, opts)
 	if err != nil {
@@ -219,18 +219,18 @@ func Run(projectPath string, opts Options) (Result, error) {
 	}
 	if found := sensitive(strings.Fields(staged)); len(found) > 0 {
 		git("reset", "-q")
-		return result, i18n.Errorf("publicação cancelada: estes arquivos parecem ter segredos; coloque-os no .gitignore: %s", strings.Join(found, ", "))
+		return result, i18n.Errorf("publishing cancelled: these files look like they contain secrets; add them to .gitignore: %s", strings.Join(found, ", "))
 	}
 	if sys.Have("gitleaks") {
 		if out, err := sys.OutputIn(projectPath, "gitleaks", "dir", ".", "--no-banner"); err != nil && strings.Contains(out, "leaks found") {
 			git("reset", "-q")
-			return result, i18n.Errorf("publicação cancelada: o gitleaks encontrou segredos no código:\n%s", sys.Tail(out, 6))
+			return result, i18n.Errorf("publishing cancelled: gitleaks found secrets in the code:\n%s", sys.Tail(out, 6))
 		}
 	}
 	if staged != "" {
-		message := "Publica o projeto"
+		message := "Publish the project"
 		if result.Exists {
-			message = "Atualiza o projeto"
+			message = "Update the project"
 		}
 		if out, err := git("commit", "-q", "-m", message); err != nil {
 			return result, i18n.Errorf("git commit: %v %s", err, out)

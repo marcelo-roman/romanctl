@@ -10,8 +10,8 @@ import (
 	"romanctl/internal/config"
 )
 
-// A última versão muda pouco e consultá-la custa uma ida à rede por ferramenta: guardada por
-// algumas horas, a lista abre já com a coluna preenchida.
+// The latest version rarely changes and checking it costs a network round trip per tool: kept for
+// a few hours, the list opens with the column already filled in.
 const latestTTL = 6 * time.Hour
 
 type latestEntry struct {
@@ -48,7 +48,7 @@ func saveLatest() {
 	}
 }
 
-// CachedLatest devolve a última versão guardada, se ainda vale.
+// CachedLatest returns the stored latest version, if still valid.
 func CachedLatest(key string) (Upstream, bool) {
 	latestMu.Lock()
 	defer latestMu.Unlock()
@@ -60,7 +60,7 @@ func CachedLatest(key string) (Upstream, bool) {
 	return e.Upstream, true
 }
 
-// Latest consulta a última versão, usando a guardada enquanto valer. Sem o README.
+// Latest checks the latest version, using the stored one while valid. Without the README.
 func (t *Tool) Latest() Upstream {
 	if u, ok := CachedLatest(t.Key); ok {
 		return u
@@ -76,7 +76,7 @@ func (t *Tool) Latest() Upstream {
 	return u
 }
 
-// RefreshLatest consulta, em paralelo, a última versão das ferramentas que não estão guardadas.
+// RefreshLatest checks, in parallel, the latest version of the tools not stored yet.
 func RefreshLatest(keys []string, progress func(done, total int)) map[string]Upstream {
 	out := map[string]Upstream{}
 	var missing []*Tool

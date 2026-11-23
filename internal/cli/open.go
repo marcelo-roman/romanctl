@@ -26,7 +26,7 @@ func ensureCodeServer() error {
 	return nil
 }
 
-// openTarget: "code", um projeto, ou uma URL. app=true abre o app rodando do projeto.
+// openTarget opens "code", a project, or a URL. app=true opens the project's running app.
 func openTarget(target string, app bool) error {
 	switch {
 	case strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://"):
@@ -44,10 +44,10 @@ func openTarget(target string, app bool) error {
 	if app {
 		u := projects.AppURL(p)
 		if u == "" {
-			return i18n.Errorf("não sei em que porta %q roda", target)
+			return i18n.Errorf("I don't know which port %q runs on", target)
 		}
 		if !sys.HttpUp(u) {
-			ui.Warnf("%s não está respondendo em %s — rode antes: romanctl run %s", target, u, target)
+			ui.Warnf("%s is not responding at %s — first run: romanctl run %s", target, u, target)
 			return nil
 		}
 		return browser.OpenURL(u)
@@ -61,12 +61,12 @@ func openTarget(target string, app bool) error {
 func menuOpen() error {
 	opts := []ui.Option{ui.Opt("code-server", "code|")}
 	for _, p := range projects.ListProjects() {
-		opts = append(opts, ui.Opt(p.Name+ui.SGray.Render(i18n.T("  no code-server")), p.Name+"|"))
+		opts = append(opts, ui.Opt(p.Name+ui.SGray.Render(i18n.T("  in code-server")), p.Name+"|"))
 		if u := projects.AppURL(p.Path); u != "" && sys.HttpUp(u) {
-			opts = append(opts, ui.Opt(p.Name+ui.SGreen.Render(i18n.T("  app rodando em ")+u), p.Name+"|app"))
+			opts = append(opts, ui.Opt(p.Name+ui.SGreen.Render(i18n.T("  app running at ")+u), p.Name+"|app"))
 		}
 	}
-	sel, err := ui.PickOne(i18n.T("Abrir no navegador"), opts)
+	sel, err := ui.PickOne(i18n.T("Open in browser"), opts)
 	if err != nil {
 		return err
 	}
@@ -74,8 +74,8 @@ func menuOpen() error {
 	return openTarget(target, mode == "app")
 }
 
-// openInCode abre uma pasta no code-server. Aceita nome de projeto ou caminho.
-// Sem alvo: usa o projeto da pasta atual ou, fora de um projeto, mostra a lista.
+// openInCode opens a folder in code-server. Accepts a project name or a path.
+// Without a target: uses the project of the current folder or, outside a project, shows the list.
 func openInCode(target string) error {
 	var dir string
 	switch {
@@ -85,7 +85,7 @@ func openInCode(target string) error {
 			dir = filepath.Join(config.ProjDir, strings.Split(rel, string(filepath.Separator))[0])
 		} else {
 			var name string
-			if err := pickProject(i18n.T("Abrir qual projeto no code-server?"), &name); err != nil {
+			if err := pickProject(i18n.T("Which project to open in code-server?"), &name); err != nil {
 				return err
 			}
 			dir = filepath.Join(config.ProjDir, name)
@@ -99,7 +99,7 @@ func openInCode(target string) error {
 			}
 		}
 		if dir == "" {
-			return i18n.Errorf("%q não é um projeto em %s nem uma pasta existente", target, config.ProjDir)
+			return i18n.Errorf("%q is not a project in %s nor an existing folder", target, config.ProjDir)
 		}
 	}
 	if err := ensureCodeServer(); err != nil {

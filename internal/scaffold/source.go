@@ -19,15 +19,15 @@ import (
 	"romanctl/internal/ui"
 )
 
-// Repo é de onde vêm os templates: a pasta templates do repositório do romanctl.
+// Repo is where templates come from: the templates directory of romanctl's repository.
 const Repo = "marcelo-roman/romanctl"
 
-// Version é a versão do binário. Os templates baixados são os da mesma tag.
+// Version is the binary's version. Downloaded templates come from the same tag.
 var Version = "dev"
 
 const refFile = ".ref"
 
-// Root é a pasta com projects e generators: ROMANCTL_TEMPLATES, para desenvolver, ou a cópia baixada.
+// Root is the directory with projects and generators: ROMANCTL_TEMPLATES, for development, or the downloaded copy.
 func Root() string {
 	if v := os.Getenv("ROMANCTL_TEMPLATES"); v != "" {
 		return v
@@ -35,14 +35,14 @@ func Root() string {
 	return filepath.Join(config.DataDir, "templates")
 }
 
-// A pasta tem uma subpasta por linguagem, cada uma com projects/<id> e generators/<alvo>/<tipo>.
+// The directory has one subdirectory per language, each with projects/<id> and generators/<target>/<kind>.
 const (
 	projectsPattern  = "*/projects/*/template.yaml"
 	generatorsSubdir = "generators"
 	languageProjects = "projects"
 )
 
-// Installed diz se há templates nesta máquina.
+// Installed says whether there are templates on this machine.
 func Installed() bool { return hasProjects(Root()) }
 
 func hasProjects(root string) bool {
@@ -50,7 +50,7 @@ func hasProjects(root string) bool {
 	return len(matches) > 0
 }
 
-// InstalledRef diz de que versão vieram os templates baixados.
+// InstalledRef says which version the downloaded templates came from.
 func InstalledRef() string {
 	b, err := os.ReadFile(filepath.Join(Root(), refFile))
 	if err != nil {
@@ -76,25 +76,25 @@ func archiveURL(ref string) string {
 
 var ensureOnce sync.Once
 
-// ensureInstalled baixa os templates na primeira vez que alguém precisa deles.
+// ensureInstalled downloads the templates the first time something needs them.
 func ensureInstalled() {
 	ensureOnce.Do(func() {
 		if Installed() || os.Getenv("ROMANCTL_TEMPLATES") != "" {
 			return
 		}
 		if !sys.IsOnline() {
-			ui.Warnf("Os templates ainda não foram baixados. Com internet, rode: romanctl templates update")
+			ui.Warnf("The templates have not been downloaded yet. With internet, run: romanctl templates update")
 			return
 		}
 		var err error
-		ui.Spin(i18n.T("Baixando os templates..."), func(func(string)) { _, err = Update("") })
+		ui.Spin(i18n.T("Downloading the templates..."), func(func(string)) { _, err = Update("") })
 		if err != nil {
-			ui.Warnf("Não consegui baixar os templates: %v", err)
+			ui.Warnf("Could not download the templates: %v", err)
 		}
 	})
 }
 
-// UpdateResult é o que templates update informa.
+// UpdateResult is what templates update reports.
 type UpdateResult struct {
 	OK       bool   `json:"ok"`
 	Ref      string `json:"ref"`
@@ -121,11 +121,11 @@ func download(url string) (io.ReadCloser, int, error) {
 	return resp.Body, resp.StatusCode, nil
 }
 
-// Update baixa a pasta templates de uma tag ou branch. Vazio, a da versão do binário; se a tag
-// não existe ou ainda não tem templates, a da main.
+// Update downloads the templates directory of a tag or branch. Empty means the binary's version; if
+// that tag does not exist or has no templates yet, main.
 func Update(ref string) (UpdateResult, error) {
 	if os.Getenv("ROMANCTL_TEMPLATES") != "" {
-		return UpdateResult{}, i18n.Errorf("ROMANCTL_TEMPLATES aponta para %s; os templates de lá não são baixados", Root())
+		return UpdateResult{}, i18n.Errorf("ROMANCTL_TEMPLATES points to %s; templates there are not downloaded", Root())
 	}
 	result := UpdateResult{Path: Root()}
 	dest := Root()
@@ -183,12 +183,12 @@ func fetch(ref, dest string) error {
 		return err
 	}
 	if !hasProjects(dest) {
-		return i18n.Errorf("%s não tem templates em templates/<linguagem>/projects", ref)
+		return i18n.Errorf("%s has no templates in templates/<language>/projects", ref)
 	}
 	return nil
 }
 
-// extractTemplates tira do tar.gz do GitHub só o que está em <raiz>/templates/.
+// extractTemplates extracts from GitHub's tar.gz only what is under <root>/templates/.
 func extractTemplates(r io.Reader, dest string) error {
 	gz, err := gzip.NewReader(r)
 	if err != nil {
@@ -209,7 +209,7 @@ func extractTemplates(r io.Reader, dest string) error {
 		}
 		rel := parts[2]
 		if strings.HasPrefix(rel, "../") || path.IsAbs(rel) {
-			return i18n.Errorf("caminho inválido no arquivo: %s", h.Name)
+			return i18n.Errorf("invalid path in the archive: %s", h.Name)
 		}
 		target := filepath.Join(dest, filepath.FromSlash(rel))
 		switch h.Typeflag {

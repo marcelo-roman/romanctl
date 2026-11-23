@@ -30,12 +30,12 @@ func TestOpener(t *testing.T) {
 			got = command[0]
 		}
 		if got != c.want {
-			t.Errorf("%+v: obtido %q, esperado %q", c.p, got, c.want)
+			t.Errorf("%+v: got %q, want %q", c.p, got, c.want)
 		}
 	}
 }
 
-func TestCmdEscapeNaoCortaAURLNoPrimeiroE(t *testing.T) {
+func TestCmdEscapeDoesNotCutURLAtFirstAmpersand(t *testing.T) {
 	got := cmdEscape("https://auth/x?a=1&b=(2)")
 	if got != "https://auth/x?a=1^&b=^(2^)" {
 		t.Fatalf("%q", got)

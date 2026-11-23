@@ -8,7 +8,7 @@ import (
 	"romanctl/internal/dotenv"
 )
 
-// KV é uma variável do .env.
+// KV is a variable from a .env file.
 type KV struct{ Key, Value string }
 
 func quote(v string) string {
@@ -18,7 +18,7 @@ func quote(v string) string {
 	return v
 }
 
-// MergeEnv só acrescenta o que falta: um valor que a pessoa mudou nunca é sobrescrito.
+// MergeEnv only adds what is missing: a value the user changed is never overwritten.
 func MergeEnv(path string, vars []KV) ([]string, error) {
 	existing, err := os.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {
@@ -46,12 +46,12 @@ func MergeEnv(path string, vars []KV) ([]string, error) {
 	return added, os.WriteFile(path, []byte(text), 0o600)
 }
 
-// ProcessEnv devolve o .env para o app. O que já está no ambiente tem prioridade.
+// ProcessEnv returns the .env for the app. What is already in the environment takes precedence.
 func ProcessEnv(path string, lookup func(string) (string, bool)) []string {
 	return dotenv.Load(path, lookup)
 }
 
-// EnsureIgnored evita que o .env acabe em um commit.
+// EnsureIgnored keeps the .env out of commits.
 func EnsureIgnored(projectPath string) (bool, error) {
 	path := filepath.Join(projectPath, ".gitignore")
 	b, err := os.ReadFile(path)

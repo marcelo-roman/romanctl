@@ -13,38 +13,38 @@ import (
 	"romanctl/internal/i18n"
 )
 
-// Option é uma linha de uma lista. O rótulo pode ter cor, e o filtro enxerga só o texto.
+// Option is a row of a list. The label may be colored; the filter only sees the text.
 type Option struct {
 	Label    string
 	Value    string
-	Category string // chave da categoria, para listas com categorias
-	Search   string // texto a mais para o filtro, que não aparece na tela
-	Section  string // título do grupo, como nas seções do "git help"
+	Category string // category key, for categorized lists
+	Search   string // extra text for the filter, not shown on screen
+	Section  string // group title, like the sections of "git help"
 }
 
-// Category é uma aba de uma lista.
+// Category is a tab of a list.
 type Category struct {
 	Key   string
 	Label string
 }
 
-// Opt cria uma opção.
+// Opt creates an option.
 func Opt(label, value string) Option { return Option{Label: label, Value: value} }
 
-// PickConfig descreve uma lista com filtro.
+// PickConfig describes a filterable list.
 type PickConfig struct {
 	Title      string
 	Options    []Option
 	Multi      bool
-	All        bool   // mostra a linha "Todos" no topo de uma lista de múltipla escolha
-	Initial    string // valor que começa selecionado
-	NoLeft     bool   // a seta esquerda não volta, como no menu principal
+	All        bool   // shows the "All" row at the top of a multiple-choice list
+	Initial    string // value selected at start
+	NoLeft     bool   // the left arrow does not go back, as in the main menu
 	Subtitle   string
-	Categories []Category // com isto, ←/→ trocam de categoria
-	AllowNone  bool       // Enter sem nada marcado é uma resposta válida, como "sem serviços"
+	Categories []Category // with this, ←/→ switch categories
+	AllowNone  bool       // Enter with nothing marked is a valid answer, such as "no services"
 }
 
-// matches diz se o texto contém todas as palavras do filtro, sem diferenciar maiúsculas e acentos.
+// matches reports whether the text contains every word of the filter, ignoring case and accents.
 func matches(text, filter string) bool {
 	text = fold(ansi.Strip(text))
 	for _, word := range strings.Fields(fold(filter)) {
@@ -55,15 +55,15 @@ func matches(text, filter string) bool {
 	return true
 }
 
-// Matches é o mesmo filtro das listas, para quem filtra por --filter.
+// Matches is the same filter the lists use, for callers filtering by --filter.
 func Matches(text, filter string) bool { return matches(text, filter) }
 
-var foldAccents = strings.NewReplacer("á", "a", "à", "a", "â", "a", "ã", "a", "é", "e", "ê", "e", "í", "i",
-	"ó", "o", "ô", "o", "õ", "o", "ú", "u", "ü", "u", "ç", "c")
+var foldAccents = strings.NewReplacer("\u00e1", "a", "\u00e0", "a", "\u00e2", "a", "\u00e3", "a", "\u00e9", "e", "\u00ea", "e", "\u00ed", "i",
+	"\u00f3", "o", "\u00f4", "o", "\u00f5", "o", "\u00fa", "u", "\u00fc", "u", "\u00e7", "c")
 
 func fold(s string) string { return foldAccents.Replace(strings.ToLower(s)) }
 
-// Fold deixa um texto comparável, sem maiúsculas nem acentos.
+// Fold makes a text comparable, without case or accents.
 func Fold(s string) string { return fold(s) }
 
 const allRow = -1
@@ -71,7 +71,7 @@ const allRow = -1
 type pickModel struct {
 	cfg      PickConfig
 	filter   string
-	visible  []int // índices em Options; a linha "Todos" é allRow
+	visible  []int // indexes into Options; the "All" row is allRow
 	cursor   int
 	offset   int
 	marked   map[string]bool
@@ -81,7 +81,7 @@ type pickModel struct {
 	result   []string
 	err      error
 	finished bool
-	category int // 0 é "Todas"; os demais são Categories[category-1]
+	category int // 0 is "All"; the others are Categories[category-1]
 }
 
 func newPickModel(cfg PickConfig) *pickModel {
@@ -114,7 +114,7 @@ func (m *pickModel) inCategory(o Option) bool {
 	return m.category == 0 || o.Category == m.cfg.Categories[m.category-1].Key
 }
 
-// switchCategory gira entre "Todas" e as categorias; o filtro digitado continua valendo.
+// switchCategory cycles through "All" and the categories; the typed filter still applies.
 func (m *pickModel) switchCategory(delta int) {
 	total := len(m.cfg.Categories) + 1
 	m.category = (m.category + delta + total) % total
@@ -123,7 +123,7 @@ func (m *pickModel) switchCategory(delta int) {
 
 func (m *pickModel) categoryLabel() string {
 	if m.category == 0 {
-		return i18n.T("Todas")
+		return i18n.T("All")
 	}
 	return m.cfg.Categories[m.category-1].Label
 }
@@ -153,7 +153,7 @@ func (m *pickModel) allMarked() bool {
 	return true
 }
 
-// toggleVisible marca ou desmarca o que o filtro está mostrando, e só isso.
+// toggleVisible marks or unmarks what the filter is showing, and only that.
 func (m *pickModel) toggleVisible() {
 	mark := !m.allMarked()
 	for _, v := range m.visibleOptions() {
@@ -183,7 +183,7 @@ func (m *pickModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC:
 			return m.finish(errCancel)
 		case tea.KeyEsc:
-			// O primeiro Esc só limpa o filtro: a pessoa não perde a lista inteira.
+			// The first Esc only clears the filter, so the user does not lose the whole list.
 			if m.filter != "" {
 				m.filter = ""
 				m.refilter()
@@ -255,21 +255,21 @@ func (m *pickModel) submit() (tea.Model, tea.Cmd) {
 		m.result = []string{m.cfg.Options[m.visible[m.cursor]].Value}
 		return m.finish(nil)
 	}
-	// A ordem do resultado é a da lista, não a ordem em que as linhas foram marcadas.
+	// The result follows the list order, not the order in which rows were marked.
 	for _, o := range m.cfg.Options {
 		if m.marked[o.Value] {
 			m.result = append(m.result, o.Value)
 		}
 	}
 	if len(m.result) == 0 && !m.cfg.AllowNone {
-		m.warn = i18n.T("Marque ao menos um item com Espaço")
+		m.warn = i18n.T("Mark at least one item with Space")
 		return m, nil
 	}
 	return m.finish(nil)
 }
 
 func (m *pickModel) pageSize() int {
-	// Seções e rodapé também ocupam linhas: desconta para a tela nunca rolar.
+	// Sections and the footer take lines too: subtract them so the screen never scrolls.
 	return max(3, min(m.height-10, 18))
 }
 
@@ -283,8 +283,8 @@ func (m *pickModel) keepCursorVisible() {
 	}
 }
 
-// View segue convenções do terminal: prompt e contagem do fzf, seções do "git help", linha
-// em vídeo reverso e barra de teclas do htop. Só texto, sem ícones.
+// View follows terminal conventions: fzf's prompt and count, "git help" sections, a
+// reverse-video row and htop's key bar. Text only, no icons.
 func (m *pickModel) View() string {
 	if m.finished {
 		return ""
@@ -295,22 +295,22 @@ func (m *pickModel) View() string {
 		b.WriteString(SGray.Render(m.cfg.Subtitle) + "\n")
 	}
 	if len(m.cfg.Categories) > 0 {
-		b.WriteString(SGray.Render(i18n.T("Categoria: ")) + "< " + SBoldTxt.Render(m.categoryLabel()) + " >\n")
+		b.WriteString(SGray.Render(i18n.T("Category: ")) + "< " + SBoldTxt.Render(m.categoryLabel()) + " >\n")
 	}
 	shown, total := len(m.visibleOptions()), len(m.cfg.Options)
-	b.WriteString(SBlue.Render(i18n.T("Filtro> ")) + m.filter + cursorBlock.Render(" ") + SGray.Render(fmt.Sprintf("  %d/%d", shown, total)) + "\n")
+	b.WriteString(SBlue.Render(i18n.T("Filter> ")) + m.filter + cursorBlock.Render(" ") + SGray.Render(fmt.Sprintf("  %d/%d", shown, total)) + "\n")
 
 	page := m.pageSize()
 	end := min(m.offset+page, len(m.visible))
 	if len(m.visible) == 0 {
-		b.WriteString(SYellow.Render(i18n.T("  Nada encontrado; Esc limpa o filtro")) + "\n")
+		b.WriteString(SYellow.Render(i18n.T("  Nothing found; Esc clears the filter")) + "\n")
 	}
 	section := ""
 	for i := m.offset; i < end; i++ {
 		row := m.visible[i]
 		label, check := "", ""
 		if row == allRow {
-			label = i18n.Sprintf("Todos (%d)", shown)
+			label = i18n.Sprintf("All (%d)", shown)
 			check = m.checkbox(m.allMarked())
 		} else {
 			o := m.cfg.Options[row]
@@ -328,14 +328,14 @@ func (m *pickModel) View() string {
 			line = ansi.Truncate(line, m.width-3, "...")
 		}
 		if i == m.cursor {
-			// Sem as cores do rótulo, para o vídeo reverso cobrir a linha inteira.
+			// Without the label colors, so the reverse video covers the whole line.
 			b.WriteString(selectedRow.Render("  "+ansi.Strip(line)) + "\n")
 		} else {
 			b.WriteString("  " + line + "\n")
 		}
 	}
 	if len(m.visible) > page {
-		b.WriteString(SGray.Render(fmt.Sprintf("  -- %d-%d de %d --", m.offset+1, end, len(m.visible))) + "\n")
+		b.WriteString(SGray.Render(i18n.Sprintf("  -- %d-%d of %d --", m.offset+1, end, len(m.visible))) + "\n")
 	}
 	if m.warn != "" {
 		b.WriteString(SYellow.Render(m.warn) + "\n")
@@ -349,17 +349,17 @@ var (
 	cursorBlock = lipgloss.NewStyle().Reverse(true)
 )
 
-// keyBar é a barra de teclas do rodapé, como a do htop e a do nano.
+// keyBar is the footer key bar, like htop's and nano's.
 func (m *pickModel) keyBar() string {
 	type key struct{ name, action string }
-	keys := []key{{"Enter", i18n.T("escolher")}}
+	keys := []key{{"Enter", i18n.T("select")}}
 	if m.cfg.Multi {
-		keys = []key{{i18n.T("Espaço"), i18n.T("marcar")}, {"^A", i18n.T("marcar visíveis")}, {"Enter", i18n.T("confirmar")}}
+		keys = []key{{i18n.T("Space"), i18n.T("mark")}, {"^A", i18n.T("mark visible")}, {"Enter", i18n.T("confirm")}}
 	}
 	if len(m.cfg.Categories) > 0 {
-		keys = append(keys, key{"</>", i18n.T("categoria")})
+		keys = append(keys, key{"</>", i18n.T("category")})
 	}
-	keys = append(keys, key{"Esc", i18n.T("voltar")})
+	keys = append(keys, key{"Esc", i18n.T("back")})
 	parts := make([]string, len(keys))
 	for i, k := range keys {
 		parts[i] = SBoldTxt.Render(k.name) + " " + SGray.Render(k.action)
@@ -374,10 +374,10 @@ func (m *pickModel) checkbox(on bool) string {
 	return "[ ] "
 }
 
-// Pick mostra a lista e devolve o que foi escolhido.
+// Pick shows the list and returns what was chosen.
 func Pick(cfg PickConfig) ([]string, error) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) {
-		return nil, Usagef("este comando precisa de um terminal; informe tudo por argumentos (veja: romanctl help)")
+		return nil, Usagef("this command needs a terminal; pass everything as arguments (see: romanctl help)")
 	}
 	final, err := tea.NewProgram(newPickModel(cfg)).Run()
 	if err != nil {
@@ -387,7 +387,7 @@ func Pick(cfg PickConfig) ([]string, error) {
 	return m.result, m.err
 }
 
-// PickOne mostra uma lista de escolha única.
+// PickOne shows a single-choice list.
 func PickOne(title string, options []Option) (string, error) {
 	got, err := Pick(PickConfig{Title: title, Options: options})
 	if err != nil || len(got) == 0 {

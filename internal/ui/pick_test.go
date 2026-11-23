@@ -22,7 +22,7 @@ func press(m *pickModel, keys ...any) {
 }
 
 func options() []Option {
-	return []Option{Opt("kubectl CLI do Kubernetes", "kubectl"), Opt("helm Pacotes", "helm"), Opt(SGreen.Render("Segurança")+" trivy", "trivy"), Opt("kubens Troca", "kubens")}
+	return []Option{Opt("kubectl Kubernetes CLI", "kubectl"), Opt("helm Packages", "helm"), Opt(SGreen.Render("Security")+" trivy", "trivy"), Opt("kubens Switch", "kubens")}
 }
 
 func TestMatches(t *testing.T) {
@@ -31,8 +31,8 @@ func TestMatches(t *testing.T) {
 		want         bool
 	}{
 		{"kubectl CLI", "kube", true}, {"kubectl CLI", "KUBE", true}, {"kubectl CLI", "cli kube", true},
-		{"kubectl CLI", "kube helm", false}, {"Segurança", "seguranca", true}, {"Seguranca", "segurança", true},
-		{SGreen.Render("verde") + " x", "verde", true}, {"qualquer", "", true}, {"qualquer", "   ", true},
+		{"kubectl CLI", "kube helm", false}, {"Cafe", "caf\u00e9", true}, {"Caf\u00e9", "cafe", true},
+		{SGreen.Render("green") + " x", "green", true}, {"anything", "", true}, {"anything", "   ", true},
 	}
 	for _, c := range cases {
 		if got := matches(c.text, c.filter); got != c.want {
@@ -41,7 +41,7 @@ func TestMatches(t *testing.T) {
 	}
 }
 
-func TestDigitarFiltraEEnterEscolhe(t *testing.T) {
+func TestTypingFiltersAndEnterChooses(t *testing.T) {
 	m := newPickModel(PickConfig{Options: options()})
 	press(m, "h", "e")
 	if got := m.visibleOptions(); !slices.Equal(got, []string{"helm"}) {
@@ -53,23 +53,23 @@ func TestDigitarFiltraEEnterEscolhe(t *testing.T) {
 	}
 }
 
-func TestEscLimpaOFiltroAntesDeVoltar(t *testing.T) {
+func TestEscClearsFilterBeforeGoingBack(t *testing.T) {
 	m := newPickModel(PickConfig{Options: options()})
 	press(m, "kube", tea.KeyEsc)
 	if m.finished || m.filter != "" || len(m.visible) != 4 {
-		t.Fatalf("primeiro Esc: %+v", m)
+		t.Fatalf("first Esc: %+v", m)
 	}
 	press(m, tea.KeyEsc)
 	if !m.finished || !errors.Is(m.err, errBack) {
-		t.Fatalf("segundo Esc: %+v", m)
+		t.Fatalf("second Esc: %+v", m)
 	}
 }
 
-func TestSetaEsquerda(t *testing.T) {
+func TestLeftArrow(t *testing.T) {
 	m := newPickModel(PickConfig{Options: options()})
 	press(m, "k", tea.KeyLeft)
 	if m.finished {
-		t.Fatal("com filtro, a seta esquerda não deveria sair")
+		t.Fatal("with a filter, the left arrow should not exit")
 	}
 	press(m, tea.KeyBackspace, tea.KeyLeft)
 	if !errors.Is(m.err, errBack) {
@@ -78,11 +78,11 @@ func TestSetaEsquerda(t *testing.T) {
 	m = newPickModel(PickConfig{Options: options(), NoLeft: true})
 	press(m, tea.KeyLeft)
 	if m.finished {
-		t.Fatal("NoLeft deveria ignorar a seta")
+		t.Fatal("NoLeft should ignore the arrow")
 	}
 }
 
-func TestCtrlCCancela(t *testing.T) {
+func TestCtrlCCancels(t *testing.T) {
 	m := newPickModel(PickConfig{Options: options()})
 	press(m, tea.KeyCtrlC)
 	if !errors.Is(m.err, errCancel) {
@@ -90,7 +90,7 @@ func TestCtrlCCancela(t *testing.T) {
 	}
 }
 
-func TestTodosMarcaSoOQueOFiltroMostra(t *testing.T) {
+func TestAllMarksOnlyWhatTheFilterShows(t *testing.T) {
 	m := newPickModel(PickConfig{Options: options(), Multi: true, All: true})
 	press(m, "kube", tea.KeySpace, tea.KeyEnter)
 	if !slices.Equal(m.result, []string{"kubectl", "kubens"}) {
@@ -99,8 +99,8 @@ func TestTodosMarcaSoOQueOFiltroMostra(t *testing.T) {
 	m = newPickModel(PickConfig{Options: options(), Multi: true, All: true})
 	press(m, tea.KeySpace, tea.KeySpace)
 	press(m, tea.KeyEnter)
-	if m.finished || !strings.Contains(m.warn, "Espaço") {
-		t.Fatalf("sem marcação não deveria confirmar: %+v", m)
+	if m.finished || !strings.Contains(m.warn, "Space") {
+		t.Fatalf("should not confirm with nothing marked: %+v", m)
 	}
 	press(m, tea.KeyCtrlA, tea.KeyEnter)
 	if len(m.result) != 4 {
@@ -108,7 +108,7 @@ func TestTodosMarcaSoOQueOFiltroMostra(t *testing.T) {
 	}
 }
 
-func TestSemMarcacaoPermitida(t *testing.T) {
+func TestNoneMarkedAllowed(t *testing.T) {
 	m := newPickModel(PickConfig{Options: options(), Multi: true, AllowNone: true})
 	press(m, tea.KeyEnter)
 	if !m.finished || m.err != nil || len(m.result) != 0 {
@@ -116,7 +116,7 @@ func TestSemMarcacaoPermitida(t *testing.T) {
 	}
 }
 
-func TestMarcacaoSobreviveAoFiltro(t *testing.T) {
+func TestMarksSurviveTheFilter(t *testing.T) {
 	m := newPickModel(PickConfig{Options: options(), Multi: true})
 	press(m, "helm", tea.KeySpace, tea.KeyCtrlU, "trivy", tea.KeySpace, tea.KeyEnter)
 	if !slices.Equal(m.result, []string{"helm", "trivy"}) {
@@ -124,7 +124,7 @@ func TestMarcacaoSobreviveAoFiltro(t *testing.T) {
 	}
 }
 
-func TestEspacoEntraNoFiltroDaEscolhaUnica(t *testing.T) {
+func TestSpaceGoesIntoSingleChoiceFilter(t *testing.T) {
 	m := newPickModel(PickConfig{Options: options()})
 	press(m, "kube", tea.KeySpace, "cli")
 	if got := m.visibleOptions(); !slices.Equal(got, []string{"kubectl"}) {
@@ -132,18 +132,18 @@ func TestEspacoEntraNoFiltroDaEscolhaUnica(t *testing.T) {
 	}
 }
 
-func TestSemResultadoEnterNaoSai(t *testing.T) {
+func TestEnterWithNoResultDoesNotExit(t *testing.T) {
 	m := newPickModel(PickConfig{Options: options()})
 	press(m, "zzz", tea.KeyEnter)
 	if m.finished {
-		t.Fatal("não deveria terminar")
+		t.Fatal("should not finish")
 	}
-	if !strings.Contains(m.View(), "Nada encontrado") {
+	if !strings.Contains(m.View(), "Nothing found") {
 		t.Fatal(m.View())
 	}
 }
 
-func TestInicialECursorCircular(t *testing.T) {
+func TestInitialAndWrappingCursor(t *testing.T) {
 	m := newPickModel(PickConfig{Options: options(), Initial: "trivy"})
 	if m.cfg.Options[m.visible[m.cursor]].Value != "trivy" {
 		t.Fatal(m.cursor)
@@ -158,7 +158,7 @@ func TestInicialECursorCircular(t *testing.T) {
 	}
 }
 
-func TestRolagemMantemOCursorVisivel(t *testing.T) {
+func TestScrollKeepsCursorVisible(t *testing.T) {
 	var many []Option
 	for i := 0; i < 100; i++ {
 		many = append(many, Opt("item", string(rune('a'+i%26))+string(rune('a'+i/26))))
@@ -169,67 +169,67 @@ func TestRolagemMantemOCursorVisivel(t *testing.T) {
 		press(m, tea.KeyDown)
 	}
 	if m.cursor < m.offset || m.cursor >= m.offset+m.pageSize() {
-		t.Fatalf("cursor %d fora de %d+%d", m.cursor, m.offset, m.pageSize())
+		t.Fatalf("cursor %d outside %d+%d", m.cursor, m.offset, m.pageSize())
 	}
 	if lines := strings.Count(m.View(), "\n"); lines > 12 {
-		t.Fatalf("%d linhas não cabem em 12:\n%s", lines, m.View())
+		t.Fatalf("%d lines do not fit in 12:\n%s", lines, m.View())
 	}
 }
 
-func TestSecoesAcompanhamOFiltro(t *testing.T) {
+func TestSectionsFollowTheFilter(t *testing.T) {
 	m := newPickModel(PickConfig{Options: []Option{
-		{Label: "new", Value: "new", Section: "Projetos"},
-		{Label: "add", Value: "add", Section: "Projetos"},
-		{Label: "status", Value: "status", Section: "Servicos"},
+		{Label: "new", Value: "new", Section: "Projects"},
+		{Label: "add", Value: "add", Section: "Projects"},
+		{Label: "status", Value: "status", Section: "Services"},
 	}})
 	view := m.View()
-	if strings.Count(view, "Projetos") != 1 || !strings.Contains(view, "Servicos") {
+	if strings.Count(view, "Projects") != 1 || !strings.Contains(view, "Services") {
 		t.Fatal(view)
 	}
 	press(m, "status")
-	if view := m.View(); strings.Contains(view, "Projetos") || !strings.Contains(view, "Servicos") {
+	if view := m.View(); strings.Contains(view, "Projects") || !strings.Contains(view, "Services") {
 		t.Fatal(view)
 	}
 }
 
-func TestListaSemIcones(t *testing.T) {
+func TestListHasNoIcons(t *testing.T) {
 	for _, multi := range []bool{false, true} {
 		m := newPickModel(PickConfig{Title: "T", Options: options(), Multi: multi, All: multi,
 			Categories: []Category{{"x", "X"}}})
 		for _, r := range ansi.Strip(m.View()) {
 			if r > 0x2000 {
-				t.Errorf("símbolo %q na lista", r)
+				t.Errorf("symbol %q in the list", r)
 			}
 		}
 	}
 }
 
-func TestSpinSemTerminalSoRoda(t *testing.T) {
+func TestSpinWithoutTerminalJustRuns(t *testing.T) {
 	ran := false
 	Spin("x", func(update func(string)) { update("y"); ran = true })
 	if !ran {
-		t.Fatal("não rodou")
+		t.Fatal("did not run")
 	}
 }
 
 func categorized() PickConfig {
 	return PickConfig{
-		Categories: []Category{{"db", "Banco de dados"}, {"sdk", "Linguagens"}},
+		Categories: []Category{{"db", "Databases"}, {"sdk", "Languages"}},
 		Options: []Option{
-			{Label: "psql", Value: "psql", Category: "db", Search: "Banco de dados"},
-			{Label: "pgcli", Value: "pgcli", Category: "db", Search: "Banco de dados"},
-			{Label: "go", Value: "go", Category: "sdk", Search: "Linguagens"},
+			{Label: "psql", Value: "psql", Category: "db", Search: "Databases"},
+			{Label: "pgcli", Value: "pgcli", Category: "db", Search: "Databases"},
+			{Label: "go", Value: "go", Category: "sdk", Search: "Languages"},
 		},
 	}
 }
 
-func TestSetasTrocamCategoria(t *testing.T) {
+func TestArrowsSwitchCategory(t *testing.T) {
 	m := newPickModel(categorized())
 	if len(m.visibleOptions()) != 3 {
 		t.Fatal(m.visibleOptions())
 	}
 	press(m, tea.KeyRight)
-	if got := m.visibleOptions(); !slices.Equal(got, []string{"psql", "pgcli"}) || !strings.Contains(m.View(), "Banco de dados") {
+	if got := m.visibleOptions(); !slices.Equal(got, []string{"psql", "pgcli"}) || !strings.Contains(m.View(), "Databases") {
 		t.Fatalf("%v", got)
 	}
 	press(m, tea.KeyRight)
@@ -238,15 +238,15 @@ func TestSetasTrocamCategoria(t *testing.T) {
 	}
 	press(m, tea.KeyRight)
 	if m.category != 0 || len(m.visibleOptions()) != 3 {
-		t.Fatal("deveria voltar para Todas")
+		t.Fatal("should wrap back to All")
 	}
 	press(m, tea.KeyLeft)
 	if got := m.visibleOptions(); !slices.Equal(got, []string{"go"}) || m.finished {
-		t.Fatalf("a seta esquerda deveria girar, não sair: %v", got)
+		t.Fatalf("the left arrow should cycle, not exit: %v", got)
 	}
 }
 
-func TestCategoriaCombinaComFiltro(t *testing.T) {
+func TestCategoryCombinesWithFilter(t *testing.T) {
 	m := newPickModel(categorized())
 	press(m, tea.KeyRight, "pg")
 	if got := m.visibleOptions(); !slices.Equal(got, []string{"pgcli"}) {
@@ -254,22 +254,22 @@ func TestCategoriaCombinaComFiltro(t *testing.T) {
 	}
 	press(m, tea.KeyRight)
 	if got := m.visibleOptions(); len(got) != 0 {
-		t.Fatalf("o filtro deveria continuar valendo: %v", got)
+		t.Fatalf("the filter should still apply: %v", got)
 	}
 }
 
-func TestDigitarONomeDaCategoria(t *testing.T) {
+func TestTypingTheCategoryName(t *testing.T) {
 	m := newPickModel(categorized())
-	press(m, "banco de dados")
+	press(m, "databases")
 	if got := m.visibleOptions(); !slices.Equal(got, []string{"psql", "pgcli"}) {
 		t.Fatalf("%v", got)
 	}
-	if strings.Contains(m.View(), "Linguagens") {
-		t.Fatal("o texto de busca não deveria aparecer na linha")
+	if strings.Contains(m.View(), "Languages") {
+		t.Fatal("the search text should not appear on the row")
 	}
 }
 
-func TestTodosRespeitaACategoria(t *testing.T) {
+func TestAllRespectsTheCategory(t *testing.T) {
 	cfg := categorized()
 	cfg.Multi, cfg.All = true, true
 	m := newPickModel(cfg)

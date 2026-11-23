@@ -10,22 +10,22 @@ import (
 	"time"
 )
 
-// processIs confere se o PID está vivo e é o programa esperado. O PID sozinho não
-// basta: depois de uma queda, o Android pode reusá-lo em outro processo.
+// processIs checks that the PID is alive and is the expected program. The PID alone is not
+// enough: after a crash, Android may reuse it for another process.
 func ProcessIs(pid int, name string) bool {
 	if pid <= 0 || syscall.Kill(pid, 0) != nil {
 		return false
 	}
 	b, err := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/cmdline")
 	if err != nil {
-		// Sem /proc, como no macOS, pergunta ao ps.
+		// Without /proc, as on macOS, ask ps.
 		out, psErr := exec.Command("ps", "-p", strconv.Itoa(pid), "-o", "command=").Output()
 		return psErr == nil && strings.Contains(string(out), name)
 	}
 	return strings.Contains(string(b), name)
 }
 
-// pgrep: o padrão deve usar o truque "[x]" para não casar com o próprio comando.
+// pgrep: the pattern should use the "[x]" trick so it does not match the command itself.
 func Pgrep(pattern string) bool { return exec.Command("pgrep", "-f", pattern).Run() == nil }
 
 func WaitUntil(timeout time.Duration, f func() bool) bool {
@@ -39,8 +39,8 @@ func WaitUntil(timeout time.Duration, f func() bool) bool {
 	return f()
 }
 
-// startDetached inicia um processo em nova sessão, com saída num arquivo de log,
-// para que ele continue rodando depois que o romanctl terminar.
+// startDetached starts a process in a new session, with output to a log file,
+// so it keeps running after romanctl exits.
 func StartDetached(logFile, dir, name string, args ...string) error {
 	if err := os.MkdirAll(filepath.Dir(logFile), 0o755); err != nil {
 		return err
@@ -62,8 +62,8 @@ func StartDetached(logFile, dir, name string, args ...string) error {
 	return cmd.Process.Release()
 }
 
-// StartDetachedEnv é como StartDetached, com variáveis extras, e devolve o PID. O processo lidera
-// o próprio grupo, para que parar o grupo pegue também os filhos, como o app do dotnet run.
+// StartDetachedEnv is like StartDetached, with extra variables, and returns the PID. The process
+// leads its own group, so stopping the group also catches its children, like dotnet run's app.
 func StartDetachedEnv(logFile, dir string, env []string, name string, args ...string) (int, error) {
 	if err := os.MkdirAll(filepath.Dir(logFile), 0o755); err != nil {
 		return 0, err
@@ -84,17 +84,17 @@ func StartDetachedEnv(logFile, dir string, env []string, name string, args ...st
 		return 0, err
 	}
 	pid := cmd.Process.Pid
-	// Colhe o processo quando ele terminar: sem isso, ele ficaria zumbi e pareceria vivo.
+	// Reaps the process when it exits: otherwise it would become a zombie and look alive.
 	go cmd.Wait()
 	return pid, nil
 }
 
-// GroupAlive diz se ainda há algum processo no grupo.
+// GroupAlive says whether any process is still in the group.
 func GroupAlive(pgid int) bool {
 	return pgid > 0 && syscall.Kill(-pgid, 0) == nil
 }
 
-// StopGroup pede para o grupo terminar e força depois do prazo.
+// StopGroup asks the group to exit and forces it after the timeout.
 func StopGroup(pgid int, grace time.Duration) {
 	if !GroupAlive(pgid) {
 		return

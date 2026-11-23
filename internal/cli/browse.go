@@ -13,7 +13,7 @@ import (
 	"romanctl/internal/ui"
 )
 
-// toolsBrowse é a lista navegável de tools list: filtra ao digitar, e Enter mostra as ações.
+// toolsBrowse is the browsable list of tools list: it filters as you type, and Enter shows the actions.
 func toolsBrowse(showAll bool, categories []string) error {
 	cursor := ""
 	for {
@@ -30,7 +30,7 @@ func toolsBrowse(showAll bool, categories []string) error {
 			state := toolState(s)
 			opts = append(opts, toolOption(fmt.Sprintf("%-15s %s %s", s.Key, ui.SGray.Render(fmt.Sprintf("%-13s", s.Group)), state), s))
 		}
-		got, err := ui.Pick(ui.PickConfig{Title: i18n.T("Ferramentas"), Subtitle: platform.Current.Describe(), Options: opts, Initial: cursor, NoLeft: true, Categories: toolCategories(opts)})
+		got, err := ui.Pick(ui.PickConfig{Title: i18n.T("Tools"), Subtitle: platform.Current.Describe(), Options: opts, Initial: cursor, NoLeft: true, Categories: toolCategories(opts)})
 		if err != nil {
 			if ui.IsAbort(err) {
 				return nil
@@ -52,18 +52,18 @@ func toolActions(key string) error {
 	}
 	if why := t.Unavailable(); why != "" {
 		if _, installed := t.Detected(); !installed {
-			ui.Warnf("%s não roda nesta máquina: %s", t.Name, why)
+			ui.Warnf("%s does not run on this machine: %s", t.Name, why)
 			pause()
 			return nil
 		}
 	}
 	var opts []ui.Option
 	if _, installed := t.Detected(); installed {
-		opts = []ui.Option{ui.Opt(i18n.Sprintf("Remover %s", t.Name), "uninstall"), ui.Opt(i18n.Sprintf("Reinstalar %s", t.Name), "reinstall")}
+		opts = []ui.Option{ui.Opt(i18n.Sprintf("Remove %s", t.Name), "uninstall"), ui.Opt(i18n.Sprintf("Reinstall %s", t.Name), "reinstall")}
 	} else {
-		opts = []ui.Option{ui.Opt(i18n.Sprintf("Instalar %s, última versão", t.Name), "install")}
+		opts = []ui.Option{ui.Opt(i18n.Sprintf("Install %s, latest version", t.Name), "install")}
 	}
-	opts = append(opts, ui.Opt(i18n.T("Escolher outra versão"), "version"))
+	opts = append(opts, ui.Opt(i18n.T("Choose another version"), "version"))
 	action, err := ui.PickOne(t.Name+" — "+i18n.T(t.Description), opts)
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func toolActions(key string) error {
 	return nil
 }
 
-// projectList é navegável em um terminal; com --plain, --filter, --json ou um pipe, imprime.
+// projectList is browsable in a terminal; with --plain, --filter, --json or a pipe, it prints.
 func projectList(plain bool) error {
 	filter := flagVals["filter"]
 	if !plain && filter == "" && ui.Interactive() {
@@ -123,7 +123,7 @@ func projectBrowse() error {
 		for _, p := range list {
 			opts = append(opts, ui.Opt(fmt.Sprintf("%-28s %-24s %s", p.Name, ui.SGray.Render(p.Type), ui.SGray.Render(p.Mod.Format("02/01/2006 15:04"))), p.Name))
 		}
-		got, err := ui.Pick(ui.PickConfig{Title: i18n.T("Projetos"), Options: opts, Initial: cursor, NoLeft: true})
+		got, err := ui.Pick(ui.PickConfig{Title: i18n.T("Projects"), Options: opts, Initial: cursor, NoLeft: true})
 		if err != nil {
 			if ui.IsAbort(err) {
 				return nil
@@ -146,13 +146,13 @@ func projectActions(name string) error {
 	if err != nil {
 		return err
 	}
-	opts := []ui.Option{ui.Opt(i18n.T("Subir tudo em segundo plano (up -d)"), "up"), ui.Opt(i18n.T("Derrubar (down)"), "down"),
-		ui.Opt(i18n.T("Rodar"), "run"), ui.Opt(i18n.T("Abrir no code-server"), "code")}
+	opts := []ui.Option{ui.Opt(i18n.T("Bring everything up in the background (up -d)"), "up"), ui.Opt(i18n.T("Bring down (down)"), "down"),
+		ui.Opt(i18n.T("Run"), "run"), ui.Opt(i18n.T("Open in code-server"), "code")}
 	target := scaffold.TargetOf(path)
 	if target != "" {
-		opts = append(opts, ui.Opt(i18n.T("Adicionar código"), "add"))
+		opts = append(opts, ui.Opt(i18n.T("Add code"), "add"))
 	}
-	opts = append(opts, ui.Opt(i18n.T("Publicar no GitHub"), "publish"), ui.Opt(i18n.T("Remover o projeto"), "rm"))
+	opts = append(opts, ui.Opt(i18n.T("Publish to GitHub"), "publish"), ui.Opt(i18n.T("Remove the project"), "rm"))
 	action, err := ui.PickOne(name, opts)
 	if err != nil {
 		return err
@@ -180,8 +180,8 @@ func projectActions(name string) error {
 	return nil
 }
 
-// fillLatest completa a última versão das ferramentas que rodam aqui; consulta a rede só para o
-// que não foi consultado nas últimas horas.
+// fillLatest fills in the latest version of the tools that run here; it only hits the network for
+// what was not queried in the last few hours.
 func fillLatest(statuses []tools.Status) {
 	var keys []string
 	for _, s := range statuses {
@@ -193,9 +193,9 @@ func fillLatest(statuses []tools.Status) {
 		return
 	}
 	var latest map[string]tools.Upstream
-	ui.Spin(i18n.T("Consultando as últimas versões..."), func(update func(string)) {
+	ui.Spin(i18n.T("Checking the latest versions..."), func(update func(string)) {
 		latest = tools.RefreshLatest(keys, func(done, total int) {
-			update(i18n.Sprintf("Consultando as últimas versões %d/%d", done, total))
+			update(i18n.Sprintf("Checking the latest versions %d/%d", done, total))
 		})
 	})
 	for i := range statuses {

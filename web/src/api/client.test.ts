@@ -23,10 +23,10 @@ describe("api client", () => {
   });
 
   it("surfaces the backend error field", async () => {
-    server.use(http.post("/api/jobs", () => HttpResponse.json({ error: "valor inválido em \"name=-rf\"" }, { status: 400 })));
+    server.use(http.post("/api/jobs", () => HttpResponse.json({ error: "invalid value in \"name=-rf\"" }, { status: 400 })));
     const failure = api.startJob({ action: "project.up", name: "-rf" });
     await expect(failure).rejects.toBeInstanceOf(ApiError);
-    await expect(failure).rejects.toThrow('valor inválido em "name=-rf"');
+    await expect(failure).rejects.toThrow('invalid value in "name=-rf"');
   });
 
   it("falls back to the HTTP status when the body has no error", async () => {

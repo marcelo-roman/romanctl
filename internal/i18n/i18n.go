@@ -1,5 +1,5 @@
-// Package i18n traduz as mensagens do romanctl. O texto em português é a própria chave,
-// e en.go diz a versão em inglês. O que não tem entrada aparece como foi escrito.
+// Package i18n translates romanctl's messages. The English text is the key itself, and
+// pt.go holds the Portuguese version. Anything without an entry shows as written.
 package i18n
 
 import (
@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// Idiomas disponíveis.
+// Available languages.
 const (
 	PT = "pt"
 	EN = "en"
@@ -19,23 +19,23 @@ const (
 
 var current = detect()
 
-// Lang devolve o idioma em uso.
+// Lang returns the language in use.
 func Lang() string { return current }
 
-// Set troca o idioma em uso.
+// Set changes the language in use.
 func Set(lang string) { current = lang }
 
-// Add acrescenta traduções, para textos longos que ficam junto do código que os usa.
+// Add adds Portuguese translations, keyed by the English text.
 func Add(entries map[string]string) {
 	for k, v := range entries {
-		en[k] = v
+		pt[k] = v
 	}
 }
 
-// T traduz um texto.
+// T translates a text.
 func T(s string) string {
-	if current == EN {
-		if v, ok := en[s]; ok {
+	if current == PT {
+		if v, ok := pt[s]; ok {
 			return v
 		}
 	}
@@ -46,18 +46,18 @@ func Sprintf(format string, a ...any) string { return fmt.Sprintf(T(format), a..
 func Printf(format string, a ...any)         { fmt.Printf(T(format), a...) }
 func Errorf(format string, a ...any) error   { return fmt.Errorf(T(format), a...) }
 
-// ---------------------------------------------------------------- detecção
+// ---------------------------------------------------------------- detection
 
 func detect() string {
 	lang, _ := Resolve(os.Args, os.Getenv, savedLang, macLanguage)
 	return lang
 }
 
-// Resolve escolhe o idioma, nesta ordem: --lang, ROMANCTL_LANG, configuração salva, variáveis
-// do sistema e idioma do macOS. Devolve também de onde veio a escolha.
+// Resolve picks the language in this order: --lang, ROMANCTL_LANG, saved configuration, system
+// variables and the macOS language. It also returns where the choice came from.
 func Resolve(args []string, env func(string) string, saved, mac func() string) (lang, source string) {
 	if isTestBinary(args) && env("ROMANCTL_LANG") == "" {
-		return PT, "test"
+		return EN, "test"
 	}
 	for i, a := range args {
 		if a == "--lang" && i+1 < len(args) {
@@ -77,7 +77,7 @@ func Resolve(args []string, env func(string) string, saved, mac func() string) (
 	if l := Parse(saved()); l != "" {
 		return l, "config"
 	}
-	// LANGUAGE pode ser uma lista, como pt_BR:en.
+	// LANGUAGE may be a list, such as pt_BR:en.
 	for _, name := range []string{"LC_ALL", "LC_MESSAGES", "LANGUAGE", "LANG"} {
 		first, _, _ := strings.Cut(env(name), ":")
 		if l := parseSystem(first); l != "" {
@@ -94,19 +94,19 @@ func isTestBinary(args []string) bool {
 	return len(args) > 0 && strings.HasSuffix(args[0], ".test")
 }
 
-// Parse aceita só o que o usuário pediu explicitamente em uma das línguas disponíveis.
+// Parse accepts only what the user explicitly asked for in one of the available languages.
 func Parse(v string) string {
 	switch strings.ToLower(strings.TrimSpace(v)) {
-	case "pt", "pt-br", "pt_br", "portugues", "português":
+	case "pt", "pt-br", "pt_br", "portuguese", "portugues", "portugu\u00eas":
 		return PT
-	case "en", "en-us", "en_us", "english", "ingles", "inglês":
+	case "en", "en-us", "en_us", "english", "ingles", "ingl\u00eas":
 		return EN
 	}
 	return ""
 }
 
-// parseSystem lê um locale do sistema. C e POSIX não dizem nada sobre o idioma; qualquer
-// outro idioma cai em inglês, que é o que a pessoa tem mais chance de ler.
+// parseSystem reads a system locale. C and POSIX say nothing about the language; any other
+// language falls back to English, which the user is most likely to read.
 func parseSystem(locale string) string {
 	locale = strings.ToLower(strings.TrimSpace(locale))
 	base, _, _ := strings.Cut(locale, ".")
@@ -132,7 +132,7 @@ func macLanguage() string {
 	return macLang.FindString(string(out))
 }
 
-// ---------------------------------------------------------------- configuração salva
+// ---------------------------------------------------------------- saved configuration
 
 func configPath() string {
 	home, _ := os.UserHomeDir()
@@ -152,10 +152,10 @@ func savedLang() string {
 	return ""
 }
 
-// SavedLang informa o idioma salvo com "romanctl config lang".
+// SavedLang reports the language saved with "romanctl config lang".
 func SavedLang() string { return Parse(savedLang()) }
 
-// Save grava o idioma, ou apaga a escolha quando lang é vazio.
+// Save stores the language, or clears the choice when lang is empty.
 func Save(lang string) error {
 	if lang == "" {
 		if err := os.Remove(configPath()); err != nil && !os.IsNotExist(err) {
@@ -169,7 +169,7 @@ func Save(lang string) error {
 	return os.WriteFile(configPath(), []byte("lang: "+lang+"\n"), 0o644)
 }
 
-// Source explica de onde veio o idioma em uso.
+// Source explains where the language in use came from.
 func Source() string {
 	_, source := Resolve(os.Args, os.Getenv, savedLang, macLanguage)
 	return source

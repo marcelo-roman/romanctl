@@ -1,51 +1,51 @@
 ---
 name: romanctl-maintenance
-description: Mantém o próprio romanctl — atualizar para a versão nova (self-update), trocar o idioma, preparar a máquina para trabalhar sem internet (offline prep/test) e instalar ou atualizar estas skills do Claude. Use quando o usuário pedir para atualizar o romanctl, mudar o idioma, trabalhar offline, ou quando as skills estiverem desatualizadas.
+description: Maintains romanctl itself — update to the new version (self-update), change the language, prepare the machine to work without internet (offline prep/test) and install or update these Claude skills. Use when the user asks to update romanctl, change the language, work offline, or when the skills are outdated.
 ---
 
-# Manutenção do romanctl
+# romanctl maintenance
 
-Siga as regras gerais da skill `romanctl`.
+Follow the general rules of the `romanctl` skill.
 
-## Versão e atualização
+## Version and updates
 
 ```bash
 romanctl version
 romanctl self-update --check --json        # current, latest, updateAvailable
-romanctl self-update --yes --json          # atualiza; confere o SHA-256 e testa antes de trocar
-romanctl self-update --version v0.1.0 --yes --json   # volta para uma versão específica
+romanctl self-update --yes --json          # updates; verifies the SHA-256 and tests before swapping
+romanctl self-update --version v0.1.0 --yes --json   # goes back to a specific version
 ```
 
-Depois de atualizar, rode `romanctl claude install` para as skills acompanharem a versão nova.
+After updating, run `romanctl claude install` so the skills follow the new version.
 
-## Estas skills
+## These skills
 
 ```bash
-romanctl claude status --json      # instalada, desatualizada, ausente ou alheia, por skill
-romanctl claude install --json     # instala ou atualiza
-romanctl claude uninstall --json   # remove só as que o romanctl instalou
+romanctl claude status --json      # installed, outdated, missing or foreign, per skill
+romanctl claude install --json     # installs or updates
+romanctl claude uninstall --json   # removes only the ones romanctl installed
 ```
 
-O romanctl só mexe em pastas que ele mesmo criou (têm o arquivo `.romanctl`). Uma pasta com o
-mesmo nome criada à mão aparece como `alheia` e só é sobrescrita com `--force`; pergunte ao
-usuário antes.
+romanctl only touches folders it created itself (they have the `.romanctl` file). A folder with the
+same name created by hand shows up as `foreign` and is only overwritten with `--force`; ask the
+user first.
 
-## Idioma
+## Language
 
 ```bash
-romanctl config lang pt    # ou en, ou auto para seguir o sistema
+romanctl config lang pt    # or en, or auto to follow the system
 ```
 
-Para uma única chamada: `--lang en`. As mensagens mudam; as chaves do JSON, não.
+For a single call: `--lang en`. Messages change; JSON keys do not.
 
-## Sem internet
+## Without internet
 
 ```bash
 romanctl offline status
-romanctl offline prep [--force]   # baixa templates, caches e extensões; precisa de internet
-romanctl templates update --json  # baixa de novo os templates de projeto e os geradores
-romanctl offline test             # cria e compila cada tipo de projeto com a rede bloqueada
+romanctl offline prep [--force]   # downloads templates, caches and extensions; needs internet
+romanctl templates update --json  # downloads the project templates and generators again
+romanctl offline test             # creates and builds each project type with the network blocked
 ```
 
-`offline prep` e `offline test` demoram; avise e rode em segundo plano. Com a preparação
-feita, `romanctl new <tipo> <nome> --offline` cria projetos sem rede.
+`offline prep` and `offline test` take a while; warn the user and run them in the background. Once the preparation
+is done, `romanctl new <type> <name> --offline` creates projects without network.

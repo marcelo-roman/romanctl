@@ -6,7 +6,7 @@ import (
 	"romanctl/internal/ui"
 )
 
-// templatesCommand mostra e atualiza os templates, que ficam fora do binário.
+// templatesCommand shows and updates the templates, which live outside the binary.
 func templatesCommand(args []string) error {
 	switch arg(args, 0) {
 	case "", "status", "path":
@@ -16,19 +16,19 @@ func templatesCommand(args []string) error {
 			return ui.PrintJSON(status)
 		}
 		if !scaffold.Installed() {
-			ui.Warnf("Os templates ainda não foram baixados. Com internet, rode: romanctl templates update")
+			ui.Warnf("The templates have not been downloaded yet. With internet, run: romanctl templates update")
 			return nil
 		}
-		i18n.Printf("Templates em %s\n", scaffold.Root())
+		i18n.Printf("Templates in %s\n", scaffold.Root())
 		if ref := scaffold.InstalledRef(); ref != "" {
-			i18n.Printf("Versão: %s\n", ref)
+			i18n.Printf("Version: %s\n", ref)
 		}
-		i18n.Printf("%d templates de projeto. Para ver: romanctl catalog\n", status["count"])
+		i18n.Printf("%d project templates. To see them: romanctl catalog\n", status["count"])
 		return nil
 	case "update", "atualizar":
 		var result scaffold.UpdateResult
 		var err error
-		ui.Spin(i18n.T("Baixando os templates..."), func(func(string)) { result, err = scaffold.Update(flagVals["ref"]) })
+		ui.Spin(i18n.T("Downloading the templates..."), func(func(string)) { result, err = scaffold.Update(flagVals["ref"]) })
 		if err != nil {
 			return err
 		}
@@ -36,10 +36,10 @@ func templatesCommand(args []string) error {
 			return ui.PrintJSON(result)
 		}
 		if result.Fallback {
-			ui.Warnf("A versão %s ainda não tem templates publicados; vieram os da main", version)
+			ui.Warnf("Version %s has no published templates yet; the ones from main were used", version)
 		}
-		ui.Okf("Templates atualizados (%s) em %s", result.Ref, result.Path)
+		ui.Okf("Templates updated (%s) in %s", result.Ref, result.Path)
 		return nil
 	}
-	return ui.Usagef("use: romanctl templates [status|update] [--ref <tag ou branch>] [--json]")
+	return ui.Usagef("usage: romanctl templates [status|update] [--ref <tag or branch>] [--json]")
 }

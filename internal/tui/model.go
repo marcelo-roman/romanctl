@@ -1,4 +1,4 @@
-// Package tui é o painel de tela cheia do romanctl, nos moldes do k9s.
+// Package tui is romanctl's full-screen panel, modeled after k9s.
 package tui
 
 import (
@@ -28,84 +28,84 @@ var viewOrder = []string{viewProjects, viewServices, viewTools, viewSystem}
 func viewTitle(v string) string {
 	switch v {
 	case viewServices:
-		return i18n.T("Serviços")
+		return i18n.T("Services")
 	case viewProjects:
-		return i18n.T("Projetos")
+		return i18n.T("Projects")
 	case viewTools:
-		return i18n.T("Ferramentas")
+		return i18n.T("Tools")
 	}
-	return i18n.T("Sistema")
+	return i18n.T("System")
 }
 
 func statusText(s string) string {
 	switch s {
-	case "rodando":
-		return i18n.T("rodando")
-	case "parado":
-		return i18n.T("parado")
-	case "caiu":
-		return i18n.T("caiu")
-	case "nao-instalado":
-		return i18n.T("não instalado")
-	case "instalado":
-		return i18n.T("instalado")
-	case "disponivel":
-		return i18n.T("disponível")
-	case "preparado":
-		return i18n.T("só os serviços")
+	case "running":
+		return i18n.T("running")
+	case "stopped":
+		return i18n.T("stopped")
+	case "crashed":
+		return i18n.T("crashed")
+	case "not-installed":
+		return i18n.T("not installed")
+	case "installed":
+		return i18n.T("installed")
+	case "available":
+		return i18n.T("available")
+	case "prepared":
+		return i18n.T("services only")
 	}
 	return s
 }
 
-// action é algo que a tecla faz sobre a linha selecionada.
+// action is something a key does to the selected row.
 type action struct {
 	key     string
 	label   string
-	args    func(key string) []string // comando do romanctl
-	exec    bool                      // precisa do terminal: o painel sai da frente
-	confirm string                    // pergunta antes, com y/n
+	args    func(key string) []string // romanctl command
+	exec    bool                      // needs the terminal: the panel steps aside
+	confirm string                    // asks first, with y/n
 	when    func(r Row) bool
 
-	question string // pergunta já pronta, quando o texto depende da linha
-	version  string // versão escolhida na lista de versões
+	question string // ready-made question, when the text depends on the row
+	version  string // version chosen in the version list
 }
 
-// engineGroup marca a linha do Docker: ligar e desligar o daemon pede sudo, então a ação toma o
-// terminal, e parar avisa que derruba todos os containers da máquina.
+// engineGroup marks the Docker row: starting and stopping the daemon needs sudo, so the action takes
+// over the terminal, and stopping warns that it brings down every container on the machine.
 const engineGroup = "engine"
 
-const engineWarning = "Parar o Docker derruba todos os containers da máquina, não só os do romanctl. Parar %s?"
+const engineWarning = "Stopping Docker brings down every container on the machine, not only romanctl's. Stop %s?"
 
 var actions = map[string][]action{
 	viewServices: {
-		{key: "s", label: "iniciar", args: func(k string) []string { return []string{"start", k} }, when: both(container, not("rodando", "nao-instalado"))},
-		{key: "x", label: "parar", args: func(k string) []string { return []string{"stop", k} }, when: both(container, is("rodando"))},
-		{key: "r", label: "reiniciar", args: func(k string) []string { return []string{"restart", k} }, when: both(container, is("rodando"))},
-		{key: "s", label: "iniciar", args: func(k string) []string { return []string{"start", k} }, exec: true, when: both(engine, not("rodando", "nao-instalado"))},
-		{key: "x", label: "parar", args: func(k string) []string { return []string{"stop", k, "--yes"} }, exec: true, when: both(engine, is("rodando")), confirm: engineWarning},
-		{key: "r", label: "reiniciar", args: func(k string) []string { return []string{"restart", k, "--yes"} }, exec: true, when: both(engine, is("rodando")), confirm: engineWarning},
+		{key: "s", label: "start", args: func(k string) []string { return []string{"start", k} }, when: both(container, not("running", "not-installed"))},
+		{key: "x", label: "stop", args: func(k string) []string { return []string{"stop", k} }, when: both(container, is("running"))},
+		{key: "r", label: "restart", args: func(k string) []string { return []string{"restart", k} }, when: both(container, is("running"))},
+		{key: "s", label: "start", args: func(k string) []string { return []string{"start", k} }, exec: true, when: both(engine, not("running", "not-installed"))},
+		{key: "x", label: "stop", args: func(k string) []string { return []string{"stop", k, "--yes"} }, exec: true, when: both(engine, is("running")), confirm: engineWarning},
+		{key: "r", label: "restart", args: func(k string) []string { return []string{"restart", k, "--yes"} }, exec: true, when: both(engine, is("running")), confirm: engineWarning},
 	},
 	viewProjects: {
-		{key: "u", label: "subir (up -d)", args: func(k string) []string { return []string{"up", k, "-d"} }, when: not("rodando")},
-		{key: "x", label: "derrubar (down)", args: func(k string) []string { return []string{"down", k} }, when: is("rodando", "caiu", "preparado")},
-		{key: "r", label: "rodar aqui", args: func(k string) []string { return []string{"run", k} }, exec: true},
-		{key: "a", label: "adicionar código", args: func(k string) []string { return []string{"add", "--project", k} }, exec: true},
-		{key: "e", label: "editar (code-server)", args: func(k string) []string { return []string{"code", k} }},
-		{key: "o", label: "abrir o app", args: func(k string) []string { return []string{"open", k, "--app"} }, when: is("rodando")},
-		{key: "p", label: "publicar", args: func(k string) []string { return []string{"publish", k} }, exec: true},
-		{key: "ctrl+d", label: "remover", args: func(k string) []string { return []string{"rm", k, "--yes"} }, confirm: "Remover o projeto %s e todos os arquivos dele?"},
+		{key: "u", label: "bring up (up -d)", args: func(k string) []string { return []string{"up", k, "-d"} }, when: not("running")},
+		{key: "x", label: "bring down (down)", args: func(k string) []string { return []string{"down", k} }, when: is("running", "crashed", "prepared")},
+		{key: "r", label: "run here", args: func(k string) []string { return []string{"run", k} }, exec: true},
+		{key: "a", label: "add code", args: func(k string) []string { return []string{"add", "--project", k} }, exec: true},
+		{key: "e", label: "edit (code-server)", args: func(k string) []string { return []string{"code", k} }},
+		{key: "o", label: "open the app", args: func(k string) []string { return []string{"open", k, "--app"} }, when: is("running")},
+		{key: "p", label: "publish", args: func(k string) []string { return []string{"publish", k} }, exec: true},
+		{key: "ctrl+d", label: "remove", args: func(k string) []string { return []string{"rm", k, "--yes"} }, confirm: "Remove project %s and all its files?"},
 	},
 	viewTools: {
-		{key: "i", label: "instalar", args: func(k string) []string { return []string{"tools", "install", k, "--yes"} }, when: is("disponivel"), confirm: "Instalar %s?"},
-		{key: "r", label: "reinstalar", args: func(k string) []string { return []string{"tools", "install", k, "--yes", "--force"} }, when: is("instalado"), confirm: "Reinstalar %s?"},
-		{key: "ctrl+d", label: "remover", args: func(k string) []string { return []string{"tools", "uninstall", k, "--yes"} }, when: is("instalado"), confirm: "Remover a ferramenta %s?"},
+		{key: "i", label: "install", args: func(k string) []string { return []string{"tools", "install", k, "--yes"} }, when: is("available"), confirm: "Install %s?"},
+		{key: "r", label: "reinstall", args: func(k string) []string { return []string{"tools", "install", k, "--yes", "--force"} }, when: is("installed"), confirm: "Reinstall %s?"},
+		{key: "ctrl+d", label: "remove", args: func(k string) []string { return []string{"tools", "uninstall", k, "--yes"} }, when: is("installed"), confirm: "Remove tool %s?"},
 	},
 }
 
-// Ações que valem para a tela, sem precisar de uma linha selecionada.
+// Actions that apply to the screen, without needing a selected row.
 var globalActions = map[string][]action{
-	viewProjects: {{key: "n", label: "novo projeto", args: func(string) []string { return []string{"new"} }, exec: true}},
-	viewServices: {{key: "n", label: "instalar serviço", args: func(string) []string { return []string{"install"} }, exec: true}},
+	viewProjects: {{key: "n", label: "new project", args: func(string) []string { return []string{"new"} }, exec: true}},
+	viewServices: {{key: "n", label: "install service", args: func(string) []string { return []string{"install"} }, exec: true}},
 }
 
 func engine(r Row) bool    { return r.Group == engineGroup }
@@ -135,7 +135,7 @@ const (
 	modeVersions
 )
 
-// Model é o estado do painel.
+// Model is the panel state.
 type Model struct {
 	backend Backend
 	version string
@@ -154,7 +154,7 @@ type Model struct {
 	flash    string
 	flashErr bool
 	flashAt  time.Time
-	running  map[string]string // view/key → o que está em andamento
+	running  map[string]string // view/key → what is in progress
 	loading  bool
 	spin     int
 
@@ -187,7 +187,7 @@ type Model struct {
 	quit    bool
 }
 
-// New cria o painel.
+// New creates the panel.
 func New(b Backend) *Model {
 	return &Model{backend: b, view: viewProjects, width: 100, height: 30,
 		rows: map[string][]Row{}, loaded: map[string]bool{}, cursor: map[string]int{}, offset: map[string]int{}, running: map[string]string{},
@@ -195,7 +195,7 @@ func New(b Backend) *Model {
 		latest: map[string]tools.Upstream{}, asked: map[string]bool{}, versions: map[string][]tools.Version{}, verErr: map[string]string{}}
 }
 
-// ---------------------------------------------------------------- mensagens
+// ---------------------------------------------------------------- messages
 
 type rowsMsg struct {
 	view string
@@ -226,8 +226,8 @@ type versionsMsg struct {
 	err  error
 }
 
-// fetchLatest pede a última versão de cada ferramenta da lista, uma vez por sessão; o backend
-// limita quantas vão à rede ao mesmo tempo e guarda o resultado por algumas horas.
+// fetchLatest asks for the latest version of each tool in the list, once per session; the backend
+// limits how many hit the network at once and caches the result for a few hours.
 func (m *Model) fetchLatest() tea.Cmd {
 	var cmds []tea.Cmd
 	b := m.backend
@@ -257,7 +257,7 @@ func (m *Model) openVersions(r Row) tea.Cmd {
 	}
 }
 
-// fetchUpstream consulta a origem da ferramenta uma vez por sessão, em segundo plano.
+// fetchUpstream queries the tool's upstream once per session, in the background.
 func (m *Model) fetchUpstream(key string) tea.Cmd {
 	if _, ok := m.upstream[key]; ok || m.fetching[key] || key == "" {
 		return nil
@@ -267,8 +267,8 @@ func (m *Model) fetchUpstream(key string) tea.Cmd {
 	return func() tea.Msg { return upstreamMsg{key, b.Upstream(key)} }
 }
 
-// watchSelection espera o cursor parar numa ferramenta antes de consultar a rede: descer a
-// lista com j não pode disparar uma consulta por linha.
+// watchSelection waits for the cursor to settle on a tool before querying the network: moving
+// down the list with j must not fire one query per row.
 func (m *Model) watchSelection() tea.Cmd {
 	if m.view != viewTools {
 		return nil
@@ -305,13 +305,13 @@ func spinTick() tea.Cmd {
 	return tea.Tick(120*time.Millisecond, func(t time.Time) tea.Msg { return spinMsg(t) })
 }
 
-// Init carrega a primeira tela e liga a atualização automática.
+// Init loads the first screen and turns on automatic refresh.
 func (m *Model) Init() tea.Cmd {
 	m.loading = true
 	return tea.Batch(m.load(m.view), m.load(viewServices), m.load(viewSystem), tick(), spinTick())
 }
 
-// ---------------------------------------------------------------- filtro e seleção
+// ---------------------------------------------------------------- filter and selection
 
 func (m *Model) categories() []string {
 	var out []string
@@ -376,7 +376,7 @@ func (m *Model) setFlash(text string, isErr bool) {
 	m.flash, m.flashErr, m.flashAt = text, isErr, time.Now()
 }
 
-// ---------------------------------------------------------------- comandos
+// ---------------------------------------------------------------- commands
 
 var commandViews = map[string]string{
 	"svc": viewServices, "services": viewServices, "servicos": viewServices, "s": viewServices,
@@ -414,7 +414,7 @@ func (m *Model) runCommand(text string) tea.Cmd {
 	if v, ok := commandViews[text]; ok {
 		return m.switchView(v)
 	}
-	// Um grupo de ferramentas também é um destino, como :db ou :k8s.
+	// A tool group is also a destination, such as :db or :k8s.
 	if key, ok := tools.FindGroup(text); ok {
 		cmd := m.switchView(viewTools)
 		for i, c := range m.categories() {
@@ -425,7 +425,7 @@ func (m *Model) runCommand(text string) tea.Cmd {
 		m.pendingCategory = key
 		return cmd
 	}
-	m.setFlash(i18n.Sprintf("Comando desconhecido: %s. Use ? para ver as opções.", text), true)
+	m.setFlash(i18n.Sprintf("Unknown command: %s. Use ? to see the options.", text), true)
 	return nil
 }
 
@@ -447,14 +447,14 @@ func (m *Model) start(a action, r Row) tea.Cmd {
 	}
 	id := m.view + "/" + r.Key
 	if _, busy := m.running[id]; busy {
-		m.setFlash(i18n.Sprintf("%s ainda está em andamento", r.Key), true)
+		m.setFlash(i18n.Sprintf("%s is still in progress", r.Key), true)
 		return nil
 	}
 	label := i18n.T(a.label) + " " + r.Key
 	m.running[id] = i18n.T(a.label)
 	if a.version != "" {
-		label = i18n.Sprintf("instalar %s %s", r.Key, a.version)
-		m.running[id] = i18n.Sprintf("instalando %s", a.version)
+		label = i18n.Sprintf("install %s %s", r.Key, a.version)
+		m.running[id] = i18n.Sprintf("installing %s", a.version)
 	}
 	b := m.backend
 	return func() tea.Msg {
@@ -469,9 +469,9 @@ func lastLine(s string) string {
 	return strings.TrimSpace(lines[len(lines)-1])
 }
 
-// ---------------------------------------------------------------- atualização
+// ---------------------------------------------------------------- update
 
-// Update trata mensagens e teclas.
+// Update handles messages and keys.
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -516,7 +516,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case m.mode == modeLogs:
 			cmds = append(cmds, m.loadLogs())
-		// A lista de ferramentas muda pouco, e consultá-la custa caro: só atualiza por ação.
+		// The tool list rarely changes and is expensive to query: it only refreshes after an action.
 		case m.view != viewTools:
 			cmds = append(cmds, m.load(m.view))
 		}
@@ -529,7 +529,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.setFlash(msg.label+": "+lastLine(msg.output), true)
 		} else {
-			m.setFlash(msg.label+": "+i18n.T("concluído"), false)
+			m.setFlash(msg.label+": "+i18n.T("done"), false)
 		}
 		view := strings.SplitN(msg.id, "/", 2)[0]
 		cmds := []tea.Cmd{m.load(view)}
@@ -568,8 +568,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// Digitação rápida ou colar chega como várias letras num evento só: "/redis" precisa abrir
-	// o filtro e depois escrever, e não ser ignorado como uma tecla desconhecida.
+	// Fast typing or pasting arrives as several letters in a single event: "/redis" must open
+	// the filter and then type, not be ignored as an unknown key.
 	if msg.Type == tea.KeyRunes && len(msg.Runes) > 1 && !msg.Paste {
 		var cmds []tea.Cmd
 		for _, r := range msg.Runes {
@@ -706,7 +706,7 @@ func (m *Model) keyTable(key string) (tea.Model, tea.Cmd) {
 			m.cursor[m.view] = 0
 		}
 	case "ctrl+r":
-		m.setFlash(i18n.T("Atualizando..."), false)
+		m.setFlash(i18n.T("Refreshing..."), false)
 		return m, m.load(m.view)
 	case "d":
 		if r, ok := m.selected(); ok {
@@ -805,11 +805,11 @@ func (m *Model) keyVersions(key string) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// installAction instala a versão escolhida na lista. Trocar a versão de algo instalado é
-// reinstalar, e o romanctl entende isso sozinho quando a versão pedida é outra.
+// installAction installs the version chosen in the list. Changing the version of something installed
+// is a reinstall, and romanctl works that out by itself when the requested version differs.
 func installAction(v tools.Version, r Row) action {
-	return action{key: "enter", label: "instalar " + v.Label, version: v.Label, confirm: "Instalar %s?",
-		question: i18n.Sprintf("Instalar %s %s?", r.Key, v.Label),
+	return action{key: "enter", label: i18n.Sprintf("install %s", v.Label), version: v.Label, confirm: "Install %s?",
+		question: i18n.Sprintf("Install %s %s?", r.Key, v.Label),
 		args:     func(k string) []string { return []string{"tools", "install", k, "--version", v.ID, "--yes"} }}
 }
 
@@ -848,7 +848,7 @@ func (m *Model) keyDetail(key string) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) openLogs(r Row) tea.Cmd {
-	m.mode, m.logTitle, m.logView, m.logKey, m.logText, m.logTop, m.follow = modeLogs, r.Key, m.view, r.Key, i18n.T("Carregando..."), 0, true
+	m.mode, m.logTitle, m.logView, m.logKey, m.logText, m.logTop, m.follow = modeLogs, r.Key, m.view, r.Key, i18n.T("Loading..."), 0, true
 	return m.loadLogs()
 }
 

@@ -17,7 +17,7 @@ import (
 	"romanctl/internal/manifest"
 )
 
-// SuperviseArg é o subcomando interno que roda os processos de um projeto. Não aparece na ajuda.
+// SuperviseArg is the internal subcommand that runs a project's processes. It is not shown in help.
 const SuperviseArg = "__supervise"
 
 const stopGrace = 5 * time.Second
@@ -32,7 +32,7 @@ type exit struct {
 	code int
 }
 
-// SuperviseHere roda os processos do romanctl.yaml da pasta atual.
+// SuperviseHere runs the processes of the romanctl.yaml in the current directory.
 func SuperviseHere() int {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -41,15 +41,15 @@ func SuperviseHere() int {
 	}
 	m, ok := manifest.Read(dir)
 	if !ok || len(m.Processes) == 0 {
-		fmt.Fprintln(os.Stderr, i18n.T("o romanctl.yaml desta pasta não declara processos"))
+		fmt.Fprintln(os.Stderr, i18n.T("the romanctl.yaml in this folder declares no processes"))
 		return 2
 	}
 	return Supervise(dir, m.Processes, os.Stdout)
 }
 
-// Supervise sobe cada processo no próprio grupo, com o nome no começo de cada linha. Quando um
-// termina, ou quando chega Ctrl+C ou SIGTERM, para os outros e devolve o código do primeiro que
-// terminou. Assim quem espera o projeto subir percebe a queda na hora.
+// Supervise starts each process in its own group, prefixing every line with its name. When one
+// exits, or on Ctrl+C or SIGTERM, it stops the others and returns the exit code of the first one
+// to exit. That way whoever waits for the project to come up notices the crash right away.
 func Supervise(dir string, processes []manifest.Process, out io.Writer) int {
 	var mu sync.Mutex
 	exits := make(chan exit, len(processes))
@@ -79,7 +79,7 @@ func Supervise(dir string, processes []manifest.Process, out io.Writer) int {
 			code = 1
 		}
 		mu.Lock()
-		fmt.Fprintf(out, i18n.T("[%s] terminou com código %d; parando os outros processos")+"\n", first.name, first.code)
+		fmt.Fprintf(out, i18n.T("[%s] exited with code %d; stopping the other processes")+"\n", first.name, first.code)
 		mu.Unlock()
 	case <-signals:
 	}

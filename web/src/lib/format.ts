@@ -14,7 +14,7 @@ export function formatPercent(value: number): string {
 }
 
 export function locale(lang: Lang): string {
-  return lang === "en" ? "en-US" : "pt-BR";
+  return lang === "pt" ? "pt-BR" : "en-US";
 }
 
 export function formatTime(iso: string, lang: Lang): string {

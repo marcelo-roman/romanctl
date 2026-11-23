@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// quiet esconde a saída do comando e só a mostra em caso de erro.
+// quiet hides the command's output and only shows it on error.
 func Quiet(dir string, env []string, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Dir = dir
@@ -28,7 +28,7 @@ func Tail(s string, n int) string {
 	return strings.Join(lines, "\n")
 }
 
-// run executa um comando com stdin/stdout/stderr ligados ao terminal.
+// run executes a command with stdin/stdout/stderr attached to the terminal.
 func Run(dir string, env []string, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Dir = dir
@@ -37,13 +37,13 @@ func Run(dir string, env []string, name string, args ...string) error {
 	return cmd.Run()
 }
 
-// output executa um comando e devolve a saída (stdout+stderr) sem espaços nas pontas.
+// output executes a command and returns its output (stdout+stderr), trimmed.
 func Output(name string, args ...string) (string, error) {
 	out, err := exec.Command(name, args...).CombinedOutput()
 	return strings.TrimSpace(string(out)), err
 }
 
-// outputEnv é como output, com variáveis de ambiente extras.
+// outputEnv is like output, with extra environment variables.
 func OutputEnv(env []string, name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
 	cmd.Env = append(os.Environ(), env...)
@@ -51,7 +51,7 @@ func OutputEnv(env []string, name string, args ...string) (string, error) {
 	return strings.TrimSpace(string(out)), err
 }
 
-// outputIn é como output, mas executa dentro do diretório dir.
+// outputIn is like output, but runs inside directory dir.
 func OutputIn(dir, name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
 	cmd.Dir = dir

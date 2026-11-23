@@ -14,5 +14,5 @@ func Command(sub string, flags map[string]bool) error {
 	case "test", "testar":
 		return offlineTest()
 	}
-	return i18n.Errorf("use: romanctl offline [status|prep|test]")
+	return i18n.Errorf("usage: romanctl offline [status|prep|test]")
 }

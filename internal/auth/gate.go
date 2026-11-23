@@ -10,8 +10,8 @@ import (
 	"romanctl/internal/i18n"
 )
 
-// Em pipelines não há navegador: ROMANCTL_CLIENT_ID e ROMANCTL_CLIENT_SECRET fazem o login com
-// client_credentials num cliente da API do mesmo realm, criado no IAM Manager.
+// Pipelines have no browser: ROMANCTL_CLIENT_ID and ROMANCTL_CLIENT_SECRET log in with
+// client_credentials using an API client of the same realm, created in IAM Manager.
 func serviceCredentials() (id, secret string, ok bool) {
 	id, secret = os.Getenv("ROMANCTL_CLIENT_ID"), os.Getenv("ROMANCTL_CLIENT_SECRET")
 	return id, secret, id != "" && secret != ""
@@ -32,7 +32,7 @@ func serviceSession(ctx context.Context) (*Session, error) {
 	ep := DefaultEndpoints()
 	t, err := postToken(ctx, ep.oidc("token"), url.Values{"grant_type": {"client_credentials"}, "client_id": {id}, "client_secret": {secret}})
 	if err != nil {
-		return nil, i18n.Errorf("login com ROMANCTL_CLIENT_ID falhou: %v", err)
+		return nil, i18n.Errorf("login with ROMANCTL_CLIENT_ID failed: %v", err)
 	}
 	s := &Session{Issuer: ep.Issuer, ClientID: id, API: ep.API}
 	if err := s.apply(t, time.Now()); err != nil {
@@ -42,7 +42,7 @@ func serviceSession(ctx context.Context) (*Session, error) {
 	return s, nil
 }
 
-// Current devolve a sessão em uso: a do client de serviço, se configurado, ou a do login.
+// Current returns the session in use: the service client's, if configured, or the login's.
 func Current(ctx context.Context) (*Session, error) {
 	if _, _, ok := serviceCredentials(); ok {
 		return serviceSession(ctx)
@@ -50,8 +50,8 @@ func Current(ctx context.Context) (*Session, error) {
 	return Load()
 }
 
-// Require é a porta da CLI. Sem rede, a sessão salva basta enquanto o refresh token valer; com rede,
-// a cada 12 h ela é conferida no Keycloak, e uma sessão revogada ou um usuário bloqueado saem na hora.
+// Require is the CLI's gate. Offline, the saved session is enough while the refresh token is valid;
+// online, it is checked against Keycloak every 12 h, so a revoked session or a blocked user is out at once.
 func Require(ctx context.Context) error {
 	if _, _, ok := serviceCredentials(); ok {
 		_, err := serviceSession(ctx)
@@ -80,7 +80,7 @@ func Require(ctx context.Context) error {
 	return nil
 }
 
-// AccessToken devolve um access token válido, renovando quando falta menos de 30 s.
+// AccessToken returns a valid access token, refreshing it when less than 30 s remain.
 func AccessToken(ctx context.Context) (string, *Session, error) {
 	s, err := Current(ctx)
 	if err != nil {

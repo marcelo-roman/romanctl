@@ -10,7 +10,7 @@ import (
 	"golang.org/x/term"
 )
 
-// Markdown desenha o texto no terminal; se não renderizar, devolve o texto cru.
+// Markdown renders the text for the terminal; if rendering fails, it returns the raw text.
 func Markdown(text string, width int, dark bool) string {
 	style := "dark"
 	if !dark {
@@ -31,10 +31,10 @@ func Markdown(text string, width int, dark bool) string {
 	return strings.Join(lines, "\n")
 }
 
-// O glamour completa cada linha com espaços coloridos até a largura toda.
+// glamour pads each line with colored spaces up to the full width.
 var trailingPad = regexp.MustCompile(`(?:\x1b\[[0-9;]*m| )+$`)
 
-// Width é a largura do terminal, com um padrão para quando a saída não é um terminal.
+// Width is the terminal width, with a default for when the output is not a terminal.
 func Width() int {
 	if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 0 {
 		return w
@@ -44,8 +44,8 @@ func Width() int {
 
 func init() { lipgloss.SetHasDarkBackground(DarkBackground()) }
 
-// DarkBackground decide o tema sem perguntar ao terminal: a pergunta (OSC 11) trava em
-// terminais que não respondem. Usa o COLORFGBG quando existe; sem ele, fundo escuro.
+// DarkBackground picks the theme without querying the terminal: the query (OSC 11) hangs on
+// terminals that do not answer. Uses COLORFGBG when set; otherwise assumes a dark background.
 func DarkBackground() bool {
 	v := os.Getenv("COLORFGBG")
 	if v == "" {

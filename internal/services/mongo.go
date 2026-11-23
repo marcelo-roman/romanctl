@@ -42,7 +42,7 @@ func mongo() *Service {
 }
 
 func installMongo() error {
-	ui.Infof("Procurando a última versão 7.0.x...")
+	ui.Infof("Looking for the latest 7.0.x version...")
 	resp, err := http.Get("https://downloads.mongodb.org/full.json")
 	if err != nil {
 		return err
@@ -77,9 +77,9 @@ func installMongo() error {
 		}
 	}
 	if url == "" {
-		return i18n.Errorf("não achei build 7.0 aarch64")
+		return i18n.Errorf("could not find a 7.0 aarch64 build")
 	}
-	ui.Infof("Baixando MongoDB %s...", ver)
+	ui.Infof("Downloading MongoDB %s...", ver)
 	tmp, err := os.CreateTemp("", "mongodb-*.tgz")
 	if err != nil {
 		return err
@@ -96,18 +96,18 @@ func installMongo() error {
 	}
 	tmp.Close()
 	if got := hex.EncodeToString(h.Sum(nil)); got != sum {
-		return i18n.Errorf("checksum não confere (esperado %s, obtido %s)", sum, got)
+		return i18n.Errorf("checksum mismatch (expected %s, got %s)", sum, got)
 	}
-	ui.Okf("Checksum SHA-256 conferido")
+	ui.Okf("SHA-256 checksum verified")
 	os.RemoveAll(MongoHome)
 	os.MkdirAll(MongoHome, 0o755)
 	if out, err := sys.Output("tar", "-xzf", tmp.Name(), "-C", MongoHome, "--strip-components=1"); err != nil {
 		return i18n.Errorf("tar: %v %s", err, out)
 	}
 	if !sys.Have("mongosh") {
-		ui.Infof("Instalando mongosh (npm)...")
+		ui.Infof("Installing mongosh (npm)...")
 		if err := sys.Run("", nil, "npm", "install", "-g", "mongosh"); err != nil {
-			ui.Warnf("mongosh não instalado: %v", err)
+			ui.Warnf("mongosh not installed: %v", err)
 		}
 	}
 	return nil

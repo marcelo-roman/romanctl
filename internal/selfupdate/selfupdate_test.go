@@ -30,11 +30,11 @@ func TestCompare(t *testing.T) {
 func TestChecksumFor(t *testing.T) {
 	sums := "aaa  romanctl-linux-amd64\nbbb *romanctl-linux-arm64\n"
 	if checksumFor(sums, "romanctl-linux-arm64") != "bbb" || checksumFor(sums, "romanctl-darwin-arm64") != "" {
-		t.Fatal("checksum errado")
+		t.Fatal("wrong checksum")
 	}
 }
 
-// release monta um servidor com o mesmo formato de URLs das releases do GitHub.
+// release sets up a server with the same URL layout as GitHub releases.
 func release(t *testing.T, version, script string, corrupt bool) string {
 	t.Helper()
 	binary := []byte("#!/bin/sh\n" + script + "\n")
@@ -67,7 +67,7 @@ func current(t *testing.T) string {
 	return target
 }
 
-func TestAtualiza(t *testing.T) {
+func TestUpdates(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip()
 	}
@@ -81,45 +81,45 @@ func TestAtualiza(t *testing.T) {
 	}
 	b, _ := os.ReadFile(target)
 	if !strings.Contains(string(b), "0.2.0") {
-		t.Fatalf("não trocou: %s", b)
+		t.Fatalf("not replaced: %s", b)
 	}
-	if _, err := os.Stat(target + ".anterior"); err == nil {
-		t.Fatal("deixou o backup")
+	if _, err := os.Stat(target + ".previous"); err == nil {
+		t.Fatal("left the backup behind")
 	}
 }
 
-func TestChecksumErradoNaoTroca(t *testing.T) {
+func TestWrongChecksumDoesNotReplace(t *testing.T) {
 	release(t, "0.2.0", "echo romanctl 0.2.0", true)
 	target := current(t)
 	if err := Install("0.2.0", target); err == nil || !strings.Contains(err.Error(), "checksum") {
 		t.Fatalf("%v", err)
 	}
 	if b, _ := os.ReadFile(target); !strings.Contains(string(b), "0.1.0") {
-		t.Fatal("trocou mesmo assim")
+		t.Fatal("replaced anyway")
 	}
 }
 
-func TestBinarioQueNaoRodaNaoTroca(t *testing.T) {
+func TestBinaryThatDoesNotRunDoesNotReplace(t *testing.T) {
 	release(t, "0.2.0", "exit 1", false)
 	target := current(t)
-	if err := Install("0.2.0", target); err == nil || !strings.Contains(err.Error(), "não rodou") {
+	if err := Install("0.2.0", target); err == nil || !strings.Contains(err.Error(), "did not run") {
 		t.Fatalf("%v", err)
 	}
 	if b, _ := os.ReadFile(target); !strings.Contains(string(b), "0.1.0") {
-		t.Fatal("trocou um binário quebrado")
+		t.Fatal("replaced with a broken binary")
 	}
 }
 
-func TestVersaoInexistente(t *testing.T) {
+func TestMissingVersion(t *testing.T) {
 	release(t, "0.2.0", "echo romanctl 0.2.0", false)
 	if err := Install("9.9.9", current(t)); err == nil {
-		t.Fatal("deveria falhar")
+		t.Fatal("should fail")
 	}
 }
 
-func TestPastaSemPermissao(t *testing.T) {
+func TestDirectoryWithoutPermission(t *testing.T) {
 	if os.Geteuid() == 0 {
-		t.Skip("root ignora permissões de pasta")
+		t.Skip("root ignores directory permissions")
 	}
 	release(t, "0.2.0", "echo romanctl 0.2.0", false)
 	target := current(t)
@@ -130,7 +130,7 @@ func TestPastaSemPermissao(t *testing.T) {
 	}
 }
 
-func TestLatestPeloRedirecionamento(t *testing.T) {
+func TestLatestFromRedirect(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/latest" {
 			http.Redirect(w, r, "/releases/tag/v0.3.1", http.StatusFound)

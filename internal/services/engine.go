@@ -11,20 +11,20 @@ import (
 	"romanctl/internal/ui"
 )
 
-// dockerEngine é o daemon do Docker. Ele aparece como serviço porque os bancos e filas dependem
-// dele, mas parar o daemon derruba todos os containers da máquina, não só os do romanctl.
+// dockerEngine is the Docker daemon. It shows up as a service because the databases and queues
+// depend on it, but stopping the daemon takes down every container on the machine, not only romanctl's.
 func dockerEngine() *Service {
 	s := &Service{Key: "docker", Name: "Docker", Aliases: []string{"dockerd", "docker-engine"}, Engine: true,
-		Warning: i18n.T("parar o Docker derruba todos os containers da máquina, não só os do romanctl")}
+		Warning: i18n.T("stopping Docker brings down every container on the machine, not only romanctl's")}
 	if platform.Current.Proot {
-		s.Unsupported = i18n.T("o proot não roda containers; use uma máquina com Docker")
+		s.Unsupported = i18n.T("proot cannot run containers; use a machine with Docker")
 	}
 	s.URL = dockerHost
 	s.Installed = func() bool {
 		if s.Unsupported != "" || !sys.Have("docker") {
 			return false
 		}
-		// O Docker Desktop não põe o dockerd nesta máquina: aí, existir é responder.
+		// Docker Desktop does not put dockerd on this machine: there, existing means answering.
 		return sys.Have("dockerd") || readEngine().up
 	}
 	s.Running = func() bool { return sys.Have("docker") && readEngine().up }
@@ -32,7 +32,7 @@ func dockerEngine() *Service {
 	s.start = func() error { defer forgetEngine(); return dockerDaemon("start") }
 	s.stop = func() error { defer forgetEngine(); return dockerDaemon("stop") }
 	s.install = func() error {
-		return i18n.Errorf("instale com: romanctl tools install docker")
+		return i18n.Errorf("install with: romanctl tools install docker")
 	}
 	if hasSystemd() {
 		s.LogCmd = func() []string { return []string{"journalctl", "-u", "docker", "-n", "50", "-f", "--no-pager"} }
@@ -41,7 +41,7 @@ func dockerEngine() *Service {
 	return s
 }
 
-// sudoFirst pede a senha antes do spinner, que apagaria a pergunta do sudo.
+// sudoFirst asks for the password before the spinner, which would erase sudo's prompt.
 func sudoFirst() error {
 	if os.Geteuid() == 0 || !ui.Interactive() || !sys.Have("dockerd") {
 		return nil
@@ -54,7 +54,7 @@ var (
 	hostSeen string
 )
 
-// dockerHost diz por onde o cliente fala com o daemon: o socket local ou o do contexto ativo.
+// dockerHost says how the client talks to the daemon: the local socket or the active context's.
 func dockerHost() string {
 	if h := os.Getenv("DOCKER_HOST"); h != "" {
 		return h
@@ -70,11 +70,11 @@ func dockerHost() string {
 
 func hasSystemd() bool { return sys.Exists("/run/systemd/system") && sys.Have("systemctl") }
 
-// dockerDaemon liga ou desliga o daemon pelo systemd ou pelo script de serviço. Sem terminal,
-// o sudo não pode pedir senha: aí a falha diz para rodar o comando num terminal.
+// dockerDaemon starts or stops the daemon through systemd or the service script. Without a terminal,
+// sudo cannot ask for a password: then the failure says to run the command in a terminal.
 func dockerDaemon(action string) error {
 	if !sys.Have("dockerd") {
-		return i18n.Errorf("este Docker vem do Docker Desktop: %s pelo próprio Docker Desktop", map[string]string{"start": i18n.T("inicie"), "stop": i18n.T("pare")}[action])
+		return i18n.Errorf("this Docker comes from Docker Desktop: %s it from Docker Desktop itself", map[string]string{"start": i18n.T("start"), "stop": i18n.T("stop")}[action])
 	}
 	command := []string{"service", "docker", action}
 	if hasSystemd() {
@@ -85,7 +85,7 @@ func dockerDaemon(action string) error {
 	}
 	if out, err := sys.Output(command[0], command[1:]...); err != nil {
 		if strings.Contains(out, "password") || strings.Contains(out, "senha") {
-			return i18n.Errorf("precisa da senha do sudo: rode romanctl %s docker em um terminal", action)
+			return i18n.Errorf("needs the sudo password: run romanctl %s docker in a terminal", action)
 		}
 		return i18n.Errorf("%v: %s", err, sys.Tail(out, 4))
 	}

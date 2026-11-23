@@ -1,4 +1,4 @@
-// Package webui serve a interface web do romanctl, só em 127.0.0.1.
+// Package webui serves romanctl's web interface, on 127.0.0.1 only.
 package webui
 
 import (
@@ -38,12 +38,12 @@ import (
 //go:embed all:dist
 var dist embed.FS
 
-// DefaultPort é a porta da interface quando --port não é informado.
+// DefaultPort is the interface port when --port is not given.
 const DefaultPort = 7777
 
 const tokenHeader = "X-Romanctl-Token"
 
-// Options são as escolhas do comando web-ui.
+// Options are the choices of the web-ui command.
 type Options struct {
 	Port    int
 	Open    bool
@@ -59,7 +59,7 @@ type server struct {
 	index   []byte
 }
 
-// Serve sobe a interface e só volta com Ctrl+C ou SIGTERM.
+// Serve starts the interface and only returns on Ctrl+C or SIGTERM.
 func Serve(opts Options) error {
 	exe, err := os.Executable()
 	if err != nil {
@@ -67,7 +67,7 @@ func Serve(opts Options) error {
 	}
 	listener, err := net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(opts.Port))
 	if err != nil {
-		return i18n.Errorf("não consegui usar a porta %d: %v (escolha outra com --port)", opts.Port, err)
+		return i18n.Errorf("could not use port %d: %v (pick another one with --port)", opts.Port, err)
 	}
 	s, err := newServer(opts.Port, opts.Version, exe)
 	if err != nil {
@@ -84,7 +84,7 @@ func Serve(opts Options) error {
 		srv.Shutdown(shutdown)
 	}()
 	url := "http://localhost:" + strconv.Itoa(opts.Port)
-	ui.Okf("Interface web em %s  (Ctrl+C para parar)", url)
+	ui.Okf("Web interface at %s  (Ctrl+C to stop)", url)
 	if opts.Open {
 		browser.OpenURL(url)
 	}
@@ -134,8 +134,8 @@ func (s *server) routes() http.Handler {
 	return s.localOnly(mux)
 }
 
-// localOnly recusa um Host que não seja este computador: barra DNS rebinding, em que outro site
-// faz o navegador chamar 127.0.0.1 com o nome dele.
+// localOnly refuses a Host that is not this computer: it blocks DNS rebinding, where another site
+// makes the browser call 127.0.0.1 under its own name.
 func (s *server) localOnly(next http.Handler) http.Handler {
 	allowed := map[string]bool{}
 	for _, h := range []string{"localhost", "127.0.0.1", "[::1]"} {
@@ -157,11 +157,11 @@ func (s *server) localOnly(next http.Handler) http.Handler {
 	})
 }
 
-// requireToken exige o token da página: outro site não consegue lê-lo, então não chama a API.
+// requireToken requires the page token: another site cannot read it, so it cannot call the API.
 func (s *server) requireToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get(tokenHeader) != s.token {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": i18n.T("token ausente ou inválido; recarregue a página")})
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": i18n.T("missing or invalid token; reload the page")})
 			return
 		}
 		w.Header().Set("Cache-Control", "no-store")
@@ -294,7 +294,7 @@ func (s *server) serviceList(w http.ResponseWriter, _ *http.Request) {
 func (s *server) serviceLogs(w http.ResponseWriter, r *http.Request) {
 	svc := services.FindService(r.PathValue("key"))
 	if svc == nil {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": i18n.T("serviço desconhecido")})
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": i18n.T("unknown service")})
 		return
 	}
 	if svc.LogTail == nil {
@@ -323,7 +323,7 @@ func (s *server) toolList(w http.ResponseWriter, _ *http.Request) {
 func (s *server) toolVersions(w http.ResponseWriter, r *http.Request) {
 	t := tools.Find(r.PathValue("key"))
 	if t == nil {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": i18n.T("ferramenta desconhecida")})
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": i18n.T("unknown tool")})
 		return
 	}
 	versions, err := t.Versions()
@@ -341,7 +341,7 @@ func (s *server) jobList(w http.ResponseWriter, _ *http.Request) {
 func (s *server) jobGet(w http.ResponseWriter, r *http.Request) {
 	j, ok := s.jobs.get(r.PathValue("id"))
 	if !ok {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": i18n.T("tarefa não encontrada")})
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": i18n.T("job not found")})
 		return
 	}
 	writeJSON(w, http.StatusOK, j)
@@ -350,12 +350,12 @@ func (s *server) jobGet(w http.ResponseWriter, r *http.Request) {
 func (s *server) jobStart(w http.ResponseWriter, r *http.Request) {
 	var req ActionRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64*1024)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": i18n.T("corpo inválido")})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": i18n.T("invalid body")})
 		return
 	}
 	a, ok := actions[req.Action]
 	if !ok {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": i18n.Sprintf("ação desconhecida: %s", req.Action)})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": i18n.Sprintf("unknown action: %s", req.Action)})
 		return
 	}
 	args, err := a.args(req)

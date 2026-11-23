@@ -16,15 +16,15 @@ import (
 )
 
 func offlineStatus() {
-	fmt.Println(ui.STitle.Render(i18n.T("Preparação offline")))
+	fmt.Println(ui.STitle.Render(i18n.T("Offline preparation")))
 	if b, err := os.ReadFile(prepStamp); err == nil {
-		i18n.Printf("  %-14s %s\n", i18n.T("Preparado em"), ui.SGreen.Render(string(b)))
+		i18n.Printf("  %-14s %s\n", i18n.T("Prepared on"), ui.SGreen.Render(string(b)))
 	} else {
-		i18n.Printf("  %-14s %s\n", i18n.T("Preparado em"), ui.SYellow.Render(i18n.T("nunca — rode: romanctl offline prep")))
+		i18n.Printf("  %-14s %s\n", i18n.T("Prepared on"), ui.SYellow.Render(i18n.T("never — run: romanctl offline prep")))
 	}
-	conn := ui.SRed.Render(i18n.T("sem conexão"))
+	conn := ui.SRed.Render(i18n.T("no connection"))
 	if sys.IsOnline() {
-		conn = ui.SGreen.Render(i18n.T("conectado"))
+		conn = ui.SGreen.Render(i18n.T("connected"))
 	}
 	i18n.Printf("  %-14s %s\n", "Internet", conn)
 	var tpls []string
@@ -36,31 +36,31 @@ func offlineStatus() {
 	i18n.Printf("  %-14s %s\n", "Templates", strings.Join(tpls, ", "))
 	caches := [][2]string{
 		{i18n.T("Templates"), projects.TemplatesDir},
-		{i18n.T("Cache npm"), filepath.Join(config.Home, ".npm")},
-		{i18n.T("Cache Go"), goModCache()},
-		{i18n.T("Cache NuGet"), filepath.Join(config.Home, ".nuget", "packages")},
+		{i18n.T("npm cache"), filepath.Join(config.Home, ".npm")},
+		{i18n.T("Go cache"), goModCache()},
+		{i18n.T("NuGet cache"), filepath.Join(config.Home, ".nuget", "packages")},
 	}
 	for i, size := range cacheSizes(caches) {
 		fmt.Printf("  %-14s %s\n", caches[i][0], size)
 	}
 	if out, err := sys.Output("code-server", "--list-extensions"); err == nil {
-		i18n.Printf("  %-14s %d instaladas\n", i18n.T("Extensões"), len(strings.Fields(out)))
+		i18n.Printf("  %-14s %d installed\n", i18n.T("Extensions"), len(strings.Fields(out)))
 	}
 
-	fmt.Println("\n" + ui.STitle.Render(i18n.T("Sem internet")))
-	fmt.Println(i18n.T("  romanctl new <tipo> <nome>             usa templates e cache sozinho"))
-	fmt.Println(i18n.T("  npm install <pacote> --offline         instala do cache"))
-	fmt.Println(i18n.T("  go get <módulo>                        usa o cache sozinho"))
-	fmt.Println(i18n.T("  dotnet add package <pacote>            usa o cache se o pacote foi baixado"))
+	fmt.Println("\n" + ui.STitle.Render(i18n.T("Without internet")))
+	fmt.Println(i18n.T("  romanctl new <type> <name>             uses templates and cache on its own"))
+	fmt.Println(i18n.T("  npm install <package> --offline        installs from the cache"))
+	fmt.Println(i18n.T("  go get <module>                        uses the cache on its own"))
+	fmt.Println(i18n.T("  dotnet add package <package>           uses the cache if the package was downloaded"))
 
-	fmt.Println("\n" + ui.STitle.Render(i18n.T("O que você precisa fazer manualmente")))
-	fmt.Println(i18n.T("  • Abrir devdocs.io e ativar as documentações para uso offline"))
-	fmt.Println(i18n.T("  • Testar de verdade: ligar o modo avião e rodar romanctl offline test"))
-	fmt.Println(i18n.T("  • Sem internet, o Claude Code não funciona"))
+	fmt.Println("\n" + ui.STitle.Render(i18n.T("What you need to do manually")))
+	fmt.Println(i18n.T("  • Open devdocs.io and enable the documentation for offline use"))
+	fmt.Println(i18n.T("  • Test for real: turn on airplane mode and run romanctl offline test"))
+	fmt.Println(i18n.T("  • Claude Code does not work without internet"))
 }
 
-// cacheSizes mede em paralelo e guarda por uma hora: percorrer esses caches arquivo por
-// arquivo é o que fazia o comando parecer travado.
+// cacheSizes measures in parallel and keeps the result for an hour: walking these caches file by
+// file is what made the command look stuck.
 func cacheSizes(caches [][2]string) []string {
 	cachePath := filepath.Join(projects.OfflineRoot, "tamanhos.json")
 	type stored struct {
@@ -87,7 +87,7 @@ func cacheSizes(caches [][2]string) []string {
 		}
 	}
 	sizes := make([]int64, len(caches))
-	ui.Spin(i18n.T("Calculando o tamanho dos caches..."), func(update func(string)) {
+	ui.Spin(i18n.T("Calculating cache sizes..."), func(update func(string)) {
 		var wg sync.WaitGroup
 		var mu sync.Mutex
 		done := 0
@@ -98,7 +98,7 @@ func cacheSizes(caches [][2]string) []string {
 				sizes[i] = sys.DirSize(c[1])
 				mu.Lock()
 				done++
-				update(i18n.Sprintf("Calculando o tamanho dos caches %d/%d", done, len(caches)))
+				update(i18n.Sprintf("Calculating cache sizes %d/%d", done, len(caches)))
 				mu.Unlock()
 			}()
 		}

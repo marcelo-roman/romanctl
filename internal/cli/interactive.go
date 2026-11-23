@@ -8,7 +8,7 @@ import (
 	"romanctl/internal/ui"
 )
 
-// serviceCommand abre a lista de serviços quando nenhum foi informado em um terminal.
+// serviceCommand opens the service list when none was given in a terminal.
 func serviceCommand(action, name string, f func(*services.Service) error) error {
 	if name == "" && ui.Interactive() {
 		return menuServices(action)
@@ -17,11 +17,11 @@ func serviceCommand(action, name string, f func(*services.Service) error) error 
 }
 
 func menuRestore() error {
-	sub, err := ui.Choose(i18n.T("Restaurar"),
-		ui.Opt(i18n.T("Sobe de novo o que estava ligado"), "run"),
-		ui.Opt(i18n.T("Ver o estado salvo"), "status"),
-		ui.Opt(i18n.T("Salvar o que está rodando agora"), "save"),
-		ui.Opt(i18n.T("Limpar o estado salvo"), "clear"))
+	sub, err := ui.Choose(i18n.T("Restore"),
+		ui.Opt(i18n.T("Starts again what was running"), "run"),
+		ui.Opt(i18n.T("View the saved state"), "status"),
+		ui.Opt(i18n.T("Save what is running now"), "save"),
+		ui.Opt(i18n.T("Clear the saved state"), "clear"))
 	if err != nil {
 		return err
 	}
@@ -31,11 +31,11 @@ func menuRestore() error {
 	return services.RestoreCommand(sub)
 }
 
-// newCommand cria direto quando tudo foi informado; em um terminal, pergunta o que falta.
+// newCommand creates right away when everything was given; in a terminal, it asks for what is missing.
 func newCommand(args []string, flags map[string]bool) error {
 	a, b := arg(args, 0), arg(args, 1)
 	stack, archFlag := flagVals["stack"], flagVals["arch"]
-	git := !flags["sem-git"]
+	git := !flags["no-git"]
 	opts := scaffold.Options{Git: git, DryRun: flags["dry-run"], Offline: flags["offline"]}
 
 	if stack != "" || archFlag != "" {
@@ -44,7 +44,7 @@ func newCommand(args []string, flags map[string]bool) error {
 		}
 		if !ui.Interactive() {
 			if a == "" {
-				return ui.Usagef("informe o nome: romanctl new <nome> --stack <stack> --arch <arquiteturas>")
+				return ui.Usagef("specify the name: romanctl new <name> --stack <stack> --arch <architectures>")
 			}
 			return scaffold.NewFromTemplate(a, stack, archFlag, flagVals["with"], opts)
 		}
@@ -55,7 +55,7 @@ func newCommand(args []string, flags map[string]bool) error {
 		return projects.NewProject(a, b, git, flags["offline"])
 	}
 	req := newRequest{typ: a, noGit: !git, offline: flags["offline"]}
-	// "new loja" informa o nome; "new express" informa o tipo.
+	// "new shop" gives the name; "new express" gives the type.
 	if a != "" && projects.FindType(a) == nil {
 		req.typ, req.name = "", a
 	}

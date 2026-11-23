@@ -34,8 +34,8 @@ type patch struct {
 	Text   string `yaml:"text"`
 }
 
-// Generator cria arquivos em um projeto existente. Fica em
-// generators/<alvo>/<tipo>/generator.yaml, com os arquivos ao lado, na pasta files.
+// Generator creates files in an existing project. It lives in
+// generators/<target>/<kind>/generator.yaml, with its files next to it, in the files directory.
 type Generator struct {
 	Kind        string            `yaml:"-" json:"kind"`
 	Description string            `yaml:"description" json:"description"`
@@ -54,7 +54,7 @@ func userGeneratorsDir() string {
 	return filepath.Join(config.Home, ".config", "romanctl", "generators")
 }
 
-// LoadGenerators lê os geradores de um alvo; os do usuário têm prioridade.
+// LoadGenerators reads a target's generators; the user's take precedence.
 func LoadGenerators(target string) []*Generator {
 	ensureInstalled()
 	found := map[string]*Generator{}
@@ -68,7 +68,7 @@ func LoadGenerators(target string) []*Generator {
 			}
 			var g Generator
 			if err := yaml.Unmarshal(b, &g); err != nil {
-				ui.Warnf("Gerador inválido %s: %v", file, err)
+				ui.Warnf("Invalid generator %s: %v", file, err)
 				continue
 			}
 			dir := path.Dir(file)
@@ -89,7 +89,7 @@ func LoadGenerators(target string) []*Generator {
 	return list
 }
 
-// AllTargets lista os alvos com geradores, para o catálogo.
+// AllTargets lists the targets that have generators, for the catalog.
 func AllTargets() []string {
 	ensureInstalled()
 	dirs, _ := filepath.Glob(filepath.Join(Root(), "*", generatorsSubdir, "*"))
@@ -102,7 +102,7 @@ func AllTargets() []string {
 	return out
 }
 
-// TargetOf descobre que geradores valem para um projeto.
+// TargetOf works out which generators apply to a project.
 func TargetOf(projectPath string) string {
 	if m, ok := manifest.Read(projectPath); ok {
 		return m.Stack + "/" + m.Template
@@ -122,7 +122,7 @@ func TargetOf(projectPath string) string {
 	return ""
 }
 
-// FindGenerator busca pelo tipo ou por um apelido.
+// FindGenerator looks up by kind or by alias.
 func FindGenerator(list []*Generator, name string) *Generator {
 	name = strings.ToLower(name)
 	for _, g := range list {
@@ -133,14 +133,14 @@ func FindGenerator(list []*Generator, name string) *Generator {
 	return nil
 }
 
-// ---------------------------------------------------------------- nomes
+// ---------------------------------------------------------------- names
 
 var (
 	identifier = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
 	wordEdge   = regexp.MustCompile(`([a-z0-9])([A-Z])`)
 )
 
-// Pascal aceita product-item, product_item e ProductItem.
+// Pascal accepts product-item, product_item and ProductItem.
 func Pascal(s string) string {
 	parts := strings.FieldsFunc(s, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) })
 	var out strings.Builder
@@ -165,7 +165,7 @@ func separated(s, sep string) string {
 	return strings.ToLower(wordEdge.ReplaceAllString(s, "${1}"+sep+"${2}"))
 }
 
-// Plural segue as regras do inglês, porque o código gerado é em inglês.
+// Plural follows English rules, because the generated code is in English.
 func Plural(s string) string {
 	lower := strings.ToLower(s)
 	switch {
@@ -178,7 +178,7 @@ func Plural(s string) string {
 	return s + "s"
 }
 
-// addData é o que os textos do generator.yaml enxergam, como next.
+// addData is what generator.yaml texts see, like next.
 type addData struct {
 	templateData
 	Entity, EntityPlural, EntitySnake, EntityPluralSnake, EntityKebab, EntityPluralKebab string
@@ -214,7 +214,7 @@ func newAddData(projectPath, entity, plural, in string) addData {
 	return d
 }
 
-// expand troca os nomes de exemplo. Num projeto React sem TypeScript, .tsx e .ts viram .jsx e .js.
+// expand replaces the sample names. In a React project without TypeScript, .tsx and .ts become .jsx and .js.
 func (d addData) expand(s string) string { return d.names.Replace(s) }
 
 func (d addData) expandPath(p string) string {
@@ -235,15 +235,15 @@ func renderData(name, text string, data addData) (string, error) {
 	return renderAny(name, text, data)
 }
 
-// ---------------------------------------------------------------- execução
+// ---------------------------------------------------------------- execution
 
-// AddOptions são as escolhas do comando add.
+// AddOptions are the add command's choices.
 type AddOptions struct {
 	Kind, Name, In, Plural string
 	Force, DryRun          bool
 }
 
-// AddResult é o que o add informa, inclusive em --dry-run e --json.
+// AddResult is what add reports, including with --dry-run and --json.
 type AddResult struct {
 	OK      bool     `json:"ok"`
 	DryRun  bool     `json:"dryRun"`
@@ -270,7 +270,7 @@ func collect(all []*Generator, g *Generator, seen map[string]bool, out *[]*Gener
 	for _, inc := range g.Includes {
 		child := FindGenerator(all, inc)
 		if child == nil {
-			return i18n.Errorf("o gerador %s inclui %s, que não existe", g.Kind, inc)
+			return i18n.Errorf("generator %s includes %s, which does not exist", g.Kind, inc)
 		}
 		if err := collect(all, child, seen, out); err != nil {
 			return err
@@ -280,21 +280,21 @@ func collect(all []*Generator, g *Generator, seen map[string]bool, out *[]*Gener
 	return nil
 }
 
-// Add gera os arquivos e registra o que for preciso nos arquivos existentes.
+// Add generates the files and registers whatever is needed in existing files.
 func Add(projectPath string, opts AddOptions) (AddResult, error) {
 	target := TargetOf(projectPath)
 	result := AddResult{Project: projectPath, Target: target, DryRun: opts.DryRun}
 	if target == "" {
-		return result, ui.Usagef("não há geradores para este tipo de projeto: %s", projectPath)
+		return result, ui.Usagef("there are no generators for this type of project: %s", projectPath)
 	}
 	all := LoadGenerators(target)
 	g := FindGenerator(all, opts.Kind)
 	if g == nil {
-		return result, ui.Usagef("gerador desconhecido %q para %s (disponíveis: %s)", opts.Kind, target, kinds(all))
+		return result, ui.Usagef("unknown generator %q for %s (available: %s)", opts.Kind, target, kinds(all))
 	}
 	entity := Pascal(opts.Name)
 	if !identifier.MatchString(entity) {
-		return result, ui.Usagef("nome inválido %q: use letras e números, começando por letra (ex.: Product)", opts.Name)
+		return result, ui.Usagef("invalid name %q: use letters and numbers, starting with a letter (e.g. Product)", opts.Name)
 	}
 	in := Pascal(opts.In)
 	var chain []*Generator
@@ -303,7 +303,7 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 	}
 	needsIn := slices.ContainsFunc(chain, func(x *Generator) bool { return x.NeedsIn })
 	if needsIn && in == "" {
-		return result, ui.Usagef("%s precisa de --in com o nome do agregado (ex.: --in Product)", g.Kind)
+		return result, ui.Usagef("%s needs --in with the aggregate name (e.g. --in Product)", g.Kind)
 	}
 	result.Kind, result.Name = g.Kind, entity
 
@@ -344,7 +344,7 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 	}
 	sort.Strings(result.Files)
 
-	// Tudo é conferido antes de gravar qualquer coisa.
+	// Everything is checked before anything is written.
 	for _, r := range requires {
 		p := data.expandPath(r.Path)
 		if slices.Contains(result.Files, p) {
@@ -352,7 +352,7 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 		}
 		if _, err := os.Stat(filepath.Join(projectPath, filepath.FromSlash(p))); err != nil {
 			hint := data.expand(r.Hint)
-			return result, ui.Usagef("falta %s; rode antes: %s", p, hint)
+			return result, ui.Usagef("%s is missing; first run: %s", p, hint)
 		}
 	}
 	if !opts.Force {
@@ -363,7 +363,7 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 			}
 		}
 		if len(conflicts) > 0 {
-			return result, ui.Usagef("estes arquivos já existem, use --force para sobrescrever: %s", strings.Join(conflicts, ", "))
+			return result, ui.Usagef("these files already exist, use --force to overwrite: %s", strings.Join(conflicts, ", "))
 		}
 	}
 	for _, p := range patches {
@@ -388,7 +388,7 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 		}
 		for _, command := range after {
 			if err := sys.Quiet(projectPath, nil, "sh", "-c", command); err != nil {
-				ui.Warnf("%s falhou depois de gerar: %v", command, err)
+				ui.Warnf("%s failed after generating: %v", command, err)
 			}
 		}
 	}
@@ -396,8 +396,8 @@ func Add(projectPath string, opts AddOptions) (AddResult, error) {
 	return result, nil
 }
 
-// containsBlock diz se as linhas do patch já estão no arquivo, juntas e na mesma ordem. Uma linha
-// solta igual, como um ")", não conta: o bloco só é pulado quando já foi inserido inteiro.
+// containsBlock says whether the patch lines are already in the file, together and in the same order.
+// A lone matching line, like a ")", does not count: the block is only skipped once fully inserted.
 func containsBlock(lines, block []string) bool {
 	if len(block) == 0 {
 		return true
@@ -456,8 +456,8 @@ func planPatch(p patch, data addData) (plannedPatch, bool) {
 	return planned, true
 }
 
-// dedent tira a indentação comum do bloco e as linhas vazias das pontas: cada linha guarda o recuo
-// relativo, e o patch soma a ele o recuo do marcador.
+// dedent strips the block's common indentation and the blank lines at its ends: each line keeps its
+// relative indent, and the patch adds the marker's indent to it.
 func dedent(lines []string) []string {
 	for len(lines) > 0 && strings.TrimSpace(lines[0]) == "" {
 		lines = lines[1:]

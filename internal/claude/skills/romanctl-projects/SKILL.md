@@ -1,79 +1,79 @@
 ---
 name: romanctl-projects
-description: Cria, lista e remove projetos pelo romanctl, a partir de templates (Node, Express, React, Next.js, .NET Web API/MVC/Blazor/Console, Go) e de templates de arquitetura (Go, Rust, Java, Kotlin, PHP e Python hexagonais com DDD; .NET Clean/DDD/CQRS, event sourcing, vertical slice e monólito modular; Node NestJS Clean/DDD/CQRS e Fastify em camadas; Django em camadas; com Postgres). Use quando o usuário pedir um projeto novo, uma API, um site, um app web, ou quiser saber que projetos existem.
+description: Creates, lists and removes projects through romanctl, from templates (Node, Express, React, Next.js, .NET Web API/MVC/Blazor/Console, Go) and from architecture templates (hexagonal Go, Rust, Java, Kotlin, PHP and Python with DDD; .NET Clean/DDD/CQRS, event sourcing, vertical slice and modular monolith; Node NestJS Clean/DDD/CQRS and layered Fastify; layered Django; with Postgres). Use when the user asks for a new project, an API, a website, a web app, or wants to know which projects exist.
 ---
 
-# Projetos pelo romanctl
+# Projects through romanctl
 
-Siga as regras gerais da skill `romanctl`.
+Follow the general rules of the `romanctl` skill.
 
-## Antes de criar: o que existe
+## Before creating: what exists
 
 ```bash
-romanctl types                # tipos simples: node, express, react, react-ts, next, dotnet-*, go
-romanctl catalog --json       # templates de arquitetura, combinações válidas e geradores
-romanctl list --json          # projetos que já existem
+romanctl types                # simple types: node, express, react, react-ts, next, dotnet-*, go
+romanctl catalog --json       # architecture templates, valid combinations and generators
+romanctl list --json          # projects that already exist
 ```
 
-Escolha o template pelo que o usuário descreveu e diga qual escolheu. Se nada servir
-(mobile, desktop, uma linguagem ou arquitetura sem template...), siga "Quando o romanctl não cobre o pedido" da skill
-`romanctl`.
+Choose the template from what the user described and say which one you chose. If nothing fits
+(mobile, desktop, a language or architecture without a template...), follow "When romanctl does not cover the request" in the
+`romanctl` skill.
 
-## Criar
+## Create
 
-Tipo simples: **o tipo vem antes do nome**.
+Simple type: **the type comes before the name**.
 
 ```bash
-romanctl new <tipo> <nome>
+romanctl new <type> <name>
 romanctl new next site
-romanctl new dotnet-webapi pedidos
-romanctl new express api --sem-git        # sem repositório git
-romanctl new react painel --offline       # só templates e cache locais
+romanctl new dotnet-webapi orders
+romanctl new express api --no-git         # no git repository
+romanctl new react dashboard --offline    # local templates and cache only
 ```
 
-Template de arquitetura: nome, stack e arquiteturas, e os serviços que o projeto usa.
+Architecture template: name, stack and architectures, and the services the project uses.
 
 ```bash
-romanctl new <nome> --stack <stack> --arch <a,b,c> [--with <serviços>] [--dry-run] [--json]
-romanctl new loja --stack dotnet --arch clean,ddd,cqrs --with postgres
+romanctl new <name> --stack <stack> --arch <a,b,c> [--with <services>] [--dry-run] [--json]
+romanctl new store --stack dotnet --arch clean,ddd,cqrs --with postgres
 ```
 
-- As combinações válidas de `--arch` e os serviços aceitos em `--with` estão em
-  `romanctl catalog --json`; não invente combinações.
-- `--dry-run` mostra os arquivos que seriam criados, e `missingTools` no `--json` diz que ferramentas
-  faltam para rodar o projeto.
-- Depois de gerar, o `new` roda o preparo do template (`dotnet restore`, `npm install`...). Sem as
-  ferramentas, ou com `--offline`, o preparo fica para depois e `setup` no `--json` diz por quê
-  (`skipped`, `offline`, `failed` ou `done`). Faltando ferramenta, instale pela skill `romanctl-tools`
-  e rode o preparo na pasta do projeto.
-- Nomes: letras minúsculas, números, `-`, `_` ou `.`; num template, começando por letra.
-- Os templates ficam fora do binário. Se `catalog` vier vazio ou faltar um template que deveria existir,
-  rode `romanctl templates update --json` (precisa de internet) e confira com `romanctl templates --json`.
-- O projeto nasce em `~/projetos/<nome>` (ou em `$ROMANCTL_PROJETOS`).
+- The valid `--arch` combinations and the services accepted by `--with` are in
+  `romanctl catalog --json`; do not invent combinations.
+- `--dry-run` shows the files that would be created, and `missingTools` in `--json` tells which tools
+  are missing to run the project.
+- After generating, `new` runs the template setup (`dotnet restore`, `npm install`...). Without the
+  tools, or with `--offline`, the setup is deferred and `setup` in `--json` says why
+  (`skipped`, `offline`, `failed` or `done`). If a tool is missing, install it through the `romanctl-tools` skill
+  and run the setup in the project folder.
+- Names: lowercase letters, digits, `-`, `_` or `.`; for a template, starting with a letter.
+- Templates live outside the binary. If `catalog` comes back empty or a template that should exist is missing,
+  run `romanctl templates update --json` (needs internet) and check with `romanctl templates --json`.
+- The project is created in `~/projetos/<name>` (or in `$ROMANCTL_PROJETOS`).
 
-Depois de criar, o próximo passo natural é subir o ambiente (skill `romanctl-dev`) e, se o
-usuário quiser, gerar código (skill `romanctl-add`).
+After creating, the natural next step is to start the environment (`romanctl-dev` skill) and, if the
+user wants, generate code (`romanctl-add` skill).
 
-## Listar e localizar
+## List and locate
 
 ```bash
-romanctl list --json                     # nome, tipo, pasta, data
-romanctl list --filter <texto> --plain   # filtrado, em texto
+romanctl list --json                     # name, type, folder, date
+romanctl list --filter <text> --plain    # filtered, as text
 ```
 
-Use a pasta que `list --json` devolve para ler e editar o código do projeto.
+Use the folder that `list --json` returns to read and edit the project's code.
 
-## Remover
+## Remove
 
-Apaga **todos os arquivos** do projeto. Só com pedido explícito do usuário para aquele
-projeto, e derrube antes o que estiver no ar:
+Deletes **all of the project's files**. Only on the user's explicit request for that
+project, and stop whatever is running first:
 
 ```bash
-romanctl down <nome> --json
-romanctl rm <nome> --yes
+romanctl down <name> --json
+romanctl rm <name> --yes
 ```
 
-## Abrir para o usuário
+## Open for the user
 
-Só quando ele pedir: `romanctl code <nome>` abre no code-server, e `romanctl open <nome> --app`
-abre o app rodando no navegador.
+Only when they ask: `romanctl code <name>` opens it in code-server, and `romanctl open <name> --app`
+opens the running app in the browser.

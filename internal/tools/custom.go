@@ -61,7 +61,7 @@ func installAWS() error {
 	if err := extractZip(file, tmp); err != nil {
 		return err
 	}
-	ui.Infof("Rodando o instalador oficial da AWS...")
+	ui.Infof("Running the official AWS installer...")
 	return sys.Quiet(tmp, nil, filepath.Join(tmp, "aws", "install"), "-i", opt("aws-cli"), "-b", binDir, "--update")
 }
 
@@ -86,7 +86,7 @@ func installDockerCLI() error {
 		}
 	}
 	if latest == "" {
-		return i18n.Errorf("não achei o Docker em %s", base)
+		return i18n.Errorf("could not find Docker in %s", base)
 	}
 	return installFromURL(base+latest, "", []string{"docker"})
 }
@@ -127,7 +127,7 @@ func installOllamaAt(want string) error {
 	if err != nil {
 		return err
 	}
-	// O binário procura as bibliotecas ao lado dele, então fica em uma pasta própria.
+	// The binary looks for its libraries next to it, so it lives in its own directory.
 	return installToOpt(base+asset, sum, opt("ollama"), 0, "bin/ollama")
 }
 
@@ -144,7 +144,7 @@ func nodeLTS() (string, error) {
 			return r.Version, nil
 		}
 	}
-	return "", i18n.Errorf("não achei uma versão LTS do Node")
+	return "", i18n.Errorf("could not find an LTS version of Node")
 }
 
 func installNode() error { return installNodeAt("") }
@@ -169,7 +169,7 @@ func installNodeAt(want string) error {
 	if err != nil {
 		return err
 	}
-	// Extrai por cima, sem apagar: preserva os pacotes globais, como o mongosh.
+	// Extracts on top, without deleting: keeps global packages, like mongosh.
 	dest := opt("node")
 	if err := extractTar(file, dest, 1); err != nil {
 		return err
@@ -194,7 +194,7 @@ func goReleases() ([]goRelease, error) {
 		return nil, err
 	}
 	if len(releases) == 0 {
-		return nil, i18n.Errorf("lista de versões do Go vazia")
+		return nil, i18n.Errorf("empty list of Go versions")
 	}
 	return releases, nil
 }
@@ -229,7 +229,7 @@ func installGoAt(want string) error {
 	if want != "" {
 		i := slices.IndexFunc(releases, func(r goRelease) bool { return r.Version == "go"+strings.TrimPrefix(want, "go") })
 		if i < 0 {
-			return i18n.Errorf("o Go %s não está na lista de versões", want)
+			return i18n.Errorf("Go %s is not in the version list", want)
 		}
 		release = releases[i]
 	}
@@ -238,7 +238,7 @@ func installGoAt(want string) error {
 			return installToOpt("https://go.dev/dl/"+f.Filename, f.Sha256, goDir(), 1, "bin/go", "bin/gofmt")
 		}
 	}
-	return i18n.Errorf("não achei o Go para linux/%s", arch)
+	return i18n.Errorf("could not find Go for linux/%s", arch)
 }
 
 func goDir() string {
@@ -261,7 +261,7 @@ func zigIndex() (map[string]map[string]any, string, error) {
 	}
 	sort.Slice(versions, func(i, j int) bool { return semverLess(versions[i], versions[j]) })
 	if len(versions) == 0 {
-		return nil, "", i18n.Errorf("lista de versões do Zig vazia")
+		return nil, "", i18n.Errorf("empty list of Zig versions")
 	}
 	return index, versions[len(versions)-1], nil
 }
@@ -283,7 +283,7 @@ func installZigAt(want string) error {
 	}
 	target, ok := index[version][platform.Current.UArch()+"-linux"].(map[string]any)
 	if !ok {
-		return i18n.Errorf("Zig %s não tem versão para %s-linux", version, platform.Current.UArch())
+		return i18n.Errorf("Zig %s has no version for %s-linux", version, platform.Current.UArch())
 	}
 	url, _ := target["tarball"].(string)
 	sum, _ := target["shasum"].(string)
@@ -314,7 +314,7 @@ func installDart() error {
 
 func installKotlin() error { return installKotlinAt("") }
 
-// installGradle usa a distribuição oficial: o pacote gradle do Ubuntu parou na 4.4.
+// installGradle uses the official distribution: Ubuntu's gradle package stopped at 4.4.
 func installGradle() error {
 	var current struct {
 		Version     string `json:"version"`
@@ -325,7 +325,7 @@ func installGradle() error {
 		return err
 	}
 	if current.DownloadURL == "" {
-		return i18n.Errorf("não achei a versão atual do Gradle")
+		return i18n.Errorf("could not find the current Gradle version")
 	}
 	sum, err := sumFromFile(current.ChecksumURL, path.Base(current.DownloadURL))
 	if err != nil {
@@ -358,11 +358,11 @@ func installSwift() error {
 		return err
 	}
 	if len(releases) == 0 {
-		return i18n.Errorf("lista de versões do Swift vazia")
+		return i18n.Errorf("empty list of Swift versions")
 	}
 	tag := releases[len(releases)-1].Tag
 	if platform.Current.Manager == platform.Apt {
-		// Dependências da toolchain, conforme a documentação do Swift.
+		// Toolchain dependencies, per the Swift documentation.
 		if err := aptInstall("libncurses6", "libedit2", "libxml2", "libz3-4", "libcurl4t64", "libsqlite3-0", "libpython3.12t64", "binutils", "tzdata"); err != nil {
 			return err
 		}
@@ -393,7 +393,7 @@ func installNeovimAt(want string) error {
 
 func installDotnetEF() error {
 	if !sys.Have("dotnet") {
-		return i18n.Errorf("precisa do .NET: romanctl tools install dotnet")
+		return i18n.Errorf("needs .NET: romanctl tools install dotnet")
 	}
 	if err := sys.Quiet("", dotnetToolEnv, "dotnet", "tool", "update", "--global", "dotnet-ef"); err != nil {
 		return err
@@ -401,7 +401,7 @@ func installDotnetEF() error {
 	if !platform.Current.Proot {
 		return link(dotnetEFPath())
 	}
-	// No proot, o executável da ferramenta não passa pelo wrapper e precisa do limite de heap.
+	// Under proot, the tool's executable bypasses the wrapper and needs the heap limit.
 	script := "#!/bin/sh\n: \"${DOTNET_GCHeapHardLimit:=0x40000000}\"\nexport DOTNET_GCHeapHardLimit\nexec " + dotnetEFPath() + " \"$@\"\n"
 	return os.WriteFile(binDir+"/dotnet-ef", []byte(script), 0o755)
 }
@@ -428,7 +428,7 @@ func installRust() error {
 	}
 	fields := strings.Fields(text)
 	if len(fields) == 0 {
-		return i18n.Errorf("checksum do rustup vazio")
+		return i18n.Errorf("empty rustup checksum")
 	}
 	tmp, err := os.MkdirTemp("", "romanctl-")
 	if err != nil {
@@ -442,7 +442,7 @@ func installRust() error {
 	if err := os.Chmod(file, 0o755); err != nil {
 		return err
 	}
-	ui.Infof("Instalando o Rust com o rustup (demora)...")
+	ui.Infof("Installing Rust with rustup (takes a while)...")
 	if err := sys.Quiet(tmp, nil, file, "-y", "--no-modify-path", "--profile", "minimal"); err != nil {
 		return err
 	}
@@ -472,12 +472,12 @@ func installCodeServerAt(want string) error {
 	return installToOpt(url, sum, opt("code-server"), 1, "bin/code-server")
 }
 
-// No proot, o GC do .NET falha ao reservar memória (0x8007000E) sem limite de heap,
-// e o dotnet test não reconhece o binário do dotnet.
+// Under proot, the .NET GC fails to reserve memory (0x8007000E) without a heap limit,
+// and dotnet test does not recognize the dotnet binary.
 const (
 	dotnetRunSettingsPath = "/usr/local/etc/dotnet-proot.runsettings"
 	dotnetRunSettings     = `<?xml version="1.0" encoding="utf-8"?>
-<!-- No proot, o dotnet test não reconhece a arquitetura do binário do dotnet. -->
+<!-- Under proot, dotnet test does not recognize the dotnet binary's architecture. -->
 <RunSettings>
   <RunConfiguration>
     <DotNetHostPath>/usr/lib/dotnet/dotnet</DotNetHostPath>
@@ -485,19 +485,19 @@ const (
 </RunSettings>
 `
 	dotnetWrapper = `#!/bin/sh
-# Wrapper: no proot/Android o GC do .NET falha ao reservar memória (0x8007000E).
-# Limitar o heap resolve. Ajuste/remova DOTNET_GCHeapHardLimit se precisar.
+# Wrapper: under proot/Android the .NET GC fails to reserve memory (0x8007000E).
+# Limiting the heap fixes it. Adjust/remove DOTNET_GCHeapHardLimit if needed.
 : "${DOTNET_GCHeapHardLimit:=0x40000000}"
 export DOTNET_GCHeapHardLimit
-# O dotnet test não reconhece o binário no proot: esta configuração indica o caminho.
-# O MSBuild lê variáveis de ambiente como propriedades; um projeto pode sobrescrevê-la.
+# dotnet test does not recognize the binary under proot: this setting points to it.
+# MSBuild reads environment variables as properties; a project may override it.
 : "${RunSettingsFilePath:=` + dotnetRunSettingsPath + `}"
 export RunSettingsFilePath
 exec /usr/lib/dotnet/dotnet "$@"
 `
 )
 
-// writeDotnetWrapper grava os contornos que só o proot precisa.
+// writeDotnetWrapper writes the workarounds only proot needs.
 func writeDotnetWrapper() error {
 	if !platform.Current.Proot {
 		return nil
@@ -511,11 +511,11 @@ func writeDotnetWrapper() error {
 	if err := os.WriteFile(binDir+"/dotnet", []byte(dotnetWrapper), 0o755); err != nil {
 		return err
 	}
-	ui.Infof("Wrapper do .NET para o proot gravado em %s/dotnet", binDir)
+	ui.Infof(".NET wrapper for proot written to %s/dotnet", binDir)
 	return nil
 }
 
-// O wrapper só sai junto com o último SDK.
+// The wrapper is only removed along with the last SDK.
 func removeDotnetWrapperIfUnused() error {
 	if !platform.Current.Proot {
 		return nil
@@ -549,7 +549,7 @@ func dotnetHasSDK(major string) func() (string, bool) {
 	}
 }
 
-// O Python sozinho não basta: o venv fica num pacote separado no Ubuntu.
+// Python alone is not enough: venv lives in a separate package on Ubuntu.
 func detectPython() (string, bool) {
 	if _, err := versionOutput("python3", "-c", "import ensurepip, venv"); err != nil {
 		return "", false

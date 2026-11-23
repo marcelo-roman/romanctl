@@ -1,57 +1,57 @@
 ---
 name: romanctl-system
-description: Monitora a máquina pelo romanctl — CPU, memória, swap, disco, bateria (nível, watts, autonomia), processos que mais consomem, consumo estimado em watts, sistema, arquitetura e capacidades detectadas (WSL, containers, virtualização). Use quando o usuário perguntar se a máquina está pesada, o que está consumindo, quanto de bateria resta, ou antes de instalar algo grande.
+description: Monitors the machine through romanctl — CPU, memory, swap, disk, battery (level, watts, remaining time), top-consuming processes, estimated power draw in watts, operating system, architecture and detected capabilities (WSL, containers, virtualization). Use when the user asks whether the machine is under load, what is consuming resources, how much battery is left, or before installing something large.
 ---
 
-# Monitoramento pelo romanctl
+# Monitoring through romanctl
 
-Siga as regras gerais da skill `romanctl`. Leia sempre com `--json` e resuma para o
-usuário em frases, não despeje o JSON.
+Follow the general rules of the `romanctl` skill. Always read with `--json` and summarize for the
+user in sentences; do not dump the JSON.
 
-## Retrato agora
+## Snapshot now
 
 ```bash
 romanctl system status --json
 ```
 
-Traz `platform`, `cores`, `systemCpuPercent` (nulo quando a máquina não informa; aí use
+Returns `platform`, `cores`, `systemCpuPercent` (null when the machine does not report it; then use
 `visibleProcessesCores`), `memory` (`totalBytes`, `availableBytes`, `swapTotalBytes`,
-`swapFreeBytes`), `disk` (`path`, `sizeBytes`, `freeBytes`), `battery` (quando existe) e
-`top` (processos com `pid`, `name`, `cpuPercentOfOneCore`, `rssBytes`).
+`swapFreeBytes`), `disk` (`path`, `sizeBytes`, `freeBytes`), `battery` (when present) and
+`top` (processes with `pid`, `name`, `cpuPercentOfOneCore`, `rssBytes`).
 
-## Bateria
+## Battery
 
 ```bash
 romanctl system battery --json
 ```
 
-Nível, consumo em watts, temperatura e previsão de autonomia, quando o sistema informa.
+Level, power draw in watts, temperature and remaining-time estimate, when the system reports them.
 
-## Medir por um período
+## Measure over a period
 
 ```bash
 romanctl system watch --seconds 60 --interval 5 --json
 ```
 
-**Sempre com `--seconds`**: sem ele, o comando pergunta a duração. Mede consumo e CPU juntos
-e estima quantos watts os processos do usuário gastam (`fit.estimatedW`, `fit.meanPowerW`). Para medições longas (minutos), rode
-em segundo plano e avise o usuário quanto tempo vai levar.
+**Always with `--seconds`**: without it, the command asks for the duration. It measures power and CPU together
+and estimates how many watts the user's processes use (`fit.estimatedW`, `fit.meanPowerW`). For long measurements (minutes), run
+it in the background and tell the user how long it will take.
 
-## A máquina
+## The machine
 
 ```bash
 romanctl platform --json   # os, arch, wsl, proot, root, manager, binDir, containers, virtualization, gui
-romanctl doctor            # versões das ferramentas principais
+romanctl doctor            # versions of the main tools
 ```
 
-Use `platform` antes de sugerir algo que dependa do sistema: `containers: false` quer dizer
-que os serviços em Docker não sobem; `manager` diz qual gerenciador de pacotes existe.
+Use `platform` before suggesting anything that depends on the system: `containers: false` means
+Docker services will not start; `manager` tells which package manager exists.
 
-## Ao interpretar
+## Interpreting
 
-- Memória: o que importa é `availableBytes`.
-- `cpuPercentOfOneCore` passa de 100% em processos com várias threads; divida por `cores`
-  para a fatia da máquina.
-- Disco abaixo de ~10% livre atrapalha imagens Docker e builds; avise.
-- Um processo do próprio Claude ou do code-server no topo é normal; diga o nome antes de
-  sugerir encerrar qualquer coisa, e não encerre processos sem pedido.
+- Memory: what matters is `availableBytes`.
+- `cpuPercentOfOneCore` goes above 100% for multi-threaded processes; divide by `cores`
+  for the machine's share.
+- Less than ~10% free disk gets in the way of Docker images and builds; warn about it.
+- A Claude or code-server process at the top is normal; name it before
+  suggesting ending anything, and do not kill processes unless asked.

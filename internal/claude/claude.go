@@ -1,4 +1,4 @@
-// Package claude instala as skills que ensinam o Claude Code a operar a máquina pelo romanctl.
+// Package claude installs the skills that teach Claude Code to operate the machine through romanctl.
 package claude
 
 import (
@@ -15,18 +15,18 @@ import (
 //go:embed skills
 var bundle embed.FS
 
-// Marker fica em cada pasta que o romanctl criou: é o que o autoriza a sobrescrever ou apagar.
+// Marker sits in every directory romanctl created: it is what allows overwriting or deleting it.
 const Marker = ".romanctl"
 
-// Estados de uma skill na máquina.
+// States of a skill on the machine.
 const (
-	StateInstalled = "instalada"
-	StateOutdated  = "desatualizada"
-	StateMissing   = "ausente"
-	StateForeign   = "alheia"
+	StateInstalled = "installed"
+	StateOutdated  = "outdated"
+	StateMissing   = "missing"
+	StateForeign   = "foreign"
 )
 
-// Skill é uma skill do pacote e o que existe dela no disco.
+// Skill is a bundled skill and what exists of it on disk.
 type Skill struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -34,14 +34,14 @@ type Skill struct {
 	State       string `json:"state"`
 }
 
-// Result é o que aconteceu com uma skill ao instalar ou remover.
+// Result is what happened to a skill on install or removal.
 type Result struct {
 	Name   string `json:"name"`
 	Path   string `json:"path"`
 	Action string `json:"action"`
 }
 
-// Dir é onde o Claude Code procura as skills do usuário.
+// Dir is where Claude Code looks for the user's skills.
 func Dir() string {
 	if d := os.Getenv("CLAUDE_CONFIG_DIR"); d != "" {
 		return filepath.Join(d, "skills")
@@ -62,7 +62,7 @@ func names() []string {
 	return out
 }
 
-// files devolve os arquivos de uma skill, com o caminho relativo à pasta dela.
+// files returns a skill's files, keyed by path relative to its directory.
 func files(name string) map[string][]byte {
 	out := map[string][]byte{}
 	root := path.Join("skills", name)
@@ -105,7 +105,7 @@ func state(dir, name string) string {
 	return StateInstalled
 }
 
-// Status compara o pacote com o que está em dir.
+// Status compares the bundle with what is in dir.
 func Status(dir string) []Skill {
 	var out []Skill
 	for _, name := range names() {
@@ -115,7 +115,7 @@ func Status(dir string) []Skill {
 	return out
 }
 
-// Install grava as skills em dir. Uma pasta que o romanctl não criou só é trocada com force.
+// Install writes the skills to dir. A directory romanctl did not create is only replaced with force.
 func Install(dir, version string, force, dryRun bool) ([]Result, error) {
 	var out []Result
 	for _, s := range Status(dir) {
@@ -140,7 +140,7 @@ func Install(dir, version string, force, dryRun bool) ([]Result, error) {
 	return out, nil
 }
 
-// write troca a pasta inteira, para não sobrar arquivo de uma versão antiga da skill.
+// write replaces the whole directory, so no file from an older version of the skill is left behind.
 func write(target, name, version string) error {
 	tmp := target + ".tmp"
 	os.RemoveAll(tmp)
@@ -162,7 +162,7 @@ func write(target, name, version string) error {
 	return os.Rename(tmp, target)
 }
 
-// Uninstall apaga só as pastas que têm o marcador do romanctl.
+// Uninstall deletes only the directories that carry romanctl's marker.
 func Uninstall(dir string, dryRun bool) ([]Result, error) {
 	var out []Result
 	for _, s := range Status(dir) {

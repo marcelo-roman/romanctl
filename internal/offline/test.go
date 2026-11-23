@@ -16,7 +16,7 @@ import (
 
 type offlineCheck struct {
 	typ    string
-	args   []string // argumentos de "new" quando o tipo vem de um template de arquitetura
+	args   []string // "new" arguments when the type comes from an architecture template
 	checks [][]string
 }
 
@@ -26,13 +26,13 @@ func offlineTest() error {
 		return err
 	}
 	os.MkdirAll(projects.OfflineRoot, 0o755)
-	tmp, err := os.MkdirTemp(projects.OfflineRoot, "teste-")
+	tmp, err := os.MkdirTemp(projects.OfflineRoot, "test-")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(tmp)
 
-	// Um proxy morto bloqueia a rede de npm, Go e .NET sem desligar o Wi-Fi.
+	// A dead proxy blocks npm, Go and .NET network access without turning off Wi-Fi.
 	dead := "http://127.0.0.1:9"
 	env := []string{"ROMANCTL_OFFLINE=1", "ROMANCTL_PROJETOS=" + tmp,
 		"HTTPS_PROXY=" + dead, "HTTP_PROXY=" + dead, "https_proxy=" + dead, "http_proxy=" + dead,
@@ -53,14 +53,14 @@ func offlineTest() error {
 		{typ: "clean-ddd-cqrs", args: []string{"--stack", "dotnet", "--arch", "clean,ddd,cqrs"}, checks: [][]string{dotnetBuild, {"dotnet", "test"}}},
 		{typ: "clean-ddd-cqrs+pg", args: []string{"--stack", "dotnet", "--arch", "clean,ddd,cqrs", "--with", "postgres"}, checks: [][]string{dotnetBuild, {"dotnet", "test"}}},
 	}
-	fmt.Println(ui.STitle.Render(i18n.T("Criando e compilando cada tipo com a rede bloqueada")))
+	fmt.Println(ui.STitle.Render(i18n.T("Creating and building each type with the network blocked")))
 	failures := 0
 	for _, c := range cases {
 		start := time.Now()
 		name := "t-" + strings.ReplaceAll(c.typ, "+", "-")
-		command := []string{self, "new", c.typ, name, "--sem-git", "--offline"}
+		command := []string{self, "new", c.typ, name, "--no-git", "--offline"}
 		if c.args != nil {
-			command = append([]string{self, "new", name, "--sem-git"}, c.args...)
+			command = append([]string{self, "new", name, "--no-git"}, c.args...)
 		}
 		err := testStep(tmp, env, command)
 		for i := 0; err == nil && i < len(c.checks); i++ {
@@ -76,10 +76,10 @@ func offlineTest() error {
 	}
 	fmt.Println()
 	if failures > 0 {
-		return i18n.Errorf("%d de %d tipos falharam. Rode com internet: romanctl offline prep --force", failures, len(cases))
+		return i18n.Errorf("%d of %d types failed. Run with internet: romanctl offline prep --force", failures, len(cases))
 	}
-	ui.Okf("Todos os %d tipos funcionaram com a rede bloqueada", len(cases))
-	ui.Infof("O teste só bloqueia a rede das ferramentas. Repita no modo avião antes do voo.")
+	ui.Okf("All %d types worked with the network blocked", len(cases))
+	ui.Infof("The test only blocks the tools' network. Repeat it in airplane mode before a flight.")
 	return nil
 }
 

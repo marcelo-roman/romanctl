@@ -1,4 +1,4 @@
-// Package selfupdate atualiza o próprio binário a partir das releases do GitHub.
+// Package selfupdate updates the binary itself from GitHub releases.
 package selfupdate
 
 import (
@@ -18,10 +18,10 @@ import (
 	"romanctl/internal/i18n"
 )
 
-// Repo é de onde vêm as releases.
+// Repo is where releases come from.
 const Repo = "marcelo-roman/romanctl"
 
-// baseURL pode ser trocada por ROMANCTL_RELEASES_URL, para testar contra um servidor local.
+// baseURL can be overridden by ROMANCTL_RELEASES_URL, to test against a local server.
 func baseURL() string {
 	if v := os.Getenv("ROMANCTL_RELEASES_URL"); v != "" {
 		return strings.TrimSuffix(v, "/")
@@ -48,8 +48,8 @@ func get(url string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
-// Latest descobre a última versão. Usa o arquivo VERSION da release e, se ele não existir,
-// o redirecionamento de /releases/latest; nenhum dos dois gasta a cota da API do GitHub.
+// Latest finds the latest version. It uses the release's VERSION file and, if missing,
+// the /releases/latest redirect; neither consumes GitHub API quota.
 func Latest() (string, error) {
 	if b, err := get(baseURL() + "/latest/download/VERSION"); err == nil {
 		if v := strings.TrimSpace(string(b)); v != "" {
@@ -67,13 +67,13 @@ func Latest() (string, error) {
 	if _, tag, ok := strings.Cut(resp.Header.Get("Location"), "/releases/tag/"); ok && tag != "" {
 		return Normalize(tag), nil
 	}
-	return "", i18n.Errorf("não consegui descobrir a última versão do romanctl")
+	return "", i18n.Errorf("could not find the latest version of romanctl")
 }
 
-// Normalize tira o "v": v0.2.0 e 0.2.0 são a mesma versão.
+// Normalize strips the "v": v0.2.0 and 0.2.0 are the same version.
 func Normalize(v string) string { return strings.TrimPrefix(strings.TrimSpace(v), "v") }
 
-// Compare devolve -1, 0 ou 1. Partes que não são número, como -rc1, contam como zero.
+// Compare returns -1, 0 or 1. Non-numeric parts, like -rc1, count as zero.
 func Compare(a, b string) int {
 	pa, pb := strings.Split(Normalize(a), "."), strings.Split(Normalize(b), ".")
 	for i := 0; i < max(len(pa), len(pb)); i++ {
@@ -94,7 +94,7 @@ func Compare(a, b string) int {
 	return 0
 }
 
-// Asset é o nome do binário desta plataforma na release.
+// Asset is the name of this platform's binary in the release.
 func Asset() string { return "romanctl-" + runtime.GOOS + "-" + runtime.GOARCH }
 
 func checksumFor(sums, asset string) string {
@@ -107,32 +107,32 @@ func checksumFor(sums, asset string) string {
 	return ""
 }
 
-// Install baixa a versão, confere e troca o executável atual. Se a versão nova não rodar, o
-// binário anterior volta para o lugar.
+// Install downloads the version, verifies it and replaces the current executable. If the new
+// version does not run, the previous binary is put back.
 func Install(version, target string) error {
 	base := baseURL() + "/download/v" + Normalize(version)
 	asset := Asset()
 	sums, err := get(base + "/SHA256SUMS")
 	if err != nil {
-		return i18n.Errorf("não consegui baixar a lista de checksums da versão %s: %v", version, err)
+		return i18n.Errorf("could not download the checksum list for version %s: %v", version, err)
 	}
 	want := checksumFor(string(sums), asset)
 	if want == "" {
-		return i18n.Errorf("a versão %s não tem binário para %s/%s", version, runtime.GOOS, runtime.GOARCH)
+		return i18n.Errorf("version %s has no binary for %s/%s", version, runtime.GOOS, runtime.GOARCH)
 	}
 	binary, err := get(base + "/" + asset)
 	if err != nil {
-		return i18n.Errorf("não consegui baixar %s: %v", asset, err)
+		return i18n.Errorf("could not download %s: %v", asset, err)
 	}
 	sum := sha256.Sum256(binary)
 	if got := hex.EncodeToString(sum[:]); got != want {
-		return i18n.Errorf("checksum não confere (esperado %s, obtido %s); nada foi trocado", want, got)
+		return i18n.Errorf("checksum does not match (expected %s, got %s); nothing was replaced", want, got)
 	}
 
 	dir := filepath.Dir(target)
-	tmp, err := os.CreateTemp(dir, ".romanctl-novo-")
+	tmp, err := os.CreateTemp(dir, ".romanctl-new-")
 	if err != nil {
-		return i18n.Errorf("sem permissão para gravar em %s; rode com sudo ou reinstale pelo install.sh", dir)
+		return i18n.Errorf("no permission to write to %s; run with sudo or reinstall with install.sh", dir)
 	}
 	defer os.Remove(tmp.Name())
 	if _, err := tmp.Write(binary); err != nil {
@@ -145,15 +145,15 @@ func Install(version, target string) error {
 	if err := os.Chmod(tmp.Name(), 0o755); err != nil {
 		return err
 	}
-	// A versão nova roda antes de entrar no lugar: um binário quebrado nunca substitui o bom.
+	// The new version runs before taking its place: a broken binary never replaces the good one.
 	out, err := exec.Command(tmp.Name(), "version").CombinedOutput()
 	if err != nil || !strings.Contains(string(out), Normalize(version)) {
-		return i18n.Errorf("a versão baixada não rodou nesta máquina (%v: %s); nada foi trocado", err, strings.TrimSpace(string(out)))
+		return i18n.Errorf("the downloaded version did not run on this machine (%v: %s); nothing was replaced", err, strings.TrimSpace(string(out)))
 	}
-	backup := target + ".anterior"
+	backup := target + ".previous"
 	os.Remove(backup)
 	if err := os.Rename(target, backup); err != nil {
-		return i18n.Errorf("sem permissão para trocar %s; rode com sudo ou reinstale pelo install.sh", target)
+		return i18n.Errorf("no permission to replace %s; run with sudo or reinstall with install.sh", target)
 	}
 	if err := os.Rename(tmp.Name(), target); err != nil {
 		os.Rename(backup, target)
@@ -163,7 +163,7 @@ func Install(version, target string) error {
 	return nil
 }
 
-// Executable é o caminho real do binário em uso, sem links.
+// Executable is the real path of the running binary, with links resolved.
 func Executable() (string, error) {
 	path, err := os.Executable()
 	if err != nil {

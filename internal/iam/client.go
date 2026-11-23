@@ -1,4 +1,4 @@
-// Package iam chama a API do IAM Manager com um cliente da API (client_credentials).
+// Package iam calls the IAM Manager API with an API client (client_credentials).
 package iam
 
 import (
@@ -19,7 +19,7 @@ import (
 
 var httpClient = &http.Client{Timeout: 3 * time.Minute}
 
-// Error é a resposta de erro da API ({"error": "..."}) com o status HTTP.
+// Error is the API's error response ({"error": "..."}) with the HTTP status.
 type Error struct {
 	Status   int
 	Message  string
@@ -29,9 +29,9 @@ type Error struct {
 func (e Error) Error() string {
 	switch e.Status {
 	case http.StatusUnauthorized:
-		return i18n.Sprintf("o IAM Manager recusou o token do cliente %s (%s); confira com: romanctl iam credentials", e.ClientID, e.Message)
+		return i18n.Sprintf("IAM Manager rejected the token of client %s (%s); check it with: romanctl iam credentials", e.ClientID, e.Message)
 	case http.StatusForbidden:
-		return i18n.Sprintf("sem permissão: %s", e.Message)
+		return i18n.Sprintf("no permission: %s", e.Message)
 	}
 	return fmt.Sprintf("HTTP %d: %s", e.Status, e.Message)
 }
@@ -42,7 +42,7 @@ var cache struct {
 	token auth.Token
 }
 
-// Token devolve um access token do cliente, reaproveitado até faltar menos de 30 s para expirar.
+// Token returns an access token for the client, reused until less than 30 s remain before expiry.
 func Token(ctx context.Context, c Credentials, renew bool) (string, error) {
 	cache.Lock()
 	defer cache.Unlock()
@@ -54,7 +54,7 @@ func Token(ctx context.Context, c Credentials, renew bool) (string, error) {
 	if err != nil {
 		cache.key = ""
 		if auth.IsRejected(err) {
-			return "", i18n.Errorf("o Keycloak recusou o cliente %s (%v); confira com: romanctl iam credentials", c.ClientID, err)
+			return "", i18n.Errorf("Keycloak rejected the client %s (%v); check it with: romanctl iam credentials", c.ClientID, err)
 		}
 		return "", err
 	}
@@ -65,12 +65,12 @@ func Token(ctx context.Context, c Credentials, renew bool) (string, error) {
 func credentials() (Credentials, error) {
 	c, err := LoadCredentials()
 	if errors.Is(err, ErrNoCredentials) {
-		return c, i18n.Errorf("sem cliente da API do IAM Manager. Defina IAM_CLIENT_ID e IAM_CLIENT_SECRET ou rode: romanctl iam credentials set")
+		return c, i18n.Errorf("no IAM Manager API client. Set IAM_CLIENT_ID and IAM_CLIENT_SECRET or run: romanctl iam credentials set")
 	}
 	return c, err
 }
 
-// Do faz a chamada e decodifica o JSON em out (se não for nil). path começa em /api.
+// Do makes the call and decodes the JSON into out (if not nil). path starts at /api.
 func Do(ctx context.Context, method, path string, body, out any) error {
 	raw, err := Raw(ctx, method, path, body)
 	if err != nil {
@@ -82,7 +82,7 @@ func Do(ctx context.Context, method, path string, body, out any) error {
 	return json.Unmarshal(raw, out)
 }
 
-// Raw devolve o corpo da resposta sem interpretar; serve ao "romanctl iam api".
+// Raw returns the raw response body; used by "romanctl iam api".
 func Raw(ctx context.Context, method, path string, body any) ([]byte, error) {
 	c, err := credentials()
 	if err != nil {
@@ -91,7 +91,7 @@ func Raw(ctx context.Context, method, path string, body any) ([]byte, error) {
 	return With(ctx, c, method, path, body)
 }
 
-// With chama a API com uma credencial explícita. Em 401 pede outro token uma vez.
+// With calls the API with an explicit credential. On 401 it requests a new token once.
 func With(ctx context.Context, c Credentials, method, path string, body any) ([]byte, error) {
 	payload, err := encode(body)
 	if err != nil {

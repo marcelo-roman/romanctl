@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-// openWhenUp espera o app do projeto responder e então abre o navegador.
+// openWhenUp waits for the project's app to respond and then opens the browser.
 func openWhenUp(p string) {
 	u := AppURL(p)
 	if u == "" {
@@ -30,7 +30,7 @@ func openWhenUp(p string) {
 	}()
 }
 
-// RunCommand descobre como rodar o projeto, instalando as dependências de Node se faltarem.
+// RunCommand works out how to run the project, installing Node dependencies if missing.
 func RunCommand(p, name string) ([]string, error) {
 	project, hasManifest := manifest.Read(p)
 	switch t := DetectType(p); {
@@ -48,7 +48,7 @@ func RunCommand(p, name string) ([]string, error) {
 		return []string{"go", "run", "."}, nil
 	case t != "?":
 		if !sys.Exists(filepath.Join(p, "node_modules")) {
-			ui.Infof("Instalando dependências (npm install)...")
+			ui.Infof("Installing dependencies (npm install)...")
 			offlineMode = !sys.IsOnline()
 			if err := npmInstall(p); err != nil {
 				return nil, err
@@ -59,7 +59,7 @@ func RunCommand(p, name string) ([]string, error) {
 		}
 		return []string{"npm", "run", "dev"}, nil
 	}
-	return nil, i18n.Errorf("não sei rodar %q (tipo não reconhecido)", name)
+	return nil, i18n.Errorf("I don't know how to run %q (unrecognized type)", name)
 }
 
 func display(cmd []string) string {
@@ -69,7 +69,7 @@ func display(cmd []string) string {
 	return strings.Join(cmd, " ")
 }
 
-// RunProject roda o projeto em primeiro plano; Ctrl+C encerra só o projeto.
+// RunProject runs the project in the foreground; Ctrl+C stops only the project.
 func RunProject(name string, open bool) error {
 	p, err := ProjectPath(name)
 	if err != nil {
@@ -78,14 +78,14 @@ func RunProject(name string, open bool) error {
 	if project, ok := manifest.Read(p); ok {
 		for _, key := range project.Services {
 			if s := services.FindService(key); s != nil && !s.Running() {
-				ui.Warnf("%s não está rodando e o projeto depende dele: romanctl start %s", s.Name, s.Key)
+				ui.Warnf("%s is not running and the project depends on it: romanctl start %s", s.Name, s.Key)
 			}
 		}
 	}
 	return RunAt(p, name, dotenv.Load(filepath.Join(p, ".env"), os.LookupEnv), open)
 }
 
-// RunAt roda em primeiro plano, com variáveis extras.
+// RunAt runs in the foreground, with extra variables.
 func RunAt(p, name string, env []string, open bool) error {
 	cmd, err := RunCommand(p, name)
 	if err != nil {
@@ -93,7 +93,7 @@ func RunAt(p, name string, env []string, open bool) error {
 	}
 	state.MarkProject(name, true)
 	defer state.MarkProject(name, false)
-	ui.Infof("Rodando %s em %s  (Ctrl+C para parar)", display(cmd), p)
+	ui.Infof("Running %s in %s  (Ctrl+C to stop)", display(cmd), p)
 	if open {
 		openWhenUp(p)
 	}
@@ -104,7 +104,7 @@ func RunAt(p, name string, env []string, open bool) error {
 	select {
 	case <-sig:
 		fmt.Println()
-		ui.Okf("Projeto parado")
+		ui.Okf("Project stopped")
 		return nil
 	default:
 		return err

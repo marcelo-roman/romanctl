@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-// appURL descobre em que endereço o servidor de desenvolvimento do projeto escuta.
+// appURL finds the address the project's development server listens on.
 func AppURL(p string) string {
 	if m, ok := manifest.Read(p); ok {
 		return m.URL
@@ -83,15 +83,15 @@ func ListProjects() []Project {
 
 func PrintProjects() { PrintProjectsFiltered("") }
 
-// PrintProjectsFiltered imprime os projetos que contêm o texto.
+// PrintProjectsFiltered prints the projects that contain the text.
 func PrintProjectsFiltered(filter string) {
 	ps := ListProjects()
 	if len(ps) == 0 {
-		ui.Infof("Nenhum projeto em %s. Crie um com: romanctl new", config.ProjDir)
+		ui.Infof("No projects in %s. Create one with: romanctl new", config.ProjDir)
 		return
 	}
-	fmt.Println(ui.STitle.Render(i18n.Sprintf("Projetos em %s", config.ProjDir)))
-	fmt.Println(ui.SGray.Render(i18n.Sprintf("  %-28s %-24s %s", i18n.T("NOME"), i18n.T("TIPO"), i18n.T("MODIFICADO"))))
+	fmt.Println(ui.STitle.Render(i18n.Sprintf("Projects in %s", config.ProjDir)))
+	fmt.Println(ui.SGray.Render(i18n.Sprintf("  %-28s %-24s %s", i18n.T("NAME"), i18n.T("TYPE"), i18n.T("MODIFIED"))))
 	for _, p := range ps {
 		if filter != "" && !ui.Matches(p.Name+" "+p.Type, filter) {
 			continue
@@ -119,11 +119,11 @@ func ListJSON() []map[string]any {
 
 func ProjectPath(name string) (string, error) {
 	if name == "" || strings.ContainsAny(name, "/\\") || name == "." || name == ".." {
-		return "", i18n.Errorf("nome de projeto inválido: %q", name)
+		return "", i18n.Errorf("invalid project name: %q", name)
 	}
 	p := filepath.Join(config.ProjDir, name)
 	if fi, err := os.Stat(p); err != nil || !fi.IsDir() {
-		return "", i18n.Errorf("projeto %q não encontrado em %s", name, config.ProjDir)
+		return "", i18n.Errorf("project %q not found in %s", name, config.ProjDir)
 	}
 	return p, nil
 }
@@ -133,15 +133,15 @@ func RemoveProject(name string) error {
 	if err != nil {
 		return err
 	}
-	ui.Infof("Removendo %s (%s)...", p, sys.Human(sys.DirSize(p)))
+	ui.Infof("Removing %s (%s)...", p, sys.Human(sys.DirSize(p)))
 	if err := os.RemoveAll(p); err != nil {
 		return err
 	}
-	ui.Okf("Projeto %s removido", name)
+	ui.Okf("Project %s removed", name)
 	return nil
 }
 
-// Locate acha o projeto pelo nome ou, sem nome, subindo a partir da pasta atual.
+// Locate finds the project by name or, without a name, walking up from the current directory.
 func Locate(name string) (string, error) {
 	if name != "" {
 		return ProjectPath(name)
@@ -155,7 +155,7 @@ func Locate(name string) (string, error) {
 			return dir, nil
 		}
 		if dir == filepath.Dir(dir) {
-			return "", ui.Usagef("nenhum projeto nesta pasta: entre em um ou use --project <nome>")
+			return "", ui.Usagef("no project in this folder: enter one or use --project <name>")
 		}
 	}
 }

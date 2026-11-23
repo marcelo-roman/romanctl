@@ -8,8 +8,8 @@ import (
 	"romanctl/internal/i18n"
 )
 
-// ActionRequest é o corpo de POST /api/jobs. Só as ações abaixo existem, e cada campo é conferido
-// antes de virar argumento: nada chega à CLI como opção (começando por -) nem passa por shell.
+// ActionRequest is the body of POST /api/jobs. Only the actions below exist, and each field is checked
+// before becoming an argument: nothing reaches the CLI as an option (starting with -) or goes through a shell.
 type ActionRequest struct {
 	Action  string   `json:"action"`
 	Name    string   `json:"name"`
@@ -39,31 +39,31 @@ type action struct {
 }
 
 var actions = map[string]action{
-	"project.create": {args: createArgs, title: func(r ActionRequest) string { return i18n.Sprintf("Criar o projeto %s", r.Name) }},
-	"project.up":     {args: projectArgs("up", "-d"), title: func(r ActionRequest) string { return i18n.Sprintf("Subir %s", r.Name) }},
-	"project.down":   {args: projectArgs("down"), title: func(r ActionRequest) string { return i18n.Sprintf("Derrubar %s", r.Name) }},
-	"project.remove": {args: projectArgs("rm", "--yes"), title: func(r ActionRequest) string { return i18n.Sprintf("Remover o projeto %s", r.Name) }},
+	"project.create": {args: createArgs, title: func(r ActionRequest) string { return i18n.Sprintf("Create project %s", r.Name) }},
+	"project.up":     {args: projectArgs("up", "-d"), title: func(r ActionRequest) string { return i18n.Sprintf("Bring up %s", r.Name) }},
+	"project.down":   {args: projectArgs("down"), title: func(r ActionRequest) string { return i18n.Sprintf("Bring down %s", r.Name) }},
+	"project.remove": {args: projectArgs("rm", "--yes"), title: func(r ActionRequest) string { return i18n.Sprintf("Remove project %s", r.Name) }},
 	"project.generate": {args: generateArgs, title: func(r ActionRequest) string {
-		return i18n.Sprintf("Gerar %s %s em %s", r.Kind, r.Entity, r.Name)
+		return i18n.Sprintf("Generate %s %s in %s", r.Kind, r.Entity, r.Name)
 	}},
-	"service.install": {args: serviceArgs("install"), title: func(r ActionRequest) string { return i18n.Sprintf("Instalar %s", r.Key) }},
-	"service.start":   {args: serviceArgs("start"), title: func(r ActionRequest) string { return i18n.Sprintf("Ligar %s", r.Key) }},
-	"service.stop":    {args: serviceArgs("stop", "--yes"), title: func(r ActionRequest) string { return i18n.Sprintf("Desligar %s", r.Key) }},
-	"service.restart": {args: serviceArgs("restart", "--yes"), title: func(r ActionRequest) string { return i18n.Sprintf("Reiniciar %s", r.Key) }},
-	"tool.install":    {args: toolInstallArgs, title: func(r ActionRequest) string { return i18n.Sprintf("Instalar %s", r.Key) }},
+	"service.install": {args: serviceArgs("install"), title: func(r ActionRequest) string { return i18n.Sprintf("Install %s", r.Key) }},
+	"service.start":   {args: serviceArgs("start"), title: func(r ActionRequest) string { return i18n.Sprintf("Start %s", r.Key) }},
+	"service.stop":    {args: serviceArgs("stop", "--yes"), title: func(r ActionRequest) string { return i18n.Sprintf("Stop %s", r.Key) }},
+	"service.restart": {args: serviceArgs("restart", "--yes"), title: func(r ActionRequest) string { return i18n.Sprintf("Restart %s", r.Key) }},
+	"tool.install":    {args: toolInstallArgs, title: func(r ActionRequest) string { return i18n.Sprintf("Install %s", r.Key) }},
 	"tool.uninstall": {args: func(r ActionRequest) ([]string, error) {
 		if err := check(reKey, "key", r.Key); err != nil {
 			return nil, err
 		}
 		return []string{"tools", "uninstall", r.Key, "--yes"}, nil
-	}, title: func(r ActionRequest) string { return i18n.Sprintf("Remover %s", r.Key) }},
+	}, title: func(r ActionRequest) string { return i18n.Sprintf("Remove %s", r.Key) }},
 	"templates.update": {args: func(ActionRequest) ([]string, error) { return []string{"templates", "update"}, nil },
-		title: func(ActionRequest) string { return i18n.T("Atualizar os templates") }},
+		title: func(ActionRequest) string { return i18n.T("Update the templates") }},
 }
 
 func check(re *regexp.Regexp, field, value string) error {
 	if !re.MatchString(value) {
-		return fmt.Errorf("%s %q", i18n.T("valor inválido em"), field+"="+value)
+		return fmt.Errorf("%s %q", i18n.T("invalid value in"), field+"="+value)
 	}
 	return nil
 }
@@ -111,7 +111,7 @@ func createArgs(r ActionRequest) ([]string, error) {
 			return nil, err
 		}
 		if len(r.Arch) == 0 {
-			return nil, fmt.Errorf("%s", i18n.T("informe a arquitetura do template"))
+			return nil, fmt.Errorf("%s", i18n.T("specify the template architecture"))
 		}
 		if err := checkAll(reKey, "arch", r.Arch); err != nil {
 			return nil, err
@@ -124,10 +124,10 @@ func createArgs(r ActionRequest) ([]string, error) {
 			args = append(args, "--with", strings.Join(r.With, ","))
 		}
 	default:
-		return nil, fmt.Errorf("%s", i18n.T("informe o tipo ou o template do projeto"))
+		return nil, fmt.Errorf("%s", i18n.T("specify the project type or template"))
 	}
 	if r.Git != nil && !*r.Git {
-		args = append(args, "--sem-git")
+		args = append(args, "--no-git")
 	}
 	return args, nil
 }

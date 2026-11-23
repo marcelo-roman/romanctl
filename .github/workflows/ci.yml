@@ -9,13 +9,13 @@ on:
   workflow_dispatch:
     inputs:
       sweep:
-        description: Instalar e remover todas as ferramentas (demorado)
+        description: Install and remove every tool (slow)
         type: boolean
         default: false
 
 env:
   ROMANCTL_TEMPLATES: ${{ github.workspace }}/templates
-  # O romanctl só roda com login; aqui o login é um cliente da API do IAM Manager no realm private.
+  # romanctl only runs when logged in; here the login is an IAM Manager API client in the private realm.
   ROMANCTL_CLIENT_ID: ${{ secrets.ROMANCTL_CLIENT_ID }}
   ROMANCTL_CLIENT_SECRET: ${{ secrets.ROMANCTL_CLIENT_SECRET }}
 
@@ -36,13 +36,13 @@ jobs:
       - run: go build -o romanctl ./cmd/romanctl
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: ./romanctl platform
-      - name: Instala e remove ferramentas de cada tipo
+      - name: Install and remove tools of each kind
         run: |
           ./romanctl tools install jq kubectl terraform
           kubectl version --client
           terraform version
           ./romanctl tools uninstall jq kubectl terraform --yes
-      - name: Simula cada template do catálogo
+      - name: Dry-run every catalog template
         run: scripts/templates.sh dry ./romanctl
 
   web:
@@ -60,7 +60,7 @@ jobs:
         working-directory: web
       - run: npm run build
         working-directory: web
-      - name: O build embutido no binário está atualizado
+      - name: The build embedded in the binary is up to date
         run: git diff --exit-code -- internal/webui/dist && test -z "$(git status --porcelain -- internal/webui/dist)"
 
   build:
@@ -88,16 +88,16 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: romanctl-linux-amd64
-      - name: Certificados raiz, que a imagem do Debian não traz (o login usa HTTPS)
+      - name: Root certificates, which the Debian image lacks (login uses HTTPS)
         if: matrix.image == 'debian:stable'
         run: apt-get update -qq && apt-get install -y -qq ca-certificates
       - run: chmod +x romanctl && ./romanctl platform
-      - name: Pacote da distribuição
+      - name: Distribution package
         run: |
           ./romanctl tools install jq curl
           jq --version
           ./romanctl tools uninstall jq --yes
-      - name: Binário oficial
+      - name: Official binary
         run: |
           ./romanctl tools install kubectl
           kubectl version --client
@@ -111,7 +111,7 @@ jobs:
           go-version-file: go.mod
       - run: go build -o romanctl ./cmd/romanctl
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: Sobe cada serviço em container
+      - name: Start each service in a container
         run: |
           for service in postgres mongo redis mysql mariadb sqlserver rabbitmq kafka; do
             ./romanctl install "$service"
@@ -149,9 +149,9 @@ jobs:
           go-version-file: go.mod
       - run: go build -o romanctl ./cmd/romanctl
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: Testa o template na própria pasta
+      - name: Test the template in place
         run: scripts/templates.sh inplace ./romanctl ${{ matrix.template }}
-      - name: Gera com todos os serviços e roda os testes do projeto
+      - name: Generate with every service and run the project's tests
         run: scripts/templates.sh test ./romanctl ${{ matrix.template }}
 
   sweep:

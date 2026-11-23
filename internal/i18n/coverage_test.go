@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-// Saídas que traduzem o primeiro argumento.
+// Outputs that translate their first argument.
 var translating = map[string]bool{
 	"ui.Okf": true, "ui.Failf": true, "ui.Infof": true, "ui.Warnf": true, "ui.Usagef": true,
 	"Okf": true, "Failf": true, "Infof": true, "Warnf": true, "Usagef": true,
@@ -20,21 +20,29 @@ var translating = map[string]bool{
 }
 
 var fmtVerb = regexp.MustCompile(`%[-+# 0]*[0-9.*]*[a-zA-Z%]`)
-var word = regexp.MustCompile(`[a-zA-ZÀ-ÿ]{3,}`)
+var word = regexp.MustCompile(`[a-zA-Z\x{c0}-\x{ff}]{3,}`)
 
-// Texto técnico, igual nos dois idiomas: formatos, comandos e nomes próprios.
-var technicalPrefix = regexp.MustCompile(`^(git [a-z]+:|gh repo|Publica o|Atualiza o|tar:|gcc:|gopls:|apt-mark:|go env:|go get:|go mod |npm init:|dotnet new %s|template %s|%s: HTTP|%s install|%s remove|brew install|brew uninstall|npm install -g|npm uninstall -g|use: romanctl (offline|restore|system|config)|romanctl|    romanctl run| \[--with|  --stack|\.NET|arq-|--strip-components|%s/pg_ctl)`)
+// Technical text, the same in both languages: formats, commands and proper names.
+var technicalPrefix = regexp.MustCompile(`^(git [a-z]+:|gh repo|tar:|gcc:|gopls:|apt-mark:|go env:|go get:|go mod |npm init:|dotnet new %s|template %s|%s: HTTP|%s install|%s remove|brew install|brew uninstall|npm install -g|npm uninstall -g|(use|usage): romanctl|romanctl|    romanctl run| \[--with|  --stack|\.NET|arq-|--strip-components|%s/pg_ctl)`)
 
-func isTechnical(v string) bool {
-	return technicalPrefix.MatchString(v) || !word.MatchString(fmtVerb.ReplaceAllString(v, ""))
+// Same text in both languages.
+var sameInBoth = map[string]bool{
+	"Realm:   %s\n": true, "API:     %s\n": true, "  (romanctl claude install)": true, "%s (realm %s)\n": true,
+	"client_id:      %s\nclient_secret:  %s\ntoken endpoint: %s\n":                     true,
+	"client_id:      %s\nclient_secret:  %s\ntoken endpoint: %s\napi:            %s\n": true,
+	"Templates": true, "%s %s, via %s": true, "Log": true, "logs": true,
 }
 
-var accent = regexp.MustCompile(`[áàâãéêíóôõúçÁÉÍÓÚÃÕÇ]`)
+func isTechnical(v string) bool {
+	return sameInBoth[v] || technicalPrefix.MatchString(v) || !word.MatchString(fmtVerb.ReplaceAllString(v, ""))
+}
 
-// Código gerado e scripts: o conteúdo não é mensagem do romanctl.
+var accent = regexp.MustCompile(`[\x{c0}-\x{d6}\x{d8}-\x{f6}\x{f8}-\x{ff}]`)
+
+// Generated code and scripts: their content is not a romanctl message.
 var generatedFiles = []string{"projects/create.go", "tools/custom.go"}
 
-func TestToda_MensagemTemTraducao(t *testing.T) {
+func TestEveryMessageHasTranslation(t *testing.T) {
 	root := ".."
 	filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() || !strings.HasSuffix(p, ".go") || strings.HasSuffix(p, "_test.go") ||
@@ -70,8 +78,8 @@ func TestToda_MensagemTemTraducao(t *testing.T) {
 					if lit, ok := x.Args[0].(*ast.BasicLit); ok && lit.Kind == token.STRING {
 						v, _ := strconv.Unquote(lit.Value)
 						check[lit] = true
-						if _, ok := en[v]; !ok && !isTechnical(v) {
-							t.Errorf("%s:%d: sem tradução: %q", rel, fset.Position(lit.Pos()).Line, v)
+						if _, ok := pt[v]; !ok && !isTechnical(v) {
+							t.Errorf("%s:%d: missing translation: %q", rel, fset.Position(lit.Pos()).Line, v)
 						}
 					}
 				}
@@ -79,12 +87,8 @@ func TestToda_MensagemTemTraducao(t *testing.T) {
 				if x.Kind != token.STRING || generated || check[x] {
 					return true
 				}
-				// Qualquer outro texto com acento precisa estar no catálogo.
-				// Uma letra sozinha é dado, como a tabela de acentos do filtro.
 				if v, _ := strconv.Unquote(x.Value); accent.MatchString(v) && len([]rune(v)) > 1 {
-					if _, ok := en[v]; !ok {
-						t.Errorf("%s:%d: texto com acento fora do catálogo: %q", rel, fset.Position(x.Pos()).Line, v)
-					}
+					t.Errorf("%s:%d: accented text outside the catalog: %q", rel, fset.Position(x.Pos()).Line, v)
 				}
 			}
 			return true

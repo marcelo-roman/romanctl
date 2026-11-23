@@ -1,4 +1,4 @@
-export type Lang = "pt" | "en";
+export type Lang = "en" | "pt";
 
 export interface PlatformInfo {
   os: string;

@@ -1,24 +1,24 @@
-# IAM Manager API — guia de uso
+# IAM Manager API — usage guide
 
-API REST para administrar os realms `private` (operadores e ferramentas internas) e `public`
-(usuários das aplicações) do Keycloak: usuários, credenciais, aplicações e acesso, API keys, login
-social, web apps, eventos, temas, operadores e auditoria. Este guia serve para pessoas e para agentes de IA.
+REST API to administer the Keycloak realms `private` (operators and internal tools) and `public`
+(application users): users, credentials, applications and access, API keys, social
+login, web apps, events, themes, operators and audit. This guide is for people and for AI agents.
 
-- Especificação completa: `GET {API}/api/openapi.json` (ou `.yaml`)
-- Este guia: `GET {API}/api/guide.md`
+- Full specification: `GET {API}/api/openapi.json` (or `.yaml`)
+- This guide: `GET {API}/api/guide.md`
 
-## 1. Endereços
+## 1. Addresses
 
-| nome | valor em produção |
+| name | production value |
 | --- | --- |
 | `API` | `https://iam-api.marceloroman.com.br` |
 | `TOKEN_URL` | `https://auth.marceloroman.com.br/realms/private/protocol/openid-connect/token` |
 
-## 2. Autenticação (client_credentials)
+## 2. Authentication (client_credentials)
 
-Você recebe um `client_id` e um `client_secret` de um **cliente da API** (criado em
-IAM Manager → Operadores → Clientes da API, no realm `private`). Troque-os por um access token
-com audiência `iam-manager-api`:
+You receive a `client_id` and a `client_secret` for an **API client** (created in
+IAM Manager → Operators → API clients, in the `private` realm). Exchange them for an access token
+with audience `iam-manager-api`:
 
 ```bash
 TOKEN=$(curl -s -X POST "$TOKEN_URL" \
@@ -27,111 +27,111 @@ TOKEN=$(curl -s -X POST "$TOKEN_URL" \
   -d client_secret="$IAM_CLIENT_SECRET" | jq -r .access_token)
 ```
 
-- O token vale 5 minutos (`expires_in`). Reaproveite até perto de expirar e peça outro; não há
-  refresh token no client_credentials.
-- Envie em toda chamada: `Authorization: Bearer $TOKEN`.
-- **Nunca** registre o secret ou o token em log, commit, issue ou resposta de chat.
+- The token is valid for 5 minutes (`expires_in`). Reuse it until it is close to expiring and request another; there is no
+  refresh token in client_credentials.
+- Send it on every call: `Authorization: Bearer $TOKEN`.
+- **Never** record the secret or the token in a log, commit, issue or chat response.
 
-Confira quem você é e o que pode fazer:
+Check who you are and what you can do:
 
 ```bash
 curl -s -H "Authorization: Bearer $TOKEN" "$API/api/me"
 ```
 
-`globalPermissions` vale para todos os realms; `realmPermissions` lista realms delegados. Os papéis
-são client roles de `iam-manager-api`: globais `iam-admin`, `iam-user-admin`, `iam-app-admin`,
-`iam-theme-admin` e `iam-auditor`, e as delegações `public:admin` e `public:viewer`.
+`globalPermissions` applies to all realms; `realmPermissions` lists delegated realms. The roles
+are client roles of `iam-manager-api`: global `iam-admin`, `iam-user-admin`, `iam-app-admin`,
+`iam-theme-admin` and `iam-auditor`, and the delegations `public:admin` and `public:viewer`.
 
-## 3. Convenções
+## 3. Conventions
 
-- JSON em tudo (`Content-Type: application/json`), exceto o envio de tema (`multipart/form-data`).
-- Campos desconhecidos no corpo são rejeitados (422). Envie só o que a especificação define.
-- Listas de usuários são paginadas: `first` (deslocamento) e `max` (até 100); a resposta traz `total`.
-- Os PUT de papéis/grupos e de permissões recebem o **estado desejado completo**, não um diff.
-- `realm` é `private` ou `public`; não há como criar ou excluir realms pela API.
-- O realm `master` nunca é acessível. O `private` (operadores) só com `iam-admin`.
-- Toda alteração fica na auditoria (`GET /api/audit`) com o `client_id` como autor.
+- JSON everywhere (`Content-Type: application/json`), except theme upload (`multipart/form-data`).
+- Unknown fields in the body are rejected (422). Send only what the specification defines.
+- User lists are paginated: `first` (offset) and `max` (up to 100); the response has `total`.
+- The PUTs of roles/groups and of permissions take the **complete desired state**, not a diff.
+- `realm` is `private` or `public`; realms cannot be created or deleted through the API.
+- The `master` realm is never accessible. `private` (operators) only with `iam-admin`.
+- Every change goes into the audit log (`GET /api/audit`) with the `client_id` as author.
 
-### Erros
+### Errors
 
-Corpo sempre `{"error": "mensagem"}`.
+The body is always `{"error": "message"}`.
 
-| status | significa | o que fazer |
+| status | meaning | what to do |
 | --- | --- | --- |
-| 401 | token ausente, expirado ou inválido | pegue outro token |
-| 403 | falta permissão para aquele realm/ação | não insista; reporte |
-| 404 | realm, usuário ou recurso não existe | confira o identificador |
-| 409 | conflito (nome já existe, versão em uso) | escolha outro nome ou resolva o uso |
-| 422 | validação (campo, senha fraca, regra) | leia a mensagem e corrija |
-| 429 | limite de tentativas | espere um minuto |
-| 503 | Keycloak indisponível | tente de novo com espera |
+| 401 | token missing, expired or invalid | get another token |
+| 403 | missing permission for that realm/action | do not insist; report |
+| 404 | realm, user or resource does not exist | check the identifier |
+| 409 | conflict (name already exists, version in use) | choose another name or resolve the usage |
+| 422 | validation (field, weak password, rule) | read the message and fix it |
+| 429 | rate limit | wait a minute |
+| 503 | Keycloak unavailable | retry with a delay |
 
-## 4. Receitas
+## 4. Recipes
 
-Variáveis usadas: `API`, `TOKEN`. Use `H='Authorization: Bearer '$TOKEN`.
+Variables used: `API`, `TOKEN`. Use `H='Authorization: Bearer '$TOKEN`.
 
 ### Realms
 
 ```bash
-curl -s -H "$H" "$API/api/realms"                                       # listar
-curl -s -H "$H" "$API/api/realms/public/settings"                       # configurações (só leitura)
+curl -s -H "$H" "$API/api/realms"                                       # list
+curl -s -H "$H" "$API/api/realms/public/settings"                       # settings (read-only)
 ```
 
-As configurações vêm do Terraform; a API só as mostra.
+Settings come from Terraform; the API only shows them.
 
-### Usuários
+### Users
 
 ```bash
-# criar com link de convite (a pessoa define a senha)
+# create with an invite link (the person sets the password)
 curl -s -X POST -H "$H" -H 'Content-Type: application/json' "$API/api/realms/public/users" -d '{
   "profile": {"username":"ana","email":"ana@acme.com","firstName":"Ana","lastName":"Silva","enabled":true,"emailVerified":true},
   "credential": "link", "roles": [], "groups": []
 }'
 ```
 
-`credential`: `link` (devolve `credential.link`, uso único, 72 h), `temporary` (devolve
-`credential.temporaryPassword`, troca obrigatória no primeiro login), `email` (o Keycloak envia; exige
-SMTP no realm) ou `none`. O perfil precisa de nome, sobrenome e e-mail para o login funcionar.
+`credential`: `link` (returns `credential.link`, single use, 72 h), `temporary` (returns
+`credential.temporaryPassword`, mandatory change at first login), `email` (Keycloak sends it; requires
+SMTP in the realm) or `none`. The profile needs first name, last name and email for login to work.
 
 ```bash
-curl -s -H "$H" "$API/api/realms/public/users?search=ana&first=0&max=25"   # buscar
-curl -s -H "$H" "$API/api/realms/public/users/$ID"                         # detalhe
+curl -s -H "$H" "$API/api/realms/public/users?search=ana&first=0&max=25"   # search
+curl -s -H "$H" "$API/api/realms/public/users/$ID"                         # detail
 curl -s -X PUT -H "$H" -H 'Content-Type: application/json' \
-  -d '{"roles":["billing-reader"],"groups":["<id-do-grupo>"]}' \
-  "$API/api/realms/public/users/$ID/membership"                            # papéis e grupos
+  -d '{"roles":["billing-reader"],"groups":["<group-id>"]}' \
+  "$API/api/realms/public/users/$ID/membership"                            # roles and groups
 curl -s -X POST -H "$H" -H 'Content-Type: application/json' \
-  -d '{"mode":"link"}' "$API/api/realms/public/users/$ID/credential"       # reset de senha
-curl -s -X POST -H "$H" "$API/api/realms/public/users/$ID/logout"          # encerrar sessões
-curl -s -X DELETE -H "$H" "$API/api/realms/public/users/$ID"               # excluir
+  -d '{"mode":"link"}' "$API/api/realms/public/users/$ID/credential"       # password reset
+curl -s -X POST -H "$H" "$API/api/realms/public/users/$ID/logout"          # end sessions
+curl -s -X DELETE -H "$H" "$API/api/realms/public/users/$ID"               # delete
 ```
 
-Papéis e grupos disponíveis: `GET /api/realms/public/catalog`.
+Available roles and groups: `GET /api/realms/public/catalog`.
 
-### Aplicações e acesso
+### Applications and access
 
-Entrar no realm não dá acesso a aplicação nenhuma: o acesso são as roles do usuário em cada
-aplicação. A aplicação é um client de recurso (audiência e roles); quem faz login são as web apps
-ligadas a ela (`application` no `PUT .../web-apps/{clientId}`). As marcadas `declared: true` vêm do
-Terraform e são só leitura.
+Joining the realm grants access to no application: access is the user's roles in each
+application. The application is a resource client (audience and roles); what users log in to are the web apps
+linked to it (`application` in `PUT .../web-apps/{clientId}`). Those marked `declared: true` come from
+Terraform and are read-only.
 
 ```bash
-curl -s -H "$H" "$API/api/realms/public/applications"                       # aplicações, roles, clients, tema
+curl -s -H "$H" "$API/api/realms/public/applications"                       # applications, roles, clients, theme
 curl -s -X POST -H "$H" -H 'Content-Type: application/json' \
   -d '{"id":"notes","name":"Notes","roles":["reader","editor"]}' \
-  "$API/api/realms/public/applications"                                     # cadastrar
+  "$API/api/realms/public/applications"                                     # register
 curl -s -X POST -H "$H" -H 'Content-Type: application/json' \
-  -d '{"name":"admin"}' "$API/api/realms/public/applications/notes/roles"   # nova role
+  -d '{"name":"admin"}' "$API/api/realms/public/applications/notes/roles"   # new role
 curl -s -X PUT -H "$H" -H 'Content-Type: application/json' \
-  -d '{"theme":"acme-v3"}' "$API/api/realms/public/applications/notes/theme" # tema; vazio volta ao do realm
-curl -s -H "$H" "$API/api/realms/public/users/$ID/access"                   # acesso do usuário
+  -d '{"theme":"acme-v3"}' "$API/api/realms/public/applications/notes/theme" # theme; empty falls back to the realm's
+curl -s -H "$H" "$API/api/realms/public/users/$ID/access"                   # user access
 curl -s -X PUT -H "$H" -H 'Content-Type: application/json' \
-  -d '{"roles":["reader"]}' "$API/api/realms/public/users/$ID/access/notes" # definir; [] revoga
+  -d '{"roles":["reader"]}' "$API/api/realms/public/users/$ID/access/notes" # set; [] revokes
 ```
 
-### Operadores e clientes da API
+### Operators and API clients
 
-Operadores são os usuários do `private`. O `private` só deixa entrar quem foi cadastrado antes, com
-o e-mail do Google Workspace; a conta se vincula no primeiro login.
+Operators are the users of `private`. `private` only lets in those registered beforehand, with
+their Google Workspace email; the account is linked at first login.
 
 ```bash
 curl -s -H "$H" "$API/api/operators?q=ana"
@@ -140,22 +140,22 @@ curl -s -X POST -H "$H" -H 'Content-Type: application/json' "$API/api/operators"
   "assignment":{"global":["iam-auditor"],"realms":{"public":"viewer"}}
 }'
 curl -s -X PUT -H "$H" -H 'Content-Type: application/json' \
-  -d '{"global":[],"realms":{"public":"admin"}}' "$API/api/operators/$ID/roles"   # estado completo
+  -d '{"global":[],"realms":{"public":"admin"}}' "$API/api/operators/$ID/roles"   # complete state
 curl -s -X POST -H "$H" -H 'Content-Type: application/json' \
   -d '{"name":"Pipeline","assignment":{"global":[],"realms":{"public":"admin"}}}' \
-  "$API/api/api-clients"                     # devolve secret UMA vez
+  "$API/api/api-clients"                     # returns the secret ONCE
 ```
 
-### API keys de um realm (client_credentials para aplicações)
+### A realm's API keys (client_credentials for applications)
 
 ```bash
 curl -s -X POST -H "$H" -H 'Content-Type: application/json' \
-  -d '{"name":"Billing worker","description":"exporta faturas","roles":["billing-reader"]}' \
-  "$API/api/realms/public/api-keys"            # devolve secret UMA vez; guarde em cofre
+  -d '{"name":"Billing worker","description":"exports invoices","roles":["billing-reader"]}' \
+  "$API/api/realms/public/api-keys"            # returns the secret ONCE; keep it in a vault
 curl -s -X POST -H "$H" "$API/api/realms/public/api-keys/$KEY_ID/rotate"
 ```
 
-### Eventos e auditoria
+### Events and audit
 
 ```bash
 curl -s -X PUT -H "$H" -H 'Content-Type: application/json' \
@@ -165,15 +165,15 @@ curl -s -H "$H" "$API/api/realms/public/events?max=100"
 curl -s -H "$H" "$API/api/audit?limit=50"
 ```
 
-### Temas
+### Themes
 
 ```bash
-curl -s -X POST -H "$H" -F family=acme -F file=@tema.zip "$API/api/themes"
+curl -s -X POST -H "$H" -F family=acme -F file=@theme.zip "$API/api/themes"
 curl -s -X PUT -H "$H" -H 'Content-Type: application/json' \
-  -d '{"login":"acme-v1"}' "$API/api/realms/public/themes"            # tema do realm
+  -d '{"login":"acme-v1"}' "$API/api/realms/public/themes"            # realm theme
 ```
 
-## 5. Exemplos de cliente
+## 5. Client examples
 
 ### Python
 
@@ -231,11 +231,11 @@ export async function iam<T>(method: string, path: string, payload?: unknown): P
 }
 ```
 
-## 6. Regras para agentes
+## 6. Rules for agents
 
-- Leia `GET /api/me` primeiro e não tente o que as permissões não cobrem.
-- Antes de excluir (usuário, API key, cliente da API, web app), confirme com quem pediu. Exclusão não tem volta.
-- Prefira `credential: "link"` para criar contas: o link vai para a pessoa, nunca para o agente.
-- Secrets devolvidos (API keys, senhas temporárias, links) só aparecem uma vez; entregue-os ao
-  solicitante por canal seguro e não os repita depois.
-- Em 401, renove o token uma vez; se continuar, pare e reporte.
+- Read `GET /api/me` first and do not attempt what the permissions do not cover.
+- Before deleting (user, API key, API client, web app), confirm with whoever asked. Deletion cannot be undone.
+- Prefer `credential: "link"` to create accounts: the link goes to the person, never to the agent.
+- Returned secrets (API keys, temporary passwords, links) only appear once; hand them to the
+  requester through a secure channel and do not repeat them afterwards.
+- On 401, renew the token once; if it persists, stop and report.

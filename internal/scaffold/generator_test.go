@@ -11,7 +11,7 @@ import (
 	"romanctl/internal/ui"
 )
 
-func TestNomes(t *testing.T) {
+func TestNames(t *testing.T) {
 	for in, want := range map[string]string{"product-item": "ProductItem", "product_item": "ProductItem", "ProductItem": "ProductItem", "order": "Order"} {
 		if got := Pascal(in); got != want {
 			t.Errorf("%s: %s", in, got)
@@ -23,42 +23,42 @@ func TestNomes(t *testing.T) {
 		}
 	}
 	if separated("ProductItem", "-") != "product-item" || separated("ProductItems", "_") != "product_items" {
-		t.Error("separação errada")
+		t.Error("wrong separation")
 	}
 }
 
 func dotnetProject(t *testing.T, services []string) string {
 	t.Helper()
-	dest := filepath.Join(t.TempDir(), "loja")
-	if _, err := WriteScaffold(dotnetTemplate(t), "loja", dest, services); err != nil {
+	dest := filepath.Join(t.TempDir(), "shop")
+	if _, err := WriteScaffold(dotnetTemplate(t), "shop", dest, services); err != nil {
 		t.Fatal(err)
 	}
 	return dest
 }
 
-func en(text string) string {
+func pt(text string) string {
 	defer i18n.Set(i18n.Lang())
-	i18n.Set(i18n.EN)
+	i18n.Set(i18n.PT)
 	return i18n.T(text)
 }
 
-func TestTodoGeradorRenderiza(t *testing.T) {
+func TestEveryGeneratorRenders(t *testing.T) {
 	for _, target := range AllTargets() {
 		list := LoadGenerators(target)
 		if len(list) == 0 {
-			t.Errorf("%s sem geradores", target)
+			t.Errorf("%s has no generators", target)
 		}
 		for _, g := range list {
 			if g.Description == "" {
-				t.Errorf("%s/%s sem descrição", target, g.Kind)
+				t.Errorf("%s/%s has no description", target, g.Kind)
 			}
 			for _, text := range []string{g.Description, g.Next} {
-				if text != "" && en(text) == text {
-					t.Errorf("%s/%s sem tradução em en.go: %q", target, g.Kind, text)
+				if text != "" && pt(text) == text {
+					t.Errorf("%s/%s missing from pt.go: %q", target, g.Kind, text)
 				}
 			}
 			for _, services := range [][]string{nil, {"postgres"}} {
-				d := newAddData(filepath.Join(t.TempDir(), "loja"), "ProductItem", "", "Order")
+				d := newAddData(filepath.Join(t.TempDir(), "shop"), "ProductItem", "", "Order")
 				for _, s := range services {
 					d.Services[s] = true
 				}
@@ -69,13 +69,13 @@ func TestTodoGeradorRenderiza(t *testing.T) {
 				}
 				for _, f := range files {
 					if leftoverSample.MatchString(f.Path) || leftoverSample.Match(f.Content) || strings.Contains(string(f.Content), "{{.") {
-						t.Errorf("%s/%s: nome de exemplo ou marcador não trocado em %s", target, g.Kind, f.Path)
+						t.Errorf("%s/%s: sample name or marker not replaced in %s", target, g.Kind, f.Path)
 					}
 				}
 				for _, p := range g.Patches {
 					planned, ok := planPatch(p, d)
 					if ok && (leftoverSample.MatchString(planned.file) || leftoverSample.MatchString(strings.Join(planned.lines, "\n"))) {
-						t.Errorf("%s/%s: nome de exemplo não trocado no patch de %s", target, g.Kind, planned.file)
+						t.Errorf("%s/%s: sample name not replaced in the patch of %s", target, g.Kind, planned.file)
 					}
 				}
 			}
@@ -83,7 +83,7 @@ func TestTodoGeradorRenderiza(t *testing.T) {
 	}
 }
 
-func TestResourceGeraERegistra(t *testing.T) {
+func TestResourceGeneratesAndRegisters(t *testing.T) {
 	for _, variant := range []struct {
 		services []string
 		want     string
@@ -97,32 +97,32 @@ func TestResourceGeraERegistra(t *testing.T) {
 		if r.Kind != "resource" || r.Name != "Product" || !hasPath(r.Files, variant.want) || hasPath(r.Files, variant.other+"/Product") {
 			t.Fatalf("%+v", r)
 		}
-		di, _ := os.ReadFile(filepath.Join(dir, "src/Loja.Infrastructure/DependencyInjection.cs"))
-		if !strings.Contains(string(di), "IProductRepository") || !strings.Contains(string(di), "        services.AddScoped<Loja.Domain.Products.IProductRepository") {
-			t.Fatalf("registro sem indentação:\n%s", di)
+		di, _ := os.ReadFile(filepath.Join(dir, "src/Shop.Infrastructure/DependencyInjection.cs"))
+		if !strings.Contains(string(di), "IProductRepository") || !strings.Contains(string(di), "        services.AddScoped<Shop.Domain.Products.IProductRepository") {
+			t.Fatalf("registration without indentation:\n%s", di)
 		}
-		program, _ := os.ReadFile(filepath.Join(dir, "src/Loja.Api/Program.cs"))
+		program, _ := os.ReadFile(filepath.Join(dir, "src/Shop.Api/Program.cs"))
 		if !strings.Contains(string(program), "app.MapProductEndpoints();\n// romanctl:endpoints") {
 			t.Fatalf("Program.cs:\n%s", program)
 		}
 		if len(r.Manual) != 0 {
 			t.Fatalf("manual: %v", r.Manual)
 		}
-		// Repetir é recusado e não muda os registros.
+		// Repeating is rejected and leaves the registrations unchanged.
 		if _, err := Add(dir, AddOptions{Kind: "resource", Name: "Product"}); !ui.IsUsage(err) || !strings.Contains(err.Error(), "--force") {
-			t.Fatalf("erro: %v", err)
+			t.Fatalf("error: %v", err)
 		}
 		if _, err := Add(dir, AddOptions{Kind: "resource", Name: "Product", Force: true}); err != nil {
 			t.Fatal(err)
 		}
-		again, _ := os.ReadFile(filepath.Join(dir, "src/Loja.Api/Program.cs"))
+		again, _ := os.ReadFile(filepath.Join(dir, "src/Shop.Api/Program.cs"))
 		if strings.Count(string(again), "MapProductEndpoints") != 1 {
-			t.Fatalf("registrou duas vezes:\n%s", again)
+			t.Fatalf("registered twice:\n%s", again)
 		}
 	}
 }
 
-func TestDependenciasFaltando(t *testing.T) {
+func TestMissingDependencies(t *testing.T) {
 	dir := dotnetProject(t, nil)
 	for _, c := range []AddOptions{{Kind: "controller", Name: "Product"}, {Kind: "command", Name: "ArchiveProduct", In: "Product"}, {Kind: "repository", Name: "Product"}} {
 		_, err := Add(dir, c)
@@ -130,15 +130,15 @@ func TestDependenciasFaltando(t *testing.T) {
 			t.Errorf("%s: %v", c.Kind, err)
 		}
 	}
-	if entries, _ := os.ReadDir(filepath.Join(dir, "src/Loja.Api")); slices.ContainsFunc(entries, func(e os.DirEntry) bool { return strings.Contains(e.Name(), "Product") }) {
-		t.Fatal("gravou arquivos mesmo com dependência faltando")
+	if entries, _ := os.ReadDir(filepath.Join(dir, "src/Shop.Api")); slices.ContainsFunc(entries, func(e os.DirEntry) bool { return strings.Contains(e.Name(), "Product") }) {
+		t.Fatal("wrote files even with a missing dependency")
 	}
 }
 
-func TestComandoPrecisaDoAgregado(t *testing.T) {
+func TestCommandNeedsAggregate(t *testing.T) {
 	dir := dotnetProject(t, nil)
 	if _, err := Add(dir, AddOptions{Kind: "command", Name: "Archive"}); !ui.IsUsage(err) || !strings.Contains(err.Error(), "--in") {
-		t.Fatalf("erro: %v", err)
+		t.Fatalf("error: %v", err)
 	}
 	if _, err := Add(dir, AddOptions{Kind: "resource", Name: "Product"}); err != nil {
 		t.Fatal(err)
@@ -147,7 +147,7 @@ func TestComandoPrecisaDoAgregado(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(r.Files, "src/Loja.Application/Products/Commands/ArchiveProduct.cs") {
+	if !slices.Contains(r.Files, "src/Shop.Application/Products/Commands/ArchiveProduct.cs") {
 		t.Fatalf("%v", r.Files)
 	}
 	if _, err := Add(dir, AddOptions{Kind: "value-object", Name: "Sku", In: "Product"}); err != nil {
@@ -155,28 +155,28 @@ func TestComandoPrecisaDoAgregado(t *testing.T) {
 	}
 }
 
-func TestSimulacaoNaoGrava(t *testing.T) {
+func TestDryRunWritesNothing(t *testing.T) {
 	dir := dotnetProject(t, nil)
-	before, _ := os.ReadFile(filepath.Join(dir, "src/Loja.Api/Program.cs"))
+	before, _ := os.ReadFile(filepath.Join(dir, "src/Shop.Api/Program.cs"))
 	r, err := Add(dir, AddOptions{Kind: "resource", Name: "Product", DryRun: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !r.DryRun || len(r.Files) == 0 || !slices.Contains(r.Patched, "src/Loja.Api/Program.cs") {
+	if !r.DryRun || len(r.Files) == 0 || !slices.Contains(r.Patched, "src/Shop.Api/Program.cs") {
 		t.Fatalf("%+v", r)
 	}
-	after, _ := os.ReadFile(filepath.Join(dir, "src/Loja.Api/Program.cs"))
+	after, _ := os.ReadFile(filepath.Join(dir, "src/Shop.Api/Program.cs"))
 	if string(before) != string(after) {
-		t.Fatal("mudou o Program.cs")
+		t.Fatal("changed Program.cs")
 	}
-	if _, err := os.Stat(filepath.Join(dir, "src/Loja.Domain/Products")); err == nil {
-		t.Fatal("criou arquivos")
+	if _, err := os.Stat(filepath.Join(dir, "src/Shop.Domain/Products")); err == nil {
+		t.Fatal("created files")
 	}
 }
 
-func TestSemMarcadorPedeAcaoManual(t *testing.T) {
+func TestWithoutMarkerAsksForManualAction(t *testing.T) {
 	dir := dotnetProject(t, nil)
-	program := filepath.Join(dir, "src/Loja.Api/Program.cs")
+	program := filepath.Join(dir, "src/Shop.Api/Program.cs")
 	b, _ := os.ReadFile(program)
 	os.WriteFile(program, []byte(strings.ReplaceAll(string(b), "// romanctl:endpoints\n", "")), 0o644)
 	r, err := Add(dir, AddOptions{Kind: "resource", Name: "Product"})
@@ -188,7 +188,7 @@ func TestSemMarcadorPedeAcaoManual(t *testing.T) {
 	}
 }
 
-func TestNomeInvalidoETipoErrado(t *testing.T) {
+func TestInvalidNameAndWrongKind(t *testing.T) {
 	dir := dotnetProject(t, nil)
 	if _, err := Add(dir, AddOptions{Kind: "resource", Name: "1abc"}); !ui.IsUsage(err) {
 		t.Fatalf("%v", err)
@@ -198,7 +198,7 @@ func TestNomeInvalidoETipoErrado(t *testing.T) {
 	}
 }
 
-func TestProjetosSimples(t *testing.T) {
+func TestSimpleProjects(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "package.json"), []byte(`{"dependencies":{"express":"1"}}`), 0o644)
 	os.WriteFile(filepath.Join(dir, "index.js"), []byte("const app = express();\n\nconst PORT = 3000;\n"), 0o644)
@@ -227,17 +227,17 @@ func TestProjetosSimples(t *testing.T) {
 	}
 }
 
-func TestPatchPulaSoOBlocoInteiro(t *testing.T) {
+func TestPatchSkipsOnlyWholeBlock(t *testing.T) {
 	file := []string{"routes = [", "    orders,", ")", "    # romanctl:routes", "]"}
 	if containsBlock(file, []string{"products,", ")"}) {
-		t.Fatal("um ) solto não deveria contar como o bloco já inserido")
+		t.Fatal("a lone ) should not count as the block already inserted")
 	}
 	if !containsBlock(file, []string{"orders,", ")"}) {
-		t.Fatal("o bloco existe, na ordem")
+		t.Fatal("the block exists, in order")
 	}
 }
 
-func TestPatchMantemORecuoRelativo(t *testing.T) {
+func TestPatchKeepsRelativeIndent(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, "config.yaml")
 	os.WriteFile(file, []byte("services:\n  app:\n    image: x\n  # romanctl:services\n"), 0o644)
@@ -249,19 +249,19 @@ func TestPatchMantemORecuoRelativo(t *testing.T) {
 	b, _ := os.ReadFile(file)
 	want := "services:\n  app:\n    image: x\n  worker:\n    image: y\n    env:\n      - A=1\n  # romanctl:services\n"
 	if string(b) != want {
-		t.Fatalf("obtido:\n%s", b)
+		t.Fatalf("got:\n%s", b)
 	}
 	if changed, _, _ := applyPatch(dir, planned, false); changed {
-		t.Fatal("o bloco já inserido foi inserido de novo")
+		t.Fatal("the already inserted block was inserted again")
 	}
 }
 
-func TestPluralInformadoVenceARegra(t *testing.T) {
-	d := newAddData(filepath.Join(t.TempDir(), "loja"), "Person", "People", "")
+func TestGivenPluralBeatsTheRule(t *testing.T) {
+	d := newAddData(filepath.Join(t.TempDir(), "shop"), "Person", "People", "")
 	if got := d.expand("SampleItems sample_items sample-items SampleItem"); got != "People people people Person" {
-		t.Fatalf("obtido %q", got)
+		t.Fatalf("got %q", got)
 	}
-	if got := newAddData(filepath.Join(t.TempDir(), "loja"), "Person", "", "").expand("SampleItems"); got != "Persons" {
-		t.Fatalf("sem --plural, vale a regra: %q", got)
+	if got := newAddData(filepath.Join(t.TempDir(), "shop"), "Person", "", "").expand("SampleItems"); got != "Persons" {
+		t.Fatalf("without --plural, the rule applies: %q", got)
 	}
 }

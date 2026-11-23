@@ -19,10 +19,10 @@ type catalogOutput struct {
 	Generators map[string][]*Generator `json:"generators"`
 }
 
-// CatalogInfo é o que romanctl catalog --json mostra.
+// CatalogInfo is what romanctl catalog --json shows.
 type CatalogInfo = catalogOutput
 
-// CatalogData monta o catálogo: templates, tipos simples, serviços e geradores.
+// CatalogData builds the catalog: templates, simple types, services and generators.
 func CatalogData() CatalogInfo {
 	templates := LoadTemplates()
 	out := catalogOutput{Arch: knownArch, Templates: templates}
@@ -50,22 +50,22 @@ func Catalog() error {
 	if ui.JSONOutput {
 		return ui.PrintJSON(out)
 	}
-	fmt.Println(ui.STitle.Render(i18n.T("Templates de arquitetura")))
+	fmt.Println(ui.STitle.Render(i18n.T("Architecture templates")))
 	for _, t := range templates {
 		i18n.Printf("  %s  %s\n", ui.SBoldTxt.Render(t.Key()), ui.SGray.Render("("+t.Source+")"))
 		fmt.Printf("    %s\n", i18n.T(t.Description))
-		i18n.Printf("    romanctl new <nome> --stack %s --arch %s", t.Stack, strings.Join(t.Arch, ","))
+		i18n.Printf("    romanctl new <name> --stack %s --arch %s", t.Stack, strings.Join(t.Arch, ","))
 		if len(t.Services) > 0 {
 			i18n.Printf(" [--with %s]", strings.Join(t.Services, ","))
 		}
 		fmt.Println()
 	}
-	fmt.Println("\n" + ui.STitle.Render(i18n.T("Projetos simples")))
-	fmt.Println(i18n.T("  romanctl new <tipo> <nome>   tipos: ") + projects.TypeKeys())
-	fmt.Println("\n" + ui.STitle.Render(i18n.T("Geradores")) + ui.SGray.Render("  romanctl add <tipo> <nome>"))
+	fmt.Println("\n" + ui.STitle.Render(i18n.T("Simple projects")))
+	fmt.Println(i18n.T("  romanctl new <type> <name>   types: ") + projects.TypeKeys())
+	fmt.Println("\n" + ui.STitle.Render(i18n.T("Generators")) + ui.SGray.Render("  romanctl add <kind> <name>"))
 	for _, target := range AllTargets() {
 		fmt.Printf("  %-24s %s\n", target, kinds(LoadGenerators(target)))
 	}
-	i18n.Printf("\nTemplates próprios: %s/<stack>/<id>/template.yaml\n", userTemplatesDir())
+	i18n.Printf("\nYour own templates: %s/<stack>/<id>/template.yaml\n", userTemplatesDir())
 	return nil
 }

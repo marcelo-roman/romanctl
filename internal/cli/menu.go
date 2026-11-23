@@ -17,7 +17,7 @@ import (
 )
 
 func pause() {
-	fmt.Print(ui.SGray.Render(i18n.T("\nEnter para voltar ao menu...")))
+	fmt.Print(ui.SGray.Render(i18n.T("\nPress Enter to return to the menu...")))
 	bufio.NewReader(os.Stdin).ReadString('\n')
 }
 
@@ -29,7 +29,7 @@ func menu() error {
 		services.PrintStatus(false)
 		fmt.Println()
 
-		picked, err := ui.Pick(ui.PickConfig{Title: i18n.T("O que você quer fazer?"), Initial: choice, NoLeft: true, Options: mainMenu()})
+		picked, err := ui.Pick(ui.PickConfig{Title: i18n.T("What do you want to do?"), Initial: choice, NoLeft: true, Options: mainMenu()})
 		if len(picked) > 0 {
 			choice = picked[0]
 		}
@@ -53,7 +53,7 @@ func menu() error {
 			err = menuRunProject()
 		case "code":
 			var name string
-			if err = pickProject(i18n.T("Abrir qual projeto no code-server?"), &name); err == nil {
+			if err = pickProject(i18n.T("Which project to open in code-server?"), &name); err == nil {
 				err = openInCode(name)
 			}
 		case "open":
@@ -88,7 +88,7 @@ func menu() error {
 			doctor()
 		}
 		if ui.IsAbort(err) {
-			continue // Esc/Ctrl+C num submenu: volta direto ao menu
+			continue // Esc/Ctrl+C in a submenu: go straight back to the menu
 		}
 		if err != nil {
 			ui.Failf("%v", err)
@@ -113,11 +113,11 @@ func menuServices(action string) error {
 		opts = append(opts, ui.Opt(s.Name, s.Key))
 	}
 	if len(opts) == 0 {
-		ui.Infof("Nada a fazer: nenhum serviço disponível para essa ação.")
+		ui.Infof("Nothing to do: no service available for this action.")
 		return nil
 	}
-	titles := map[string]string{"start": i18n.T("Iniciar quais?"), "stop": i18n.T("Parar quais?"),
-		"restart": i18n.T("Reiniciar quais?"), "install": i18n.T("Instalar quais?")}
+	titles := map[string]string{"start": i18n.T("Start which ones?"), "stop": i18n.T("Stop which ones?"),
+		"restart": i18n.T("Restart which ones?"), "install": i18n.T("Install which ones?")}
 	sel, err := ui.Pick(ui.PickConfig{Title: titles[action], Options: opts, Multi: true, All: len(opts) > 1})
 	if err != nil {
 		return err
@@ -146,7 +146,7 @@ func menuServices(action string) error {
 
 const templatePrefix = "template:"
 
-// newRequest é o que já foi informado por argumentos: só o resto é perguntado.
+// newRequest is what was already given as arguments: only the rest is asked.
 type newRequest struct {
 	typ, name, stack, arch string
 	with                   []string
@@ -168,7 +168,7 @@ func runNewWizard(req newRequest) error {
 			return err
 		}
 		if templateOnly && len(templates) == 0 {
-			return ui.Usagef("ainda não existe template para --stack %s --arch %s. Combinações disponíveis:\n%s", req.stack, req.arch, scaffold.AvailableCombinations())
+			return ui.Usagef("there is no template yet for --stack %s --arch %s. Available combinations:\n%s", req.stack, req.arch, scaffold.AvailableCombinations())
 		}
 		var opts []ui.Option
 		for _, t := range templates {
@@ -180,10 +180,10 @@ func runNewWizard(req newRequest) error {
 			}
 		}
 		if len(opts) == 1 {
-			typ = opts[0].Value // só há uma opção: não há o que perguntar
+			typ = opts[0].Value // only one option: nothing to ask
 		} else {
 			steps = append(steps, func() error {
-				v, err := ui.PickOne(i18n.T("Tipo de projeto"), opts)
+				v, err := ui.PickOne(i18n.T("Project type"), opts)
 				if err == nil {
 					typ = v
 				}
@@ -193,8 +193,8 @@ func runNewWizard(req newRequest) error {
 	}
 	if name == "" || projects.ValidateName(name) != nil {
 		steps = append(steps, func() error {
-			return ui.Ask(false, huh.NewInput().Title(i18n.T("Nome do projeto")).Placeholder("meu-app").
-				Description(i18n.T("Esc volta · Ctrl+C cancela")).Validate(projects.ValidateName).Value(&name))
+			return ui.Ask(false, huh.NewInput().Title(i18n.T("Project name")).Placeholder("meu-app").
+				Description(i18n.T("Esc goes back · Ctrl+C cancels")).Validate(projects.ValidateName).Value(&name))
 		})
 	}
 	if len(req.with) == 0 {
@@ -207,7 +207,7 @@ func runNewWizard(req newRequest) error {
 			for _, key := range t.Services {
 				opts = append(opts, ui.Opt(key, key))
 			}
-			v, err := ui.Pick(ui.PickConfig{Title: i18n.T("Quais serviços o projeto usa?"), Options: opts, Multi: true, AllowNone: true})
+			v, err := ui.Pick(ui.PickConfig{Title: i18n.T("Which services does the project use?"), Options: opts, Multi: true, AllowNone: true})
 			if err == nil {
 				chosen = v
 			}
@@ -216,8 +216,8 @@ func runNewWizard(req newRequest) error {
 	}
 	if !req.noGit {
 		steps = append(steps, func() error {
-			return ui.Ask(false, huh.NewConfirm().Title(i18n.T("Iniciar repositório git?")).
-				Description(i18n.T("←/→ alterna · Esc volta")).Affirmative(i18n.T("Sim")).Negative(i18n.T("Não")).Value(&git))
+			return ui.Ask(false, huh.NewConfirm().Title(i18n.T("Initialize a git repository?")).
+				Description(i18n.T("←/→ toggles · Esc goes back")).Affirmative(i18n.T("Yes")).Negative(i18n.T("No")).Value(&git))
 		})
 	}
 	if err := ui.Wizard(steps...); err != nil {
@@ -226,7 +226,7 @@ func runNewWizard(req newRequest) error {
 	if key, ok := strings.CutPrefix(typ, templatePrefix); ok {
 		t := templateByKey(key)
 		if t == nil {
-			return i18n.Errorf("template %s não encontrado", key)
+			return i18n.Errorf("template %s not found", key)
 		}
 		sort.Strings(chosen)
 		return scaffold.ScaffoldProject(t, name, chosen, scaffold.Options{Git: git, DryRun: req.dryRun, Offline: req.offline})
@@ -246,7 +246,7 @@ func templateByKey(key string) *scaffold.Template {
 func pickProject(title string, name *string) error {
 	ps := projects.ListProjects()
 	if len(ps) == 0 {
-		return i18n.Errorf("nenhum projeto em %s", config.ProjDir)
+		return i18n.Errorf("no projects in %s", config.ProjDir)
 	}
 	var opts []ui.Option
 	for _, p := range ps {
@@ -263,10 +263,10 @@ func menuRunProject() error {
 	var name string
 	open := true
 	err := ui.Wizard(
-		func() error { return pickProject(i18n.T("Rodar qual projeto?"), &name) },
+		func() error { return pickProject(i18n.T("Which project to run?"), &name) },
 		func() error {
-			return ui.Ask(false, huh.NewConfirm().Title(i18n.T("Abrir no navegador quando subir?")).
-				Description(i18n.T("←/→ alterna · Esc volta")).Affirmative(i18n.T("Sim")).Negative(i18n.T("Não")).Value(&open))
+			return ui.Ask(false, huh.NewConfirm().Title(i18n.T("Open in the browser when it is up?")).
+				Description(i18n.T("←/→ toggles · Esc goes back")).Affirmative(i18n.T("Yes")).Negative(i18n.T("No")).Value(&open))
 		},
 	)
 	if err != nil {
@@ -277,7 +277,7 @@ func menuRunProject() error {
 
 func menuRemoveProject() error {
 	var name string
-	if err := pickProject(i18n.T("Remover qual projeto?"), &name); err != nil {
+	if err := pickProject(i18n.T("Which project to remove?"), &name); err != nil {
 		return err
 	}
 	return confirmRemoveProject(name)
@@ -286,13 +286,13 @@ func menuRemoveProject() error {
 func confirmRemoveProject(name string) error {
 	var typed string
 	if err := ui.Ask(false, huh.NewInput().
-		Title(i18n.Sprintf("Digite %q para confirmar a remoção", name)).
-		Description(i18n.T("Todos os arquivos serão apagados, sem volta. Esc volta.")).
+		Title(i18n.Sprintf("Type %q to confirm the removal", name)).
+		Description(i18n.T("All files will be permanently deleted. Esc goes back.")).
 		Value(&typed)); err != nil {
 		return err
 	}
 	if typed != name {
-		ui.Infof("Nome não confere — nada foi removido.")
+		ui.Infof("Name does not match — nothing was removed.")
 		return nil
 	}
 	return projects.RemoveProject(name)
@@ -306,44 +306,44 @@ func menuLogs() error {
 		}
 	}
 	if len(opts) == 0 {
-		ui.Infof("Nenhum log ainda.")
+		ui.Infof("No logs yet.")
 		return nil
 	}
-	k, err := ui.PickOne(i18n.T("Log de qual serviço?"), opts)
+	k, err := ui.PickOne(i18n.T("Logs of which service?"), opts)
 	if err != nil {
 		return err
 	}
 	return services.TailLog(services.FindService(k))
 }
 
-// mainMenu segue o "git help": cada linha mostra o subcomando real, com o que ele faz, em
-// seções. Assim o menu também ensina a usar a linha de comando.
+// mainMenu follows "git help": each row shows the real subcommand and what it does, in
+// sections. This way the menu also teaches how to use the command line.
 func mainMenu() []ui.Option {
 	entries := []struct{ section, command, value, desc string }{
-		{i18n.T("Projetos"), "new", "new", i18n.T("Criar um projeto")},
-		{i18n.T("Projetos"), "add", "add", i18n.T("Adicionar código a um projeto")},
-		{i18n.T("Projetos"), "up", "up", i18n.T("Subir serviços, banco e app")},
-		{i18n.T("Projetos"), "down", "down", i18n.T("Derrubar o que o up subiu")},
-		{i18n.T("Projetos"), "run", "run", i18n.T("Rodar um projeto")},
-		{i18n.T("Projetos"), "code", "code", i18n.T("Abrir um projeto no code-server")},
-		{i18n.T("Projetos"), "open", "open", i18n.T("Abrir no navegador")},
-		{i18n.T("Projetos"), "publish", "publish", i18n.T("Publicar no GitHub")},
-		{i18n.T("Projetos"), "list", "list", i18n.T("Listar os projetos")},
-		{i18n.T("Projetos"), "rm", "rm", i18n.T("Remover um projeto")},
-		{i18n.T("Serviços"), "start", "start", i18n.T("Iniciar serviços")},
-		{i18n.T("Serviços"), "stop", "stop", i18n.T("Parar serviços")},
-		{i18n.T("Serviços"), "restart", "restart", i18n.T("Reiniciar serviços")},
-		{i18n.T("Serviços"), "restore", "restore", i18n.T("Religar o que estava ligado")},
-		{i18n.T("Serviços"), "logs", "logs", i18n.T("Ver os logs de um serviço")},
-		{i18n.T("Serviços"), "install", "install", i18n.T("Preparar um serviço")},
-		{i18n.T("Ferramentas"), "tools list", "tools-list", i18n.T("Listar as ferramentas")},
-		{i18n.T("Ferramentas"), "tools install", "tools", i18n.T("Instalar ferramentas")},
-		{i18n.T("Ferramentas"), "tools uninstall", "tools-rm", i18n.T("Remover ferramentas")},
-		{i18n.T("Sistema"), "system", "system", i18n.T("CPU, memória, disco e bateria")},
-		{i18n.T("Sistema"), "doctor", "doctor", i18n.T("Versões das ferramentas principais")},
-		{i18n.T("Sistema"), "offline", "offline", i18n.T("Preparar para ficar sem internet")},
-		{i18n.T("Sistema"), "config", "config", i18n.T("Idioma")},
-		{"", "quit", "quit", i18n.T("Sair")},
+		{i18n.T("Projects"), "new", "new", i18n.T("Create a project")},
+		{i18n.T("Projects"), "add", "add", i18n.T("Add code to a project")},
+		{i18n.T("Projects"), "up", "up", i18n.T("Bring up services, database and app")},
+		{i18n.T("Projects"), "down", "down", i18n.T("Bring down what up brought up")},
+		{i18n.T("Projects"), "run", "run", i18n.T("Run a project")},
+		{i18n.T("Projects"), "code", "code", i18n.T("Open a project in code-server")},
+		{i18n.T("Projects"), "open", "open", i18n.T("Open in browser")},
+		{i18n.T("Projects"), "publish", "publish", i18n.T("Publish to GitHub")},
+		{i18n.T("Projects"), "list", "list", i18n.T("List the projects")},
+		{i18n.T("Projects"), "rm", "rm", i18n.T("Remove a project")},
+		{i18n.T("Services"), "start", "start", i18n.T("Start services")},
+		{i18n.T("Services"), "stop", "stop", i18n.T("Stop services")},
+		{i18n.T("Services"), "restart", "restart", i18n.T("Restart services")},
+		{i18n.T("Services"), "restore", "restore", i18n.T("Turn back on what was running")},
+		{i18n.T("Services"), "logs", "logs", i18n.T("View a service's logs")},
+		{i18n.T("Services"), "install", "install", i18n.T("Prepare a service")},
+		{i18n.T("Tools"), "tools list", "tools-list", i18n.T("List the tools")},
+		{i18n.T("Tools"), "tools install", "tools", i18n.T("Install tools")},
+		{i18n.T("Tools"), "tools uninstall", "tools-rm", i18n.T("Remove tools")},
+		{i18n.T("System"), "system", "system", i18n.T("CPU, memory, disk and battery")},
+		{i18n.T("System"), "doctor", "doctor", i18n.T("Versions of the main tools")},
+		{i18n.T("System"), "offline", "offline", i18n.T("Prepare to work without internet")},
+		{i18n.T("System"), "config", "config", i18n.T("Language")},
+		{"", "quit", "quit", i18n.T("Quit")},
 	}
 	options := make([]ui.Option, len(entries))
 	for i, e := range entries {

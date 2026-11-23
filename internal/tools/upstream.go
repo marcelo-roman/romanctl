@@ -10,7 +10,7 @@ import (
 	"romanctl/internal/sys"
 )
 
-// Upstream é o que a instalação traria agora: a versão, por onde vem e o README do projeto.
+// Upstream is what installing would bring right now: the version, where it comes from and the project's README.
 type Upstream struct {
 	Latest string `json:"latest,omitempty"`
 	Source string `json:"source"`
@@ -18,7 +18,7 @@ type Upstream struct {
 	Readme string `json:"-"`
 }
 
-// from aponta o projeto no GitHub cujas releases são o que o instalador baixa.
+// from points to the GitHub project whose releases are what the installer downloads.
 func (t *Tool) from(repo string) *Tool {
 	t.Repo = repo
 	t.latest = func() (string, error) { return githubLatestVersion(repo) }
@@ -39,8 +39,8 @@ func github(repo string, install func(string) error) source {
 		install: install, versions: func() ([]Version, error) { return githubVersions(repo) }}
 }
 
-// sources completa os instaladores próprios com a origem deles. latest é a mesma consulta que
-// o instalador faz, para a versão mostrada ser a que vai chegar.
+// sources complements the custom installers with their origin. latest is the same query the
+// installer makes, so the version shown is the one that will arrive.
 var sources = map[string]source{
 	"kubectl":     {repo: "kubernetes/kubectl", latest: kubectlLatest, install: installKubectlAt, versions: kubectlVersions},
 	"helm":        {repo: "helm/helm", latest: func() (string, error) { return githubLatestVersion("helm/helm") }, install: installHelmAt, versions: func() ([]Version, error) { return githubVersions("helm/helm") }},
@@ -73,8 +73,8 @@ func init() {
 	}
 }
 
-// Upstream consulta a origem que runInstall usaria nesta máquina. Falhas de rede deixam os
-// campos vazios: a informação ajuda, mas não pode impedir a instalação.
+// Upstream queries the source runInstall would use on this machine. Network failures leave the
+// fields empty: the information helps, but must not block the installation.
 func (t *Tool) Upstream(withReadme bool) Upstream {
 	p := platform.Current
 	var u Upstream
@@ -86,7 +86,7 @@ func (t *Tool) Upstream(withReadme bool) Upstream {
 	case t.PyPI != "":
 		u = pypiUpstream(t.PyPI, withReadme)
 	case t.Install != nil:
-		u.Source = i18n.T("instalador oficial")
+		u.Source = i18n.T("official installer")
 		if t.Release {
 			u.Source = "GitHub releases"
 		}
@@ -112,7 +112,7 @@ func (t *Tool) Upstream(withReadme bool) Upstream {
 
 var reGitHub = regexp.MustCompile(`github\.com[/:]([\w.-]+/[\w.-]+?)(?:\.git)?(?:[/#?]|$)`)
 
-// Repo devolve o projeto no GitHub, quando a página aponta para lá.
+// Repo returns the GitHub project, when the page points there.
 func (u Upstream) Repo() string {
 	if m := reGitHub.FindStringSubmatch(u.URL); m != nil {
 		return m[1]
@@ -122,10 +122,10 @@ func (u Upstream) Repo() string {
 
 var reVersion = regexp.MustCompile(`\d+(?:\.\d+)+`)
 
-// CoreVersion tira o que não é número, para comparar "helm v3.16.2+g1a2b" com "3.16.2".
+// CoreVersion strips what is not numeric, to compare "helm v3.16.2+g1a2b" with "3.16.2".
 func CoreVersion(s string) string { return reVersion.FindString(s) }
 
-// UpToDate diz se a versão instalada é a que a instalação traria.
+// UpToDate says whether the installed version is the one installing would bring.
 func UpToDate(installed, latest string) bool {
 	a, b := CoreVersion(installed), CoreVersion(latest)
 	return a != "" && a == b
@@ -243,7 +243,7 @@ var (
 	reApkVersion   = regexp.MustCompile(`(?m)^\s+(\S+):\s*$`)
 )
 
-// pkgUpstream pergunta ao gerenciador de pacotes a versão candidata, sem instalar nada.
+// pkgUpstream asks the package manager for the candidate version, without installing anything.
 func pkgUpstream(manager string, pkgs []string) Upstream {
 	u := Upstream{Source: manager}
 	if len(pkgs) == 0 {

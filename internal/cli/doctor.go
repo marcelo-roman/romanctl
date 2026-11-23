@@ -13,8 +13,8 @@ import (
 )
 
 func doctor() {
-	i18n.Printf("%s %s\n\n", ui.STitle.Render(i18n.T("Plataforma")), platform.Current.Describe())
-	fmt.Println(ui.STitle.Render(i18n.T("Ferramentas")))
+	i18n.Printf("%s %s\n\n", ui.STitle.Render(i18n.T("Platform")), platform.Current.Describe())
+	fmt.Println(ui.STitle.Render(i18n.T("Tools")))
 	tools := [][]string{
 		{"node", "node", "--version"},
 		{"npm", "npm", "--version"},
@@ -31,7 +31,7 @@ func doctor() {
 		if b := services.PgBin(); t[0] == "PostgreSQL" && b != "" {
 			t[1] = b + "/postgres"
 		}
-		v := ui.SGray.Render(i18n.T("não instalado"))
+		v := ui.SGray.Render(i18n.T("not installed"))
 		if _, err := exec.LookPath(t[1]); err == nil {
 			if out, err := sys.Output(t[1], t[2:]...); err == nil {
 				v = strings.SplitN(out, "\n", 2)[0]
@@ -39,11 +39,19 @@ func doctor() {
 		}
 		i18n.Printf("  %-12s %s\n", t[0], v)
 	}
-	if out, err := sys.Output("sh", "-c", "free -h | awk '/Mem:/{print $7\" livres de \"$2}'"); err == nil {
-		i18n.Printf("\n  %-12s %s\n", i18n.T("Memória"), out)
+	if out, err := sys.Output("sh", "-c", "free -h | awk '/Mem:/{print $7, $2}'"); err == nil {
+		i18n.Printf("\n  %-12s %s\n", i18n.T("Memory"), freeOf(out))
 	}
-	if out, err := sys.Output("sh", "-c", "df -h "+config.Home+" | awk 'NR==2{print $4\" livres de \"$2}'"); err == nil {
-		i18n.Printf("  %-12s %s\n", i18n.T("Disco"), out)
+	if out, err := sys.Output("sh", "-c", "df -h "+config.Home+" | awk 'NR==2{print $4, $2}'"); err == nil {
+		i18n.Printf("  %-12s %s\n", i18n.T("Disk"), freeOf(out))
 	}
-	i18n.Printf("  %-12s %s\n  %-12s %s\n", i18n.T("Projetos"), config.ProjDir, i18n.T("Dados"), config.DataDir)
+	i18n.Printf("  %-12s %s\n  %-12s %s\n", i18n.T("Projects"), config.ProjDir, i18n.T("Data"), config.DataDir)
+}
+
+func freeOf(out string) string {
+	free, total, ok := strings.Cut(strings.TrimSpace(out), " ")
+	if !ok {
+		return out
+	}
+	return i18n.Sprintf("%s free of %s", free, total)
 }

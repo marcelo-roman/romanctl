@@ -1,7 +1,7 @@
-// Shim para rodar PostgreSQL dentro do proot (Termux/Android).
-// No proot todos os arquivos aparecem como do root (uid 0), e o postgres
-// exige que o diretório de dados pertença ao usuário que o executa.
-// Aqui, quando um stat devolve uid 0, reportamos o uid efetivo do processo.
+// Shim to run PostgreSQL inside proot (Termux/Android).
+// Under proot every file appears to be owned by root (uid 0), and postgres
+// requires the data directory to belong to the user running it.
+// Here, when a stat returns uid 0, we report the process's effective uid.
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <fcntl.h>
@@ -28,9 +28,9 @@ WRAP(lstat64,   (const char *p, struct stat64 *s),               (p, s), s)
 WRAP(fstat64,   (int fd, struct stat64 *s),                      (fd, s), s)
 WRAP(fstatat64, (int d, const char *p, struct stat64 *s, int f), (d, p, s, f), s)
 
-// ---- Emulação mínima de SysV shared memory (shmget/shmat/shmdt/shmctl) ----
-// O postgres só usa um segmento pequeno de "interlock" via SysV; a memória
-// principal vem de mmap. Os processos filhos herdam o mapeamento via fork().
+// ---- Minimal SysV shared memory emulation (shmget/shmat/shmdt/shmctl) ----
+// postgres only uses a small "interlock" segment via SysV; the main memory
+// comes from mmap. Child processes inherit the mapping through fork().
 #include <errno.h>
 #include <string.h>
 #include <sys/mman.h>

@@ -11,7 +11,7 @@ import (
 
 var safeDBName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
-// Conn é como um projeto alcança o serviço. Os templates montam as próprias variáveis com estes campos.
+// Conn is how a project reaches the service. Templates build their own variables from these fields.
 type Conn struct {
 	Host     string
 	Port     string
@@ -21,7 +21,7 @@ type Conn struct {
 	URL      string
 }
 
-// Conn devolve o endereço e as credenciais do serviço para o banco db.
+// Conn returns the service's address and credentials for database db.
 func (s *Service) Conn(db string) (Conn, bool) {
 	switch s.Key {
 	case "postgres":
@@ -50,7 +50,7 @@ var envNames = map[string]string{
 	"mariadb": "DATABASE_URL", "sqlserver": "SQLSERVER_CONNECTION_STRING", "rabbitmq": "RABBITMQ_URL", "kafka": "KAFKA_BROKERS",
 }
 
-// EnvVars são as variáveis que todo projeto recebe para falar com o serviço.
+// EnvVars are the variables every project gets to talk to the service.
 func (s *Service) EnvVars(db string) [][2]string {
 	c, ok := s.Conn(db)
 	if !ok {
@@ -59,12 +59,12 @@ func (s *Service) EnvVars(db string) [][2]string {
 	return [][2]string{{envNames[s.Key], c.URL}}
 }
 
-// HasDatabases diz se o banco precisa ser criado antes de o app conectar.
+// HasDatabases says whether the database must be created before the app connects.
 func (s *Service) HasDatabases() bool {
 	return s.Key == "postgres" || s.Key == "mysql" || s.Key == "mariadb"
 }
 
-// databaseCommand monta o comando que roda SQL no serviço, no ambiente atual.
+// databaseCommand builds the command that runs SQL on the service, in the current environment.
 func (s *Service) databaseCommand(sql string) []string {
 	switch s.Key {
 	case "postgres":
@@ -80,11 +80,11 @@ func (s *Service) databaseCommand(sql string) []string {
 	return nil
 }
 
-// EnsureDatabase cria o banco se faltar. Repete porque o serviço pode abrir a porta antes de
-// aceitar comandos, principalmente na primeira subida de um container.
+// EnsureDatabase creates the database if missing. It retries because the service may open its port
+// before accepting commands, especially on a container's first start.
 func (s *Service) EnsureDatabase(name string) error {
 	if !safeDBName.MatchString(name) {
-		return i18n.Errorf("nome de banco inválido: %q", name)
+		return i18n.Errorf("invalid database name: %q", name)
 	}
 	var last error
 	ready := sys.WaitUntil(60*time.Second, func() bool {
@@ -109,7 +109,7 @@ func (s *Service) createDatabase(name string) error {
 		}
 		return nil
 	}
-	// O PostgreSQL não tem CREATE DATABASE IF NOT EXISTS.
+	// PostgreSQL has no CREATE DATABASE IF NOT EXISTS.
 	out, err := run("SELECT 1 FROM pg_database WHERE datname = '" + name + "'")
 	if err != nil {
 		return i18n.Errorf("%v: %s", err, sys.Tail(out, 3))

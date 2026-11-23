@@ -12,30 +12,30 @@ import (
 	"time"
 )
 
-// O estado guarda o que o usuário quer ligado. Ele só muda por start/stop, então
-// sobrevive quando o Android mata o Termux ou o tablet reinicia.
+// The state stores what the user wants running. It only changes through start/stop, so
+// it survives Android killing Termux or the tablet rebooting.
 type RunState struct {
 	Services []string           `json:"services"`
-	Projects map[string]int     `json:"projects"` // projeto em "run" → PID do romanctl
+	Projects map[string]int     `json:"projects"` // project in "run" → romanctl PID
 	Updated  string             `json:"updated"`
 	Ups      map[string]UpEntry `json:"ups,omitempty"`
 }
 
-// UpEntry é um projeto levantado com romanctl up.
+// UpEntry is a project brought up with romanctl up.
 type UpEntry struct {
 	Path    string   `json:"path"`
 	URL     string   `json:"url,omitempty"`
-	URLs    []string `json:"urls,omitempty"` // todas as URLs, num projeto com vários processos
+	URLs    []string `json:"urls,omitempty"` // every URL, in a multi-process project
 	Log     string   `json:"log,omitempty"`
-	PID     int      `json:"pid,omitempty"` // zero: só os serviços estão no ar
+	PID     int      `json:"pid,omitempty"` // zero: only the services are up
 	Uses    []string `json:"uses,omitempty"`
-	Started []string `json:"started,omitempty"` // serviços que o up ligou, e o down pode desligar
+	Started []string `json:"started,omitempty"` // services that up started and down may stop
 }
 
-// Alive diz se o app segue rodando.
+// Alive says whether the app is still running.
 func (e UpEntry) Alive() bool { return e.PID > 0 && syscall.Kill(-e.PID, 0) == nil }
 
-// SetUp registra um projeto no ar.
+// SetUp records a project as up.
 func SetUp(name string, e UpEntry) {
 	err := UpdateState(func(st *RunState) {
 		if st.Ups == nil {
@@ -44,11 +44,11 @@ func SetUp(name string, e UpEntry) {
 		st.Ups[name] = e
 	})
 	if err != nil {
-		ui.Warnf("Não consegui salvar o estado: %v", err)
+		ui.Warnf("Could not save the state: %v", err)
 	}
 }
 
-// TransferStarted tira o projeto do estado e passa os serviços dele para outro que os usa.
+// TransferStarted removes the project from the state and hands its services to another project that uses them.
 func TransferStarted(name string, services []string) {
 	err := UpdateState(func(st *RunState) {
 		delete(st.Ups, name)
@@ -65,7 +65,7 @@ func TransferStarted(name string, services []string) {
 		}
 	})
 	if err != nil {
-		ui.Warnf("Não consegui salvar o estado: %v", err)
+		ui.Warnf("Could not save the state: %v", err)
 	}
 }
 
@@ -75,13 +75,13 @@ func ReadState() RunState {
 	var st RunState
 	if b, err := os.ReadFile(statePath); err == nil {
 		if err := json.Unmarshal(b, &st); err != nil {
-			ui.Warnf("Estado ilegível em %s: %v", statePath, err)
+			ui.Warnf("Unreadable state in %s: %v", statePath, err)
 		}
 	}
 	return st
 }
 
-// updateState altera o estado com trava, porque várias sessões podem usar o romanctl.
+// updateState changes the state under a lock, because several sessions may use romanctl.
 func UpdateState(f func(*RunState)) error {
 	if err := os.MkdirAll(config.DataDir, 0o755); err != nil {
 		return err
@@ -119,7 +119,7 @@ func MarkService(key string, on bool) {
 		}
 	})
 	if err != nil {
-		ui.Warnf("Não consegui salvar o estado: %v", err)
+		ui.Warnf("Could not save the state: %v", err)
 	}
 }
 
@@ -134,7 +134,7 @@ func MarkProject(name string, on bool) {
 		}
 	})
 	if err != nil {
-		ui.Warnf("Não consegui salvar o estado: %v", err)
+		ui.Warnf("Could not save the state: %v", err)
 	}
 }
 

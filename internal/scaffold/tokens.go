@@ -6,16 +6,16 @@ import (
 	"unicode"
 )
 
-// Os templates são projetos de verdade, que compilam e passam nos testes na própria pasta. O nome do
-// projeto de exemplo é sample-app, a entidade de exemplo dos geradores é SampleItem e o agregado de
-// --in é SampleParent. Gerar é trocar esses nomes, em todas as grafias, pelos escolhidos.
+// Templates are real projects that build and pass their tests in place. The sample project name is
+// sample-app, the generators' sample entity is SampleItem and the --in aggregate is SampleParent.
+// Generating means replacing those names, in every spelling, with the chosen ones.
 var (
 	sampleProject = []string{"sample", "app"}
 	sampleEntity  = []string{"sample", "item"}
 	sampleParent  = []string{"sample", "parent"}
 )
 
-// words separa product-item, product_item, ProductItem e minha-loja.v2 em palavras minúsculas.
+// words splits product-item, product_item, ProductItem and my-shop.v2 into lowercase words.
 func words(s string) []string {
 	var out []string
 	var cur []rune
@@ -50,7 +50,7 @@ func upperFirst(s string) string {
 	return string(r)
 }
 
-// spellings são as grafias de um nome, na ordem em que precisam ser trocadas.
+// spellings returns a name's spellings, in the order they must be replaced.
 func spellings(w []string) []string {
 	pascal := ""
 	title := make([]string, len(w))
@@ -92,13 +92,13 @@ func pluralWords(w []string) []string {
 	return out
 }
 
-// projectReplacer troca o nome do projeto de exemplo pelo do projeto.
+// projectReplacer replaces the sample project name with the project's.
 func projectReplacer(name string) *strings.Replacer {
 	return strings.NewReplacer(pairs(sampleProject, words(name))...)
 }
 
-// entityReplacer troca também a entidade e o agregado de exemplo. O plural vem antes, porque
-// SampleItems contém SampleItem.
+// entityReplacer also replaces the sample entity and aggregate. The plural comes first, because
+// SampleItems contains SampleItem.
 func entityReplacer(project, entity, plural, parent string) *strings.Replacer {
 	var all []string
 	all = append(all, pairs(pluralWords(sampleEntity), words(plural))...)
@@ -111,7 +111,7 @@ func entityReplacer(project, entity, plural, parent string) *strings.Replacer {
 	return strings.NewReplacer(all...)
 }
 
-// replaceContent troca os nomes em arquivos de texto; binários passam intactos.
+// replaceContent replaces the names in text files; binaries pass through untouched.
 func replaceContent(r *strings.Replacer, b []byte) []byte {
 	if bytes.IndexByte(b, 0) >= 0 {
 		return b

@@ -1,4 +1,4 @@
-// Package browser abre URLs no navegador da máquina.
+// Package browser opens URLs in the machine's browser.
 package browser
 
 import (
@@ -13,7 +13,7 @@ import (
 
 const termuxPrefix = "/data/data/com.termux/files/usr"
 
-// opener escolhe o comando de cada ambiente; vazio significa nenhum disponível.
+// opener picks the command for each environment; empty means none is available.
 func opener(p platform.Info, have func(string) bool) []string {
 	switch {
 	case p.OS == "darwin":
@@ -23,7 +23,7 @@ func opener(p platform.Info, have func(string) bool) []string {
 	case p.WSL && have("wslview"):
 		return []string{"wslview"}
 	case p.WSL && have("rundll32.exe"):
-		// Repassa a URL inteira ao navegador padrão do Windows, sem passar pelo cmd.
+		// Hands the whole URL to the default Windows browser, bypassing cmd.
 		return []string{"rundll32.exe", "url.dll,FileProtocolHandler"}
 	case p.WSL && have("cmd.exe"):
 		return []string{"cmd.exe", "/c", "start"}
@@ -33,11 +33,11 @@ func opener(p platform.Info, have func(string) bool) []string {
 	return nil
 }
 
-// OpenURL abre a URL ou, sem navegador disponível, só informa o endereço.
+// OpenURL opens the URL or, with no browser available, just prints the address.
 func OpenURL(u string) error {
 	command := opener(platform.Current, func(bin string) bool { return sys.Have(bin) || sys.Exists(bin) })
 	if command == nil {
-		ui.Warnf("Não achei como abrir o navegador; abra manualmente: %s", u)
+		ui.Warnf("Could not find a way to open the browser; open it manually: %s", u)
 		return nil
 	}
 	var env []string
@@ -49,14 +49,14 @@ func OpenURL(u string) error {
 		target = cmdEscape(u)
 	}
 	if out, err := sys.OutputEnv(env, command[0], append(command[1:], target)...); err != nil {
-		return i18n.Errorf("não consegui abrir o navegador (%v) %s — abra manualmente: %s", err, out, u)
+		return i18n.Errorf("could not open the browser (%v) %s — open it manually: %s", err, out, u)
 	}
-	ui.Okf("Abrindo %s", ui.SBlue.Render(u))
+	ui.Okf("Opening %s", ui.SBlue.Render(u))
 	return nil
 }
 
-// cmdEscape protege a URL do cmd.exe, que leria & | < > ^ ( ) como sintaxe e cortaria o endereço
-// no primeiro &, levando só o primeiro parâmetro.
+// cmdEscape protects the URL from cmd.exe, which would read & | < > ^ ( ) as syntax and cut the
+// address at the first &, keeping only the first parameter.
 func cmdEscape(u string) string {
 	var b strings.Builder
 	for _, r := range u {

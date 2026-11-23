@@ -17,7 +17,7 @@ const (
 	setupOffline = "offline"
 )
 
-// missingTools são as ferramentas do template que ainda não rodam nesta máquina.
+// missingTools returns the template's tools that do not run on this machine yet.
 func missingTools(keys []string) []string {
 	var out []string
 	for _, key := range keys {
@@ -33,7 +33,7 @@ func missingTools(keys []string) []string {
 	return out
 }
 
-// ensureTools oferece instalar o que falta e devolve o que continuou faltando.
+// ensureTools offers to install what is missing and returns what is still missing.
 func ensureTools(keys []string) []string {
 	missing := missingTools(keys)
 	if len(missing) == 0 {
@@ -41,12 +41,12 @@ func ensureTools(keys []string) []string {
 	}
 	list := strings.Join(missing, " ")
 	if !ui.Interactive() || ui.JSONOutput {
-		ui.Warnf("O projeto precisa de %s. Instale com: romanctl tools install %s", list, list)
+		ui.Warnf("The project needs %s. Install it with: romanctl tools install %s", list, list)
 		return missing
 	}
-	ok, err := ui.Confirm(i18n.Sprintf("O projeto precisa de %s. Instalar agora?", list))
+	ok, err := ui.Confirm(i18n.Sprintf("The project needs %s. Install it now?", list))
 	if err != nil || !ok {
-		ui.Warnf("O projeto precisa de %s. Instale com: romanctl tools install %s", list, list)
+		ui.Warnf("The project needs %s. Install it with: romanctl tools install %s", list, list)
 		return missing
 	}
 	for _, key := range missing {
@@ -57,32 +57,32 @@ func ensureTools(keys []string) []string {
 	return missingTools(keys)
 }
 
-// runSetup baixa as dependências do projeto recém-criado. Uma falha aqui não desfaz o projeto.
+// runSetup downloads the new project's dependencies. A failure here does not undo the project.
 func runSetup(t *Template, dir string, withs map[string]bool, offline bool, missing []string) string {
 	steps := t.setupFor(withs)
 	if len(steps) == 0 {
 		return ""
 	}
 	if offline {
-		ui.Infof("Sem internet, as dependências ficam para depois: cd %s && %s", dir, strings.Join(steps, " && "))
+		ui.Infof("Offline, dependencies are left for later: cd %s && %s", dir, strings.Join(steps, " && "))
 		return setupOffline
 	}
 	if len(missing) > 0 {
-		ui.Infof("As dependências ficam para depois: cd %s && %s", dir, strings.Join(steps, " && "))
+		ui.Infof("Dependencies are left for later: cd %s && %s", dir, strings.Join(steps, " && "))
 		return setupSkipped
 	}
 	for _, command := range steps {
 		var err error
-		ui.Spin(i18n.Sprintf("Rodando %s...", command), func(func(string)) { err = sys.Quiet(dir, nil, "sh", "-c", command) })
+		ui.Spin(i18n.Sprintf("Running %s...", command), func(func(string)) { err = sys.Quiet(dir, nil, "sh", "-c", command) })
 		if err != nil {
-			ui.Warnf("%s falhou; o projeto foi criado, rode de novo dentro da pasta:\n%v", command, err)
+			ui.Warnf("%s failed; the project was created, run it again inside the folder:\n%v", command, err)
 			return setupFailed
 		}
 	}
 	return setupDone
 }
 
-// Complete preenche, a partir do template, o que um romanctl.yaml mais antigo não traz.
+// Complete fills in, from the template, what an older romanctl.yaml lacks.
 func Complete(m *manifest.Project) {
 	t := FindByKey(m.Stack, m.Template)
 	if t == nil {

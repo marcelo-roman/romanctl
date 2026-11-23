@@ -20,7 +20,7 @@ type ProjectType struct {
 }
 
 var ProjectTypes = []ProjectType{
-	{"node", i18n.T("Node.js (básico)"), createNode(false)},
+	{"node", i18n.T("Node.js (basic)"), createNode(false)},
 	{"express", "API Node.js + Express", createNode(true)},
 	{"react", "React + Vite (JavaScript)", createVite("react")},
 	{"react-ts", "React + Vite (TypeScript)", createVite("react-ts")},
@@ -29,7 +29,7 @@ var ProjectTypes = []ProjectType{
 	{"dotnet-console", ".NET Console", createDotnet("console")},
 	{"dotnet-mvc", ".NET MVC", createDotnet("mvc")},
 	{"dotnet-blazor", ".NET Blazor", createDotnet("blazor")},
-	{"go", i18n.T("Go (módulo + main.go)"), createGo},
+	{"go", i18n.T("Go (module + main.go)"), createGo},
 }
 
 func FindType(k string) *ProjectType {
@@ -45,10 +45,10 @@ var nameRe = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
 
 func ValidateName(n string) error {
 	if !nameRe.MatchString(n) {
-		return i18n.Errorf("use letras minúsculas, números, '-', '_' ou '.' (ex.: meu-app)")
+		return i18n.Errorf("use lowercase letters, numbers, '-', '_' or '.' (e.g. my-app)")
 	}
 	if sys.Exists(filepath.Join(config.ProjDir, n)) {
-		return i18n.Errorf("já existe um projeto chamado %q", n)
+		return i18n.Errorf("a project named %q already exists", n)
 	}
 	return nil
 }
@@ -56,17 +56,17 @@ func ValidateName(n string) error {
 func NewProject(typ, name string, git, forceOffline bool) error {
 	t := FindType(typ)
 	if t == nil {
-		return i18n.Errorf("tipo desconhecido %q (tipos: %s)", typ, TypeKeys())
+		return i18n.Errorf("unknown type %q (types: %s)", typ, TypeKeys())
 	}
 	if err := ValidateName(name); err != nil {
 		return err
 	}
 	os.MkdirAll(config.ProjDir, 0o755)
 	path := filepath.Join(config.ProjDir, name)
-	ui.Infof("Criando %s em %s ...", t.Label, path)
+	ui.Infof("Creating %s in %s ...", t.Label, path)
 	offlineMode = forceOffline || !sys.IsOnline()
 	if offlineMode {
-		ui.Warnf("Sem internet: usando templates e cache locais")
+		ui.Warnf("No internet: using local templates and cache")
 	}
 	var err error
 	if offlineMode && isTemplated(t.Key) {
@@ -74,20 +74,20 @@ func NewProject(typ, name string, git, forceOffline bool) error {
 	} else {
 		err = t.Create(name, path)
 		if err != nil && !offlineMode && isTemplated(t.Key) && HasTemplate(t.Key) {
-			ui.Warnf("O gerador falhou (%v). Tentando pelo template local...", err)
+			ui.Warnf("The generator failed (%v). Trying the local template...", err)
 			os.RemoveAll(path)
 			err = createFromTemplate(t.Key, name, path)
 		}
 	}
 	if err != nil {
-		os.RemoveAll(path) // não deixa projeto pela metade
-		return i18n.Errorf("falha ao criar %s: %w", name, err)
+		os.RemoveAll(path) // never leave a half-created project
+		return i18n.Errorf("failed to create %s: %w", name, err)
 	}
 	if git && sys.Have("git") && !sys.Exists(filepath.Join(path, ".git")) {
 		sys.Output("git", "-C", path, "init", "-q")
 	}
-	ui.Okf("Projeto %s criado!", ui.SBoldTxt.Render(name))
-	i18n.Printf("   Pasta:   %s\n   Rodar:   romanctl run %s\n   Abrir:   %s/?folder=%s\n",
+	ui.Okf("Project %s created!", ui.SBoldTxt.Render(name))
+	i18n.Printf("   Folder:  %s\n   Run:     romanctl run %s\n   Open:    %s/?folder=%s\n",
 		path, name, services.CodeServerURL(), path)
 	return nil
 }
@@ -108,7 +108,7 @@ func createNode(express bool) func(string, string) error {
 		if out, err := sys.OutputIn(path, "npm", "init", "-y"); err != nil {
 			return i18n.Errorf("npm init: %v: %s", err, out)
 		}
-		index := "console.log('Olá do " + name + "!');\n"
+		index := "console.log('Hello from " + name + "!');\n"
 		if express {
 			if err := npmInstall(path, "express"); err != nil {
 				return err
@@ -119,7 +119,7 @@ const app = express();
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.json({ mensagem: 'Olá do ` + name + `!' });
+  res.json({ message: 'Hello from ` + name + `!' });
 });
 
 const PORT = process.env.PORT || 3000;
@@ -164,8 +164,8 @@ func createVite(tpl string) func(string, string) error {
 	}
 }
 
-// O layout padrão baixa fontes do Google ao compilar, o que quebra o "next build"
-// sem internet. O pacote geist traz a mesma fonte em arquivos locais.
+// The default layout downloads Google fonts at build time, which breaks "next build"
+// offline. The geist package ships the same font as local files.
 const nextLayout = `import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
@@ -214,7 +214,7 @@ func createDotnet(tpl string) func(string, string) error {
 	}
 }
 
-// Nomes .NET não aceitam '-' no namespace; meu-app vira MeuApp.
+// .NET names do not accept '-' in the namespace; my-app becomes MyApp.
 func DotnetName(n string) string {
 	parts := strings.FieldsFunc(n, func(r rune) bool { return r == '-' || r == '_' || r == '.' })
 	for i, p := range parts {
@@ -230,6 +230,6 @@ func createGo(name, path string) error {
 	if out, err := sys.OutputIn(path, "go", "mod", "init", name); err != nil {
 		return i18n.Errorf("%v: %s", err, out)
 	}
-	main := "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"Olá do " + name + "!\")\n}\n"
+	main := "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"Hello from " + name + "!\")\n}\n"
 	return os.WriteFile(filepath.Join(path, "main.go"), []byte(main), 0o644)
 }
