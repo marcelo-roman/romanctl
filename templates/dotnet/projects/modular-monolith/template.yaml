@@ -1,7 +1,7 @@
 id: modular-monolith
 stack: dotnet
 arch: [ddd, modular-monolith]
-description: API .NET como monólito modular com DDD, módulos que só se falam por contratos públicos e eventos de integração
+description: .NET API as a modular monolith with DDD, modules that only talk through public contracts and integration events
 services: [postgres]
 requires: [dotnet]
 setup:

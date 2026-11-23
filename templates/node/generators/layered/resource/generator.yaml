@@ -1,4 +1,4 @@
-description: CRUD completo em camadas - modelo, repositórios, serviço com as regras, rotas Fastify e testes
+description: Full layered CRUD - model, repositories, service with the rules, Fastify routes and tests
 aliases: [crud, scaffold]
 conditional:
   - path: src/repositories/postgres
@@ -39,4 +39,4 @@ patches:
     before: "-- romanctl:tables"
     text: |
       CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
-next: "Rotas em /sample-items, registradas em src/app.ts. Rode npm test para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}"
+next: "Routes at /sample-items, registered in src/app.ts. Run npm test to check.{{if .Postgres}} The sample_items table is created on the next start.{{end}}"

@@ -18,7 +18,7 @@ func TestOrderRoundTrip(t *testing.T) {
 
 	o, _ := order.Create("Ana", time.Now().UTC().Truncate(time.Microsecond))
 	price, _ := order.NewMoney(350, "BRL")
-	_ = o.AddItem("Caneta", 2, price)
+	_ = o.AddItem("Pen", 2, price)
 	if err := repo.Save(ctx, o); err != nil {
 		t.Fatal(err)
 	}

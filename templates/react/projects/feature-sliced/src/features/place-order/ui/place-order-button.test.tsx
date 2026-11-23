@@ -20,21 +20,21 @@ function renderButton(orderId: string) {
 
 describe('PlaceOrderButton', () => {
   it('places the order and the status follows', async () => {
-    const order = seedOrder('Ana', { items: [{ productName: 'Caneta', quantity: 1, unitPrice: 2, subtotal: 2 }], total: 2 });
+    const order = seedOrder('Ana', { items: [{ productName: 'Pen', quantity: 1, unitPrice: 2, subtotal: 2 }], total: 2 });
     const { user } = renderButton(order.id);
-    expect(await screen.findByText('Status: Rascunho')).toBeInTheDocument();
+    expect(await screen.findByText('Status: Draft')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Realizar pedido' }));
+    await user.click(screen.getByRole('button', { name: 'Place order' }));
 
-    expect(await screen.findByText('Status: Realizado')).toBeInTheDocument();
+    expect(await screen.findByText('Status: Placed')).toBeInTheDocument();
   });
 
   it('explains why an empty order cannot be placed', async () => {
     const order = seedOrder('Ana');
     const { user } = renderButton(order.id);
 
-    await user.click(screen.getByRole('button', { name: 'Realizar pedido' }));
+    await user.click(screen.getByRole('button', { name: 'Place order' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Um pedido sem itens não pode ser realizado.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('An order without items cannot be placed.');
   });
 });

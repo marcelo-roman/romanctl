@@ -36,7 +36,7 @@ public class OrderHttpTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Health_responde()
+    public async Task Health_answers()
     {
         var response = await _client.GetAsync("/health");
 
@@ -44,11 +44,11 @@ public class OrderHttpTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Fluxo_completo_pela_API()
+    public async Task Full_flow_through_the_API()
     {
         var id = await CreateOrder("Ana");
 
-        var added = await _client.PostAsJsonAsync($"/orders/{id}/items", new { productName = "Caneta", quantity = 2, unitPrice = 1.5m });
+        var added = await _client.PostAsJsonAsync($"/orders/{id}/items", new { productName = "Pen", quantity = 2, unitPrice = 1.5m });
         Assert.Equal(HttpStatusCode.NoContent, added.StatusCode);
         var placed = await _client.PostAsync($"/orders/{id}/place", null);
         Assert.Equal(HttpStatusCode.NoContent, placed.StatusCode);
@@ -64,21 +64,21 @@ public class OrderHttpTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Regra_violada_vira_422()
+    public async Task Violated_rule_becomes_422()
     {
         var response = await _client.PostAsJsonAsync("/orders", new { customerName = " " });
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        Assert.Equal("O nome do cliente é obrigatório.", problem!.Detail);
+        Assert.Equal("Customer name is required.", problem!.Detail);
     }
 
     [Fact]
-    public async Task Item_com_moeda_diferente_vira_422()
+    public async Task Item_with_different_currency_becomes_422()
     {
         var id = await CreateOrder("Ana");
-        await _client.PostAsJsonAsync($"/orders/{id}/items", new { productName = "Caneta", quantity = 1, unitPrice = 1m });
+        await _client.PostAsJsonAsync($"/orders/{id}/items", new { productName = "Pen", quantity = 1, unitPrice = 1m });
 
         var response = await _client.PostAsJsonAsync($"/orders/{id}/items", new { productName = "Pen", quantity = 1, unitPrice = 1m, currency = "USD" });
 
@@ -86,7 +86,7 @@ public class OrderHttpTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Pedido_inexistente_vira_404()
+    public async Task Unknown_order_becomes_404()
     {
         Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync($"/orders/{Guid.NewGuid()}")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync($"/orders/{Guid.NewGuid()}/events")).StatusCode);
@@ -94,7 +94,7 @@ public class OrderHttpTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Corpo_invalido_vira_400()
+    public async Task Invalid_body_becomes_400()
     {
         var response = await _client.PostAsync("/orders", new StringContent("{", Encoding.UTF8, "application/json"));
 
@@ -102,7 +102,7 @@ public class OrderHttpTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Conflito_de_versao_vira_409()
+    public async Task Version_conflict_becomes_409()
     {
         var client = factory
             .WithWebHostBuilder(builder => builder.ConfigureTestServices(services => services.AddSingleton<IEventStore, ConflictingEventStore>()))

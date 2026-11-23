@@ -1,4 +1,4 @@
-// Package handlers contém os handlers HTTP.
+// Package handlers holds the HTTP handlers.
 package handlers
 
 import (
@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// ListSampleItems responde com a lista de sample-items.
+// ListSampleItems responds with the list of sample-items.
 func ListSampleItems(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode([]string{})

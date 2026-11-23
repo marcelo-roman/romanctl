@@ -29,21 +29,21 @@ class Order private constructor(
 
     fun addItem(productName: String, quantity: Int, unitPrice: Money) {
         if (status != OrderStatus.DRAFT) {
-            throw BusinessRuleException("Um pedido já realizado não pode ser alterado.")
+            throw BusinessRuleException("A placed order cannot be changed.")
         }
         val currency = lines.firstOrNull()?.unitPrice?.currency
         if (currency != null && currency != unitPrice.currency) {
-            throw BusinessRuleException("Todos os itens do pedido devem usar a mesma moeda.")
+            throw BusinessRuleException("All order items must use the same currency.")
         }
         lines.add(OrderItem.create(productName, quantity, unitPrice))
     }
 
     fun place(now: Instant) {
         if (status != OrderStatus.DRAFT) {
-            throw BusinessRuleException("O pedido já foi realizado.")
+            throw BusinessRuleException("The order has already been placed.")
         }
         if (lines.isEmpty()) {
-            throw BusinessRuleException("Um pedido sem itens não pode ser realizado.")
+            throw BusinessRuleException("An order without items cannot be placed.")
         }
         status = OrderStatus.PLACED
         val total = total
@@ -59,7 +59,7 @@ class Order private constructor(
     companion object {
         fun create(customerName: String, now: Instant): Order {
             if (customerName.isBlank()) {
-                throw BusinessRuleException("O nome do cliente é obrigatório.")
+                throw BusinessRuleException("Customer name is required.")
             }
             return Order(UUID.randomUUID(), customerName.trim(), OrderStatus.DRAFT, now, emptyList())
         }

@@ -1,4 +1,4 @@
-description: Página FSD, registrada nas rotas e no menu
+description: FSD page, registered in the routes and in the menu
 aliases: [pagina]
 patches:
   - file: src/shared/config/paths.ts
@@ -13,4 +13,4 @@ patches:
   - file: src/app/layout/nav-items.ts
     before: "// romanctl:nav"
     text: "{ to: paths.sampleItem, label: 'Sample Item' },"
-next: "Página em /sample-item, com a rota em src/app/router/routes.tsx e o link no menu. Rode npm test para conferir."
+next: "Page at /sample-item, with the route in src/app/router/routes.tsx and the link in the menu. Run npm test to check."

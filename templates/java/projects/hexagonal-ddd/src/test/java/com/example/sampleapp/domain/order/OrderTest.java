@@ -35,8 +35,8 @@ class OrderTest {
     @Test
     void totalSumsItems() {
         Order order = Order.create("Ana", NOW);
-        order.addItem("Caneta", 2, brl("3.50"));
-        order.addItem("Caderno", 1, brl("12"));
+        order.addItem("Pen", 2, brl("3.50"));
+        order.addItem("Notebook", 1, brl("12"));
 
         assertThat(order.total()).isEqualTo(brl("19.00"));
     }
@@ -44,11 +44,11 @@ class OrderTest {
     @Test
     void itemsMustShareCurrency() {
         Order order = Order.create("Ana", NOW);
-        order.addItem("Caneta", 1, brl("1"));
+        order.addItem("Pen", 1, brl("1"));
 
         assertThatThrownBy(() -> order.addItem("Pen", 1, Money.of(BigDecimal.ONE, "USD")))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessage("Todos os itens do pedido devem usar a mesma moeda.");
+                .hasMessage("All order items must use the same currency.");
     }
 
     @Test
@@ -56,7 +56,7 @@ class OrderTest {
         Order order = Order.create("Ana", NOW);
 
         assertThatThrownBy(() -> order.addItem(" ", 1, brl("1"))).isInstanceOf(BusinessRuleException.class);
-        assertThatThrownBy(() -> order.addItem("Caneta", 0, brl("1"))).isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> order.addItem("Pen", 0, brl("1"))).isInstanceOf(BusinessRuleException.class);
     }
 
     @Test
@@ -64,7 +64,7 @@ class OrderTest {
         Order order = Order.create("Ana", NOW);
         assertThatThrownBy(() -> order.place(NOW)).isInstanceOf(BusinessRuleException.class);
 
-        order.addItem("Caneta", 1, brl("1"));
+        order.addItem("Pen", 1, brl("1"));
         order.place(NOW);
 
         List<DomainEvent> events = order.pullEvents();
@@ -73,7 +73,7 @@ class OrderTest {
         assertThat(order.pullEvents()).isEmpty();
         assertThat(order.status()).isEqualTo(OrderStatus.PLACED);
         assertThatThrownBy(() -> order.place(NOW)).isInstanceOf(BusinessRuleException.class);
-        assertThatThrownBy(() -> order.addItem("Lápis", 1, brl("1"))).isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> order.addItem("Pencil", 1, brl("1"))).isInstanceOf(BusinessRuleException.class);
     }
 
     @Test

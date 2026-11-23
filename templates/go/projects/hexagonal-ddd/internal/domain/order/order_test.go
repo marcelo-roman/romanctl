@@ -32,10 +32,10 @@ func TestCreateRequiresCustomer(t *testing.T) {
 
 func TestTotalSumsItems(t *testing.T) {
 	o, _ := Create("Ana", now)
-	if err := o.AddItem("Caneta", 2, brl(t, 350)); err != nil {
+	if err := o.AddItem("Pen", 2, brl(t, 350)); err != nil {
 		t.Fatal(err)
 	}
-	if err := o.AddItem("Caderno", 1, brl(t, 1200)); err != nil {
+	if err := o.AddItem("Notebook", 1, brl(t, 1200)); err != nil {
 		t.Fatal(err)
 	}
 	if got := o.Total(); got.Cents() != 1900 || got.Currency() != "BRL" {
@@ -45,7 +45,7 @@ func TestTotalSumsItems(t *testing.T) {
 
 func TestItemsMustShareCurrency(t *testing.T) {
 	o, _ := Create("Ana", now)
-	_ = o.AddItem("Caneta", 1, brl(t, 100))
+	_ = o.AddItem("Pen", 1, brl(t, 100))
 	usd, _ := NewMoney(100, "USD")
 	if err := o.AddItem("Pen", 1, usd); !isRule(err) {
 		t.Fatalf("expected rule error, got %v", err)
@@ -57,7 +57,7 @@ func TestPlaceRaisesEventOnce(t *testing.T) {
 	if err := o.Place(now); !isRule(err) {
 		t.Fatalf("placing an empty order: %v", err)
 	}
-	_ = o.AddItem("Caneta", 1, brl(t, 100))
+	_ = o.AddItem("Pen", 1, brl(t, 100))
 	if err := o.Place(now); err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestPlaceRaisesEventOnce(t *testing.T) {
 	if len(o.PullEvents()) != 0 {
 		t.Fatal("events were not cleared")
 	}
-	if err := o.AddItem("Lápis", 1, brl(t, 100)); !isRule(err) {
+	if err := o.AddItem("Pencil", 1, brl(t, 100)); !isRule(err) {
 		t.Fatalf("changed a placed order: %v", err)
 	}
 }

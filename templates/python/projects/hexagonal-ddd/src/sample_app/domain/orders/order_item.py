@@ -15,9 +15,9 @@ class OrderItem:
     @classmethod
     def create(cls, product_name: str, quantity: int, unit_price: Money) -> "OrderItem":
         if not product_name.strip():
-            raise BusinessRuleError("O nome do produto é obrigatório.")
+            raise BusinessRuleError("The product name is required.")
         if quantity <= 0:
-            raise BusinessRuleError("A quantidade deve ser maior que zero.")
+            raise BusinessRuleError("The quantity must be greater than zero.")
         return cls(new_id(), product_name.strip(), quantity, unit_price)
 
     @property

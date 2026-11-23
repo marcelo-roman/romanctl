@@ -12,7 +12,7 @@ internal sealed class DeleteSampleItemHandler(ISampleItemRepository repository, 
     public async Task<bool> HandleAsync(DeleteSampleItem command, CancellationToken cancellationToken)
     {
         var sampleItem = await repository.GetByIdAsync(new SampleItemId(command.Id), cancellationToken)
-            ?? throw new NotFoundException($"SampleItem {command.Id} não encontrado.");
+            ?? throw new NotFoundException($"SampleItem {command.Id} not found.");
 
         repository.Remove(sampleItem);
         await unitOfWork.SaveChangesAsync(cancellationToken);

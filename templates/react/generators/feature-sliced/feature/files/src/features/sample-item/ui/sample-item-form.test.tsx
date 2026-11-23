@@ -15,32 +15,32 @@ describe('SampleItemForm', () => {
     );
     const { user } = renderWithProviders(<SampleItemForm />);
 
-    await user.type(screen.getByLabelText('Nome'), ' Ana ');
-    await user.click(screen.getByRole('button', { name: 'Enviar' }));
+    await user.type(screen.getByLabelText('Name'), ' Ana ');
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
 
-    expect(await screen.findByText('Enviado.')).toBeInTheDocument();
+    expect(await screen.findByText('Submitted.')).toBeInTheDocument();
     expect(received).toEqual({ name: 'Ana' });
   });
 
   it('shows the detail of the problem the API returns', async () => {
     server.use(
       http.post('*/api/sample-item', () =>
-        HttpResponse.json({ status: 422, title: 'Regra de negócio violada', detail: 'Não é possível agora.' }, { status: 422 }),
+        HttpResponse.json({ status: 422, title: 'Business rule violated', detail: 'Not possible right now.' }, { status: 422 }),
       ),
     );
     const { user } = renderWithProviders(<SampleItemForm />);
 
-    await user.type(screen.getByLabelText('Nome'), 'Ana');
-    await user.click(screen.getByRole('button', { name: 'Enviar' }));
+    await user.type(screen.getByLabelText('Name'), 'Ana');
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Não é possível agora.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Not possible right now.');
   });
 
   it('asks for the name before calling the API', async () => {
     const { user } = renderWithProviders(<SampleItemForm />);
 
-    await user.click(screen.getByRole('button', { name: 'Enviar' }));
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Informe o nome.');
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter the name.');
   });
 });

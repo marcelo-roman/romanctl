@@ -22,14 +22,14 @@ describe('SampleItem', () => {
   it('requires a name of at most 200 characters', () => {
     expect(() => SampleItem.create('  ', new Date())).toThrow(DomainError);
     expect(() => SampleItem.create('x'.repeat(201), new Date())).toThrow(DomainError);
-    expect(SampleItem.create(' Primeiro ', new Date()).name).toBe('Primeiro');
+    expect(SampleItem.create(' First ', new Date()).name).toBe('First');
   });
 });
 
 describe('sample items router', () => {
   it('creates, renames, lists and removes', async () => {
     const api = caller();
-    const created = await api.sampleItems.create({ name: 'Primeiro' });
+    const created = await api.sampleItems.create({ name: 'First' });
     const renamed = await api.sampleItems.rename({ id: created.id, name: 'Renomeado' });
 
     expect(renamed.name).toBe('Renomeado');

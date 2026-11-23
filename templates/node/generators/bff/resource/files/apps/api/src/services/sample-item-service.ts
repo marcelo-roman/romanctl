@@ -31,7 +31,7 @@ export class SampleItemService {
   async get(id: string): Promise<SampleItem> {
     const sampleItem = await this.sampleItems.findById(id);
     if (!sampleItem) {
-      throw new NotFoundError(`Registro ${id} não encontrado.`);
+      throw new NotFoundError(`Item ${id} not found.`);
     }
     return sampleItem;
   }
@@ -45,7 +45,7 @@ export class SampleItemService {
 
   async delete(id: string): Promise<void> {
     if (!(await this.sampleItems.remove(id))) {
-      throw new NotFoundError(`Registro ${id} não encontrado.`);
+      throw new NotFoundError(`Item ${id} not found.`);
     }
   }
 }

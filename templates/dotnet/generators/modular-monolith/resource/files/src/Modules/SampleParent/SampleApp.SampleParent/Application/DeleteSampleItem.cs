@@ -8,7 +8,7 @@ internal sealed class DeleteSampleItemHandler(ISampleItemRepository sampleItems)
     public async Task HandleAsync(Guid id, CancellationToken cancellationToken)
     {
         var sampleItem = await sampleItems.FindAsync(id, cancellationToken)
-            ?? throw new NotFoundException($"SampleItem {id} não encontrado.");
+            ?? throw new NotFoundException($"SampleItem {id} not found.");
 
         sampleItems.Remove(sampleItem);
         await sampleItems.SaveChangesAsync(cancellationToken);

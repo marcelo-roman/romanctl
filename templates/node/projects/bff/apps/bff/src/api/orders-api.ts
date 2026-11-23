@@ -1,7 +1,7 @@
 import type { ApiHttp } from './api-http.js';
 import type { ApiNewOrderItem, ApiOrder } from './api-types.js';
 
-const notFound = 'Pedido não encontrado.';
+const notFound = 'Order not found.';
 
 export class OrdersApi {
   constructor(private readonly http: ApiHttp) {}

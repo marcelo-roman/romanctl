@@ -1,7 +1,7 @@
 id: clean-ddd-cqrs
 stack: node
 arch: [clean, ddd, cqrs]
-description: API Node com NestJS, Clean Architecture, DDD e CQRS, em TypeScript
+description: Node API with NestJS, Clean Architecture, DDD and CQRS, in TypeScript
 services: [postgres]
 requires: [node]
 setup:

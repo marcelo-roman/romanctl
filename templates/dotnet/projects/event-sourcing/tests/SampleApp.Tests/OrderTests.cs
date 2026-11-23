@@ -7,75 +7,75 @@ public class OrderTests
 {
     private static readonly DateTimeOffset Now = new(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
     private static readonly OrderCreated Created = new("Ana", Now);
-    private static readonly ItemAdded Pens = new("Caneta", 2, 1.50m, "BRL");
+    private static readonly ItemAdded Pens = new("Pen", 2, 1.50m, "BRL");
 
     private static AggregateScenario<Order> Scenario() => new();
 
     [Fact]
-    public void Criar_gera_OrderCreated() =>
+    public void Create_raises_OrderCreated() =>
         Scenario()
             .WhenCreating(id => Order.Create(id, " Ana ", Now))
             .Then(new OrderCreated("Ana", Now));
 
     [Fact]
-    public void Criar_exige_o_nome_do_cliente() =>
+    public void Create_requires_the_customer_name() =>
         Scenario()
             .WhenCreating(id => Order.Create(id, " ", Now))
-            .ThenFails("O nome do cliente é obrigatório.");
+            .ThenFails("Customer name is required.");
 
     [Fact]
-    public void Adicionar_item_gera_ItemAdded_com_moeda_padrao() =>
+    public void Add_item_raises_ItemAdded_with_default_currency() =>
         Scenario()
             .Given(Created)
-            .When(order => order.AddItem(" Caneta ", 2, new Money(1.50m, Order.DefaultCurrency)))
+            .When(order => order.AddItem(" Pen ", 2, new Money(1.50m, Order.DefaultCurrency)))
             .Then(Pens);
 
     [Theory]
-    [InlineData("", 1, "O nome do produto é obrigatório.")]
-    [InlineData("Caneta", 0, "A quantidade deve ser maior que zero.")]
-    public void Rejeita_item_invalido(string product, int quantity, string message) =>
+    [InlineData("", 1, "Product name is required.")]
+    [InlineData("Pen", 0, "Quantity must be greater than zero.")]
+    public void Rejects_invalid_item(string product, int quantity, string message) =>
         Scenario()
             .Given(Created)
             .When(order => order.AddItem(product, quantity, new Money(1m, "BRL")))
             .ThenFails(message);
 
     [Fact]
-    public void Nao_mistura_moedas_no_mesmo_pedido() =>
+    public void Does_not_mix_currencies_in_the_same_order() =>
         Scenario()
             .Given(Created, Pens)
             .When(order => order.AddItem("Pen", 1, new Money(1m, "USD")))
-            .ThenFails("Todos os itens do pedido devem usar a mesma moeda.");
+            .ThenFails("All order items must use the same currency.");
 
     [Fact]
-    public void Realizar_soma_os_itens() =>
+    public void Place_sums_the_items() =>
         Scenario()
-            .Given(Created, Pens, new ItemAdded("Caderno", 1, 10m, "BRL"))
+            .Given(Created, Pens, new ItemAdded("Notebook", 1, 10m, "BRL"))
             .When(order => order.Place(Now))
             .Then(new OrderPlaced(13m, "BRL", Now));
 
     [Fact]
-    public void Nao_realiza_pedido_sem_itens() =>
+    public void Does_not_place_order_without_items() =>
         Scenario()
             .Given(Created)
             .When(order => order.Place(Now))
-            .ThenFails("Um pedido sem itens não pode ser realizado.");
+            .ThenFails("An order without items cannot be placed.");
 
     [Fact]
-    public void Pedido_realizado_nao_aceita_itens() =>
+    public void Placed_order_does_not_accept_items() =>
         Scenario()
             .Given(Created, Pens, new OrderPlaced(3m, "BRL", Now))
-            .When(order => order.AddItem("Lápis", 1, new Money(1m, "BRL")))
-            .ThenFails("Um pedido já realizado não pode ser alterado.");
+            .When(order => order.AddItem("Pencil", 1, new Money(1m, "BRL")))
+            .ThenFails("A placed order cannot be changed.");
 
     [Fact]
-    public void Pedido_realizado_nao_e_realizado_de_novo() =>
+    public void Placed_order_is_not_placed_again() =>
         Scenario()
             .Given(Created, Pens, new OrderPlaced(3m, "BRL", Now))
             .When(order => order.Place(Now))
-            .ThenFails("O pedido já foi realizado.");
+            .ThenFails("The order has already been placed.");
 
     [Fact]
-    public void Reconstroi_o_estado_e_a_versao_a_partir_dos_eventos()
+    public void Rebuilds_state_and_version_from_events()
     {
         var order = new Order();
 
@@ -88,10 +88,10 @@ public class OrderTests
     }
 
     [Fact]
-    public void Confirmar_os_eventos_avanca_a_versao()
+    public void Committing_events_advances_the_version()
     {
         var order = Order.Create(Guid.NewGuid(), "Ana", Now);
-        order.AddItem("Caneta", 1, new Money(1m, "BRL"));
+        order.AddItem("Pen", 1, new Money(1m, "BRL"));
 
         order.MarkCommitted();
 
@@ -100,8 +100,8 @@ public class OrderTests
     }
 
     [Theory]
-    [InlineData(-1, "BRL", "O valor não pode ser negativo.")]
-    [InlineData(1, "REAL", "A moeda deve ter 3 letras, como BRL.")]
-    public void Rejeita_dinheiro_invalido(decimal amount, string currency, string message) =>
+    [InlineData(-1, "BRL", "Amount cannot be negative.")]
+    [InlineData(1, "REAL", "Currency must have 3 letters, like BRL.")]
+    public void Rejects_invalid_money(decimal amount, string currency, string message) =>
         Assert.Equal(message, Assert.Throws<DomainException>(() => new Money(amount, currency)).Message);
 }

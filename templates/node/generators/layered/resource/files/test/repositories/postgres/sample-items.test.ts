@@ -17,11 +17,11 @@ describe.skipIf(!databaseUrl)(suiteTitle('SampleItems in PostgreSQL'), () => {
   afterAll(() => db?.close());
 
   it('saves, renames, lists and removes', async () => {
-    const sampleItem: SampleItem = { id: randomUUID(), name: 'Primeiro', createdAt: new Date(Date.now() + 60_000) };
+    const sampleItem: SampleItem = { id: randomUUID(), name: 'First', createdAt: new Date(Date.now() + 60_000) };
     await repository.add(sampleItem);
     expect(await repository.findById(sampleItem.id)).toEqual(sampleItem);
 
-    const renamed: SampleItem = { ...sampleItem, name: 'Segundo' };
+    const renamed: SampleItem = { ...sampleItem, name: 'Second' };
     await repository.update(renamed);
     expect(await repository.findById(sampleItem.id)).toEqual(renamed);
     expect((await repository.list(1)).map((item) => item.id)).toEqual([sampleItem.id]);

@@ -19,8 +19,8 @@ export interface Order {
 }
 
 const statusLabels: Record<OrderStatus, string> = {
-  Draft: 'Rascunho',
-  Placed: 'Realizado',
+  Draft: 'Draft',
+  Placed: 'Placed',
 };
 
 export function statusLabel(status: OrderStatus): string {

@@ -7,9 +7,9 @@ export interface UiError {
   message: string;
 }
 
-const UNAVAILABLE = 'O serviço de pedidos não respondeu. Tente de novo em instantes.';
-const UNEXPECTED = 'Algo deu errado. Tente de novo.';
-const CHECK_DATA = 'Confira os dados informados';
+const UNAVAILABLE = 'The orders service did not answer. Try again in a moment.';
+const UNEXPECTED = 'Something went wrong. Try again.';
+const CHECK_DATA = 'Check the data you entered';
 
 function fromApi(error: ApiError): UiError {
   if (error.status === 400) {

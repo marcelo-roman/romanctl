@@ -24,7 +24,7 @@ public class PostgresRoundTripTests
     }
 
     [PostgresFact]
-    public async Task Cada_modulo_tem_as_tabelas_no_proprio_esquema()
+    public async Task Each_module_has_its_tables_in_its_own_schema()
     {
         await using var factory = new WebApplicationFactory<Program>();
         using var client = factory.CreateClient();
@@ -40,12 +40,12 @@ public class PostgresRoundTripTests
     }
 
     [PostgresFact]
-    public async Task Pedido_e_venda_vao_e_voltam_do_PostgreSQL()
+    public async Task Order_and_sale_round_trip_through_PostgreSQL()
     {
         await using var factory = new WebApplicationFactory<Program>();
         using var client = factory.CreateClient();
 
-        var pen = await TestApi.CreateProductAsync(client, "Caneta", 1.25m);
+        var pen = await TestApi.CreateProductAsync(client, "Pen", 1.25m);
         var id = await TestApi.CreateOrderAsync(client);
         Assert.Equal(HttpStatusCode.NoContent, await TestApi.AddItemAsync(client, id, pen, 2));
         Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync($"/orders/{id}/place", null)).StatusCode);
@@ -54,7 +54,7 @@ public class PostgresRoundTripTests
         Assert.Equal("Placed", order!.Status);
         Assert.Equal(2.50m, order.Total);
         Assert.Equal("BRL", order.Currency);
-        Assert.Equal("Caneta", Assert.Single(order.Items).ProductName);
+        Assert.Equal("Pen", Assert.Single(order.Items).ProductName);
         var listed = await client.GetFromJsonAsync<List<OrderResponse>>($"/orders?limit={ListLimit.Max}");
         Assert.Contains(listed!, recent => recent.Id == id);
 

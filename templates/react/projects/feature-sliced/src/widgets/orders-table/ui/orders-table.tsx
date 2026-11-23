@@ -24,22 +24,22 @@ export function OrdersTable() {
   const { data, error, isPending } = useOrders();
 
   if (isPending) {
-    return <p className="muted">Carregando pedidos...</p>;
+    return <p className="muted">Loading orders...</p>;
   }
   if (error) {
     return <Alert tone="error">{errorMessage(error)}</Alert>;
   }
   if (data.length === 0) {
-    return <p className="muted">Nenhum pedido ainda. Crie o primeiro acima.</p>;
+    return <p className="muted">No orders yet. Create the first one above.</p>;
   }
   return (
     <table className="table">
       <thead>
         <tr>
-          <th>Cliente</th>
+          <th>Customer</th>
           <th>Status</th>
-          <th>Criado em</th>
-          <th className="numeric">Itens</th>
+          <th>Created at</th>
+          <th className="numeric">Items</th>
           <th className="numeric">Total</th>
         </tr>
       </thead>

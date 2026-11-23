@@ -33,7 +33,7 @@ final class InMemoryOrderRepositoryTest extends TestCase
         $repository = new InMemoryOrderRepository();
         $order = Order::create('Ana', new DateTimeImmutable());
         $repository->save($order);
-        $order->addItem('Caneta', 1, new Money(100));
+        $order->addItem('Pen', 1, new Money(100));
 
         self::assertSame([], $repository->find($order->id())?->items());
     }
@@ -41,7 +41,7 @@ final class InMemoryOrderRepositoryTest extends TestCase
     public function testStoreKeepsOrdersBetweenInstances(): void
     {
         $order = Order::create('Ana', new DateTimeImmutable());
-        $order->addItem('Caneta', 2, new Money(350));
+        $order->addItem('Pen', 2, new Money(350));
         (new InMemoryOrderRepository(new MemoryStore($this->directory)))->save($order);
 
         $loaded = (new InMemoryOrderRepository(new MemoryStore($this->directory)))->find($order->id());

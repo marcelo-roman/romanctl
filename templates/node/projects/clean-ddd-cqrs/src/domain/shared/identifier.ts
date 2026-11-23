@@ -8,7 +8,7 @@ export function newIdentifier(): string {
 
 export function parseIdentifier(value: string): string {
   if (!format.test(value)) {
-    throw new DomainError('Identificador inválido.');
+    throw new DomainError('Invalid identifier.');
   }
   return value.toLowerCase();
 }

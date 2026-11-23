@@ -7,10 +7,10 @@ public record OrderItem(UUID id, String productName, int quantity, Money unitPri
 
     public OrderItem {
         if (productName == null || productName.isBlank()) {
-            throw new BusinessRuleException("O nome do produto é obrigatório.");
+            throw new BusinessRuleException("Product name is required.");
         }
         if (quantity <= 0) {
-            throw new BusinessRuleException("A quantidade deve ser maior que zero.");
+            throw new BusinessRuleException("Quantity must be greater than zero.");
         }
         productName = productName.strip();
     }

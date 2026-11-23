@@ -1,4 +1,4 @@
-description: Comando CQRS em um agregado existente (use --in)
+description: CQRS command on an existing aggregate (use --in)
 needsIn: true
 aliases: [comando]
 requires:

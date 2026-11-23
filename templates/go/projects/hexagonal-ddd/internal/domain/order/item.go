@@ -15,10 +15,10 @@ type Item struct {
 
 func newItem(productName string, quantity int, unitPrice Money) (Item, error) {
 	if strings.TrimSpace(productName) == "" {
-		return Item{}, shared.Rule("O nome do produto é obrigatório.")
+		return Item{}, shared.Rule("Product name is required.")
 	}
 	if quantity <= 0 {
-		return Item{}, shared.Rule("A quantidade deve ser maior que zero.")
+		return Item{}, shared.Rule("Quantity must be greater than zero.")
 	}
 	return Item{id: shared.NewID(), productName: strings.TrimSpace(productName), quantity: quantity, unitPrice: unitPrice}, nil
 }

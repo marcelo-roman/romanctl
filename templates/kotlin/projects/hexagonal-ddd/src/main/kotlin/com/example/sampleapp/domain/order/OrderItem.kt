@@ -8,10 +8,10 @@ class OrderItem(val id: UUID, productName: String, val quantity: Int, val unitPr
 
     init {
         if (productName.isBlank()) {
-            throw BusinessRuleException("O nome do produto é obrigatório.")
+            throw BusinessRuleException("Product name is required.")
         }
         if (quantity <= 0) {
-            throw BusinessRuleException("A quantidade deve ser maior que zero.")
+            throw BusinessRuleException("Quantity must be greater than zero.")
         }
         this.productName = productName.trim()
     }

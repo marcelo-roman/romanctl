@@ -13,7 +13,7 @@ internal sealed class AddOrderItemHandler(IOrderRepository orders, IUnitOfWork u
     public async Task<bool> HandleAsync(AddOrderItem command, CancellationToken cancellationToken)
     {
         var order = await orders.GetByIdAsync(new OrderId(command.OrderId), cancellationToken)
-            ?? throw new NotFoundException($"Pedido {command.OrderId} não encontrado.");
+            ?? throw new NotFoundException($"Order {command.OrderId} not found.");
 
         order.AddItem(command.ProductName, command.Quantity, new Money(command.UnitPrice, command.Currency ?? Order.DefaultCurrency));
         await unitOfWork.SaveChangesAsync(cancellationToken);

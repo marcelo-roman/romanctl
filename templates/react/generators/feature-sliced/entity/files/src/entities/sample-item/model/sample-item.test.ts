@@ -10,7 +10,7 @@ const sampleItem = (id: string, name: string, day: number): SampleItem => ({
 describe('sample item', () => {
   it('labels it by name, with a fallback for a blank one', () => {
     expect(sampleItemLabel(sampleItem('1', ' Ana ', 1))).toBe('Ana');
-    expect(sampleItemLabel(sampleItem('2', ' ', 1))).toBe('Sem nome');
+    expect(sampleItemLabel(sampleItem('2', ' ', 1))).toBe('Unnamed');
   });
 
   it('sorts the newest first without changing the original list', () => {

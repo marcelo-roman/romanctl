@@ -1,2 +1,2 @@
-description: Agregado com identificador, evento de criação e interface de repositório
+description: Aggregate with identifier, creation event and repository interface
 aliases: [aggregate, entity, agregado, dominio]

@@ -1,4 +1,4 @@
-description: CRUD completo - domínio, comandos, consultas, persistência, controller NestJS e testes
+description: Full CRUD - domain, commands, queries, persistence, NestJS controller and tests
 aliases: [crud, scaffold]
 conditional:
   - path: src/infrastructure/persistence/postgres
@@ -50,4 +50,4 @@ patches:
     before: "-- romanctl:tables"
     text: |
       CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
-next: "Rotas em /sample-items. Rode npm test para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}"
+next: "Routes at /sample-items. Run npm test to check.{{if .Postgres}} The sample_items table is created on the next start.{{end}}"

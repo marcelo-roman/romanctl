@@ -5,7 +5,7 @@ namespace SampleApp.Tests;
 internal sealed class AggregateScenario<TAggregate> where TAggregate : EventSourcedAggregate, new()
 {
     private IDomainEvent[] _history = [];
-    private Func<TAggregate> _act = () => throw new InvalidOperationException("Faltou o When.");
+    private Func<TAggregate> _act = () => throw new InvalidOperationException("The When step is missing.");
 
     public Guid Id { get; } = Guid.NewGuid();
 

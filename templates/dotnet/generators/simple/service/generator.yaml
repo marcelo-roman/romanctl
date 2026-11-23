@@ -1,4 +1,4 @@
-description: Serviço com interface
+description: Service with interface
 aliases: [servico]
 patches:
   - file: Program.cs

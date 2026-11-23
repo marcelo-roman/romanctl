@@ -5,15 +5,15 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace SampleApp.Api;
 
-/// <summary>Traduz erros esperados em respostas HTTP. Os demais continuam sendo erro 500.</summary>
+/// <summary>Maps expected errors to HTTP responses. Everything else stays a 500 error.</summary>
 internal sealed class ErrorHandling : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken cancellationToken)
     {
         var (status, title) = exception switch
         {
-            NotFoundException => (StatusCodes.Status404NotFound, "Não encontrado"),
-            DomainException => (StatusCodes.Status422UnprocessableEntity, "Regra de negócio violada"),
+            NotFoundException => (StatusCodes.Status404NotFound, "Not found"),
+            DomainException => (StatusCodes.Status422UnprocessableEntity, "Business rule violated"),
             _ => (0, ""),
         };
         if (status == 0)

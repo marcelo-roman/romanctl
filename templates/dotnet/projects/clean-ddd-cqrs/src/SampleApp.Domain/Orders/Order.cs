@@ -23,7 +23,7 @@ public sealed class Order : AggregateRoot<OrderId>
     public static Order Create(string customerName, DateTimeOffset now)
     {
         if (string.IsNullOrWhiteSpace(customerName))
-            throw new DomainException("O nome do cliente é obrigatório.");
+            throw new DomainException("Customer name is required.");
 
         return new Order
         {
@@ -37,9 +37,9 @@ public sealed class Order : AggregateRoot<OrderId>
     public void AddItem(string productName, int quantity, Money unitPrice)
     {
         if (Status != OrderStatus.Draft)
-            throw new DomainException("Um pedido já realizado não pode ser alterado.");
+            throw new DomainException("A placed order cannot be changed.");
         if (_items.Count > 0 && _items[0].UnitPrice.Currency != unitPrice.Currency)
-            throw new DomainException("Todos os itens do pedido devem usar a mesma moeda.");
+            throw new DomainException("All order items must use the same currency.");
 
         _items.Add(new OrderItem(productName, quantity, unitPrice));
     }
@@ -47,9 +47,9 @@ public sealed class Order : AggregateRoot<OrderId>
     public void Place(DateTimeOffset now)
     {
         if (Status != OrderStatus.Draft)
-            throw new DomainException("O pedido já foi realizado.");
+            throw new DomainException("The order has already been placed.");
         if (_items.Count == 0)
-            throw new DomainException("Um pedido sem itens não pode ser realizado.");
+            throw new DomainException("An order without items cannot be placed.");
 
         Status = OrderStatus.Placed;
         var total = Total;

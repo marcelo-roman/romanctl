@@ -1,6 +1,6 @@
 const labels: Record<string, string> = {
-  Draft: 'Rascunho',
-  Placed: 'Realizado',
+  Draft: 'Draft',
+  Placed: 'Placed',
 };
 
 export function statusLabel(status: string): string {

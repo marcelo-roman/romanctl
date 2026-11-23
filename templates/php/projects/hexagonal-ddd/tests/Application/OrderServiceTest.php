@@ -32,13 +32,13 @@ final class OrderServiceTest extends TestCase
     public function testPlacingPublishesEvent(): void
     {
         $id = $this->service->create('Ana');
-        $this->service->addItem($id, new AddItem('Caneta', 3, 2.5));
+        $this->service->addItem($id, new AddItem('Pen', 3, 2.5));
         $this->service->place($id);
 
         $view = $this->service->get($id);
 
-        self::assertSame(['Placed', 7.5, 'BRL'], [$view->status, $view->total, $view->currency]);
-        self::assertEquals([new OrderPlaced($id, 750, 'BRL', $this->clock->now())], $this->events->published);
+        self::assertSame(['Placed', 7.5, 'USD'], [$view->status, $view->total, $view->currency]);
+        self::assertEquals([new OrderPlaced($id, 750, 'USD', $this->clock->now())], $this->events->published);
     }
 
     public function testExplicitCurrencyIsKept(): void
@@ -55,7 +55,7 @@ final class OrderServiceTest extends TestCase
 
         try {
             $this->service->place($id);
-            self::fail('Esperava uma violação de regra');
+            self::fail('Expected a rule violation');
         } catch (BusinessRuleViolation) {
             self::assertSame(OrderStatus::Draft, $this->repository->saved[$id]->status());
             self::assertSame([], $this->events->published);
@@ -71,7 +71,7 @@ final class OrderServiceTest extends TestCase
 
     public function testInvalidIdIsARuleViolation(): void
     {
-        $this->expectExceptionObject(new BusinessRuleViolation('Identificador inválido.'));
+        $this->expectExceptionObject(new BusinessRuleViolation('Invalid identifier.'));
 
         $this->service->get('abc');
     }

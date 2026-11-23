@@ -9,13 +9,13 @@ from sample_app.errors import BusinessRuleError, NotFoundError
 
 PROBLEM_JSON = "application/problem+json"
 TITLES = {
-    400: "Requisição inválida",
-    404: "Não encontrado",
-    405: "Método não permitido",
-    406: "Formato de resposta não aceito",
-    415: "Tipo de conteúdo não suportado",
-    422: "Regra de negócio violada",
-    500: "Erro interno",
+    400: "Invalid request",
+    404: "Not found",
+    405: "Method not allowed",
+    406: "Response format not acceptable",
+    415: "Unsupported media type",
+    422: "Business rule violated",
+    500: "Internal error",
 }
 UNWRAPPED_KEYS = {"detail", "non_field_errors"}
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 def problem_body(status: int, detail: str = "") -> dict[str, Any]:
-    return {"status": status, "title": TITLES.get(status, "Erro na requisição"), "detail": detail}
+    return {"status": status, "title": TITLES.get(status, "Request error"), "detail": detail}
 
 
 def problem_exception_handler(error: Exception, context: dict[str, Any]) -> Response:
@@ -40,7 +40,7 @@ def problem_exception_handler(error: Exception, context: dict[str, Any]) -> Resp
 
 
 def page_not_found(request: HttpRequest, exception: Exception) -> JsonResponse:
-    return _plain_problem(404, f"Nada em {request.path}.")
+    return _plain_problem(404, f"Nothing at {request.path}.")
 
 
 def server_error(request: HttpRequest) -> JsonResponse:

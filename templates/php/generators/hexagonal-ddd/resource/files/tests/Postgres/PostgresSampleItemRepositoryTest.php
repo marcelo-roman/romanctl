@@ -15,15 +15,15 @@ final class PostgresSampleItemRepositoryTest extends DatabaseTestCase
     public function testSampleItemRoundTrip(): void
     {
         $repository = new PostgresSampleItemRepository($this->database);
-        $sampleItem = SampleItem::create('Primeiro', new DateTimeImmutable('now', new DateTimeZone('UTC')));
+        $sampleItem = SampleItem::create('First', new DateTimeImmutable('now', new DateTimeZone('UTC')));
         $repository->save($sampleItem);
-        $sampleItem->rename('Segundo');
+        $sampleItem->rename('Second');
         $repository->save($sampleItem);
 
         $loaded = $repository->find($sampleItem->id());
 
         self::assertNotNull($loaded);
-        self::assertSame('Segundo', $loaded->name());
+        self::assertSame('Second', $loaded->name());
         self::assertEquals($sampleItem->createdAt(), $loaded->createdAt());
         self::assertContains($sampleItem->id(), array_map(static fn (SampleItem $recent) => $recent->id(), $repository->listRecent(200)));
         self::assertTrue($repository->delete($sampleItem->id()));

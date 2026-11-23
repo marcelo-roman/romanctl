@@ -12,7 +12,7 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("Default")
-            ?? throw new InvalidOperationException("Falta a connection string Default.");
+            ?? throw new InvalidOperationException("Missing connection string Default.");
 
         services.AddMarten(options =>
         {

@@ -8,7 +8,7 @@ namespace SampleApp.Tests.Ordering;
 public class OrderEndpointTests
 {
     [Fact]
-    public async Task Health_responde_ok()
+    public async Task Health_answers_ok()
     {
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
@@ -19,12 +19,12 @@ public class OrderEndpointTests
     }
 
     [Fact]
-    public async Task Item_vem_do_catalogo_com_nome_e_preco_do_produto()
+    public async Task Item_comes_from_the_catalog_with_product_name_and_price()
     {
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
-        var pen = await TestApi.CreateProductAsync(client, "Caneta", 1.50m);
-        var notebook = await TestApi.CreateProductAsync(client, "Caderno", 10m);
+        var pen = await TestApi.CreateProductAsync(client, "Pen", 1.50m);
+        var notebook = await TestApi.CreateProductAsync(client, "Notebook", 10m);
         var id = await TestApi.CreateOrderAsync(client);
 
         Assert.Equal(HttpStatusCode.NoContent, await TestApi.AddItemAsync(client, id, pen, 2));
@@ -35,17 +35,17 @@ public class OrderEndpointTests
         Assert.Equal("Draft", order.Status);
         Assert.Equal(13m, order.Total);
         Assert.Equal("BRL", order.Currency);
-        Assert.Contains(order.Items, item => item is { ProductName: "Caneta", Quantity: 2, UnitPrice: 1.50m, Subtotal: 3m } && item.ProductId == pen);
+        Assert.Contains(order.Items, item => item is { ProductName: "Pen", Quantity: 2, UnitPrice: 1.50m, Subtotal: 3m } && item.ProductId == pen);
     }
 
     [Fact]
-    public async Task Lista_os_mais_recentes_primeiro_respeitando_o_limite()
+    public async Task Lists_most_recent_first_respecting_the_limit()
     {
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
         var first = await TestApi.CreateOrderAsync(client, "Ana");
-        var second = await TestApi.CreateOrderAsync(client, "Bia");
-        var third = await TestApi.CreateOrderAsync(client, "Caio");
+        var second = await TestApi.CreateOrderAsync(client, "Bob");
+        var third = await TestApi.CreateOrderAsync(client, "Carl");
 
         var listed = await client.GetFromJsonAsync<List<OrderResponse>>("/orders?limit=2");
 
@@ -54,12 +54,12 @@ public class OrderEndpointTests
     }
 
     [Fact]
-    public async Task Regra_de_negocio_violada_vira_422()
+    public async Task Business_rule_violation_becomes_422()
     {
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
-        var pen = await TestApi.CreateProductAsync(client, "Caneta", 1m);
-        var dollar = await TestApi.CreateProductAsync(client, "Pen", 1m, "USD");
+        var pen = await TestApi.CreateProductAsync(client, "Pen", 1m);
+        var dollar = await TestApi.CreateProductAsync(client, "Imported pen", 1m, "USD");
         var id = await TestApi.CreateOrderAsync(client);
 
         await TestApi.AssertProblemAsync(await client.PostAsJsonAsync("/orders", new { customerName = " " }), HttpStatusCode.UnprocessableEntity);
@@ -70,7 +70,7 @@ public class OrderEndpointTests
     }
 
     [Fact]
-    public async Task Pedido_ou_produto_inexistente_vira_404()
+    public async Task Unknown_order_or_product_becomes_404()
     {
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
@@ -89,7 +89,7 @@ public class OrderEndpointTests
     }
 
     [Fact]
-    public async Task Corpo_invalido_vira_400()
+    public async Task Invalid_body_becomes_400()
     {
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
@@ -101,7 +101,7 @@ public class OrderEndpointTests
         await TestApi.AssertProblemAsync(await client.PostAsJsonAsync("/orders", new { }), HttpStatusCode.BadRequest);
         await TestApi.AssertProblemAsync(await client.PostAsJsonAsync("/orders", new { customerName = (string?)null }), HttpStatusCode.BadRequest);
         await TestApi.AssertProblemAsync(
-            await client.PostAsJsonAsync($"/orders/{id}/items", new { productId = Guid.NewGuid(), quantity = "muitas" }),
+            await client.PostAsJsonAsync($"/orders/{id}/items", new { productId = Guid.NewGuid(), quantity = "many" }),
             HttpStatusCode.BadRequest);
         await TestApi.AssertProblemAsync(await client.PostAsJsonAsync($"/orders/{id}/items", new { productId = Guid.NewGuid() }), HttpStatusCode.BadRequest);
     }

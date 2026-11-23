@@ -12,7 +12,7 @@ internal sealed class PlaceOrderHandler(IOrderRepository orders, IEventBus bus, 
     public async Task HandleAsync(PlaceOrder command, CancellationToken cancellationToken)
     {
         var order = await orders.FindAsync(command.OrderId, cancellationToken)
-            ?? throw new NotFoundException($"Pedido {command.OrderId} não encontrado.");
+            ?? throw new NotFoundException($"Order {command.OrderId} not found.");
 
         var now = clock.GetUtcNow();
         order.Place(now);

@@ -19,12 +19,12 @@ public class DispatcherTests
     }
 
     [Fact]
-    public async Task Fluxo_completo_de_comandos_e_consultas()
+    public async Task Full_flow_of_commands_and_queries()
     {
         var dispatcher = Build().GetRequiredService<IDispatcher>();
 
         var id = await dispatcher.SendAsync(new CreateOrder("Ana"));
-        await dispatcher.SendAsync(new AddOrderItem(id, "Caneta", 2, 1.50m));
+        await dispatcher.SendAsync(new AddOrderItem(id, "Pen", 2, 1.50m));
         await dispatcher.SendAsync(new PlaceOrder(id));
 
         var order = await dispatcher.QueryAsync(new GetOrderById(id));
@@ -39,7 +39,7 @@ public class DispatcherTests
     }
 
     [Fact]
-    public async Task Leitura_vem_da_projecao_atualizada_pelos_eventos()
+    public async Task Read_comes_from_the_projection_updated_by_events()
     {
         var provider = Build();
         var id = Guid.NewGuid();
@@ -53,7 +53,7 @@ public class DispatcherTests
     }
 
     [Fact]
-    public async Task Lista_os_mais_recentes_primeiro_e_respeita_o_limite()
+    public async Task Lists_newest_first_and_respects_the_limit()
     {
         var dispatcher = Build().GetRequiredService<IDispatcher>();
         await dispatcher.SendAsync(new CreateOrder("Ana"));
@@ -66,7 +66,7 @@ public class DispatcherTests
     }
 
     [Fact]
-    public async Task Pedido_inexistente_vira_NotFound()
+    public async Task Unknown_order_becomes_NotFound()
     {
         var dispatcher = Build().GetRequiredService<IDispatcher>();
 
@@ -76,7 +76,7 @@ public class DispatcherTests
     }
 
     [Fact]
-    public async Task Duas_alteracoes_sobre_a_mesma_versao_geram_conflito()
+    public async Task Two_changes_on_the_same_version_cause_conflict()
     {
         var provider = Build();
         var dispatcher = provider.GetRequiredService<IDispatcher>();
@@ -85,8 +85,8 @@ public class DispatcherTests
 
         var first = await repository.LoadAsync<Order>(id, CancellationToken.None);
         var second = await repository.LoadAsync<Order>(id, CancellationToken.None);
-        first!.AddItem("Caneta", 1, new Money(1m, "BRL"));
-        second!.AddItem("Lápis", 1, new Money(1m, "BRL"));
+        first!.AddItem("Pen", 1, new Money(1m, "BRL"));
+        second!.AddItem("Pencil", 1, new Money(1m, "BRL"));
         await repository.SaveAsync(first, CancellationToken.None);
 
         await Assert.ThrowsAsync<ConcurrencyException>(() => repository.SaveAsync(second, CancellationToken.None));
@@ -94,7 +94,7 @@ public class DispatcherTests
     }
 
     [Fact]
-    public async Task Nao_inicia_um_fluxo_que_ja_existe()
+    public async Task Does_not_start_a_stream_that_already_exists()
     {
         var store = Build().GetRequiredService<IEventStore>();
         var id = Guid.NewGuid();

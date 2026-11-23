@@ -44,7 +44,7 @@ func TestOrderLifecycle(t *testing.T) {
 	var created struct{ ID string }
 	_ = json.NewDecoder(res.Body).Decode(&created)
 
-	if res := send(t, "POST", srv.URL+"/orders/"+created.ID+"/items", `{"productName":"Caneta","quantity":2,"unitPrice":3.5}`); res.StatusCode != http.StatusNoContent {
+	if res := send(t, "POST", srv.URL+"/orders/"+created.ID+"/items", `{"productName":"Pen","quantity":2,"unitPrice":3.5}`); res.StatusCode != http.StatusNoContent {
 		t.Fatalf("add item: %d", res.StatusCode)
 	}
 	if res := send(t, "POST", srv.URL+"/orders/"+created.ID+"/place", ``); res.StatusCode != http.StatusNoContent {

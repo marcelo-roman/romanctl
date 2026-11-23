@@ -30,13 +30,13 @@ def delete_task(task: Task) -> None:
 def _valid_title(title: str) -> str:
     trimmed = title.strip()
     if not trimmed:
-        raise BusinessRuleError("O título é obrigatório.")
+        raise BusinessRuleError("The title is required.")
     if len(trimmed) > TITLE_MAX_LENGTH:
-        raise BusinessRuleError(f"O título passa de {TITLE_MAX_LENGTH} caracteres.")
+        raise BusinessRuleError(f"The title exceeds {TITLE_MAX_LENGTH} characters.")
     return trimmed
 
 
 def _valid_due_date(due_date: date | None) -> date | None:
     if due_date is not None and due_date < timezone.localdate():
-        raise BusinessRuleError("A data de vencimento não pode estar no passado.")
+        raise BusinessRuleError("The due date cannot be in the past.")
     return due_date

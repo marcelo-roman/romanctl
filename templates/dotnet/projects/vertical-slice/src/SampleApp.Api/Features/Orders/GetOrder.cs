@@ -42,7 +42,7 @@ public static class GetOrder
     {
         var order = await db.Orders.AsNoTracking().FirstOrDefaultAsync(order => order.Id == id, cancellationToken);
         if (order is null)
-            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Não encontrado", detail: $"Pedido {id} não encontrado.");
+            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Not found", detail: $"Order {id} not found.");
 
         return TypedResults.Ok(Response.From(order));
     }

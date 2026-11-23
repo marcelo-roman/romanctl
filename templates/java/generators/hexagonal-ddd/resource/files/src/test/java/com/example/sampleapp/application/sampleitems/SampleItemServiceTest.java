@@ -44,10 +44,10 @@ class SampleItemServiceTest {
 
     @Test
     void createRenameAndDelete() {
-        UUID id = service.create("Primeiro");
-        service.rename(id, "Segundo");
+        UUID id = service.create("First");
+        service.rename(id, "Second");
 
-        assertThat(service.get(id).name()).isEqualTo("Segundo");
+        assertThat(service.get(id).name()).isEqualTo("Second");
         assertThat(service.list(null)).hasSize(1);
 
         service.delete(id);

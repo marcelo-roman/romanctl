@@ -7,15 +7,15 @@ interface OrderItemsTableProps {
 
 export function OrderItemsTable({ items, total }: OrderItemsTableProps) {
   if (items.length === 0) {
-    return <p>O pedido ainda não tem itens.</p>;
+    return <p>The order has no items yet.</p>;
   }
   return (
     <table>
       <thead>
         <tr>
-          <th>Produto</th>
-          <th>Quantidade</th>
-          <th>Preço</th>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Price</th>
           <th>Subtotal</th>
         </tr>
       </thead>

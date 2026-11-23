@@ -15,9 +15,9 @@ async fn sample_item_round_trip() {
     let database = Database::connect(&url).await.expect("connect to DATABASE_URL");
     let repository = PostgresSampleItemRepository::new(database);
 
-    let mut sample_item = SampleItem::create("Primeiro", Utc::now().trunc_subsecs(6)).unwrap();
+    let mut sample_item = SampleItem::create("First", Utc::now().trunc_subsecs(6)).unwrap();
     repository.save(&sample_item).await.unwrap();
-    sample_item.rename("Segundo").unwrap();
+    sample_item.rename("Second").unwrap();
     repository.save(&sample_item).await.unwrap();
 
     let loaded = repository.find(sample_item.id()).await.unwrap();

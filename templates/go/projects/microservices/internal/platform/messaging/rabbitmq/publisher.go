@@ -47,7 +47,7 @@ func (p *Publisher) Publish(ctx context.Context, e messaging.Envelope) error {
 		return err
 	}
 	if !acked {
-		return fmt.Errorf("o RabbitMQ recusou a mensagem %s", e.ID)
+		return fmt.Errorf("RabbitMQ rejected message %s", e.ID)
 	}
 	return p.unroutable(e)
 }
@@ -63,7 +63,7 @@ func (p *Publisher) unroutable(e messaging.Envelope) error {
 		select {
 		case r := <-p.returns:
 			if r.MessageId == e.ID {
-				return fmt.Errorf("nenhuma fila recebe %s em %s ainda", e.Type, p.exchange)
+				return fmt.Errorf("no queue receives %s on %s yet", e.Type, p.exchange)
 			}
 		default:
 			return nil

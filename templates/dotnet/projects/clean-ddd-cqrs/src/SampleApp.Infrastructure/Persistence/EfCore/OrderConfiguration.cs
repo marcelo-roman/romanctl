@@ -23,7 +23,7 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             items.ToTable("order_items");
             items.WithOwner().HasForeignKey("OrderId");
             items.HasKey(item => item.Id);
-            // O Id é gerado no domínio. Sem isto, o EF trata um item novo como já existente.
+            // The Id is generated in the domain. Without this, EF treats a new item as an existing one.
             items.Property(item => item.Id).ValueGeneratedNever();
             items.Property(item => item.ProductName).HasMaxLength(200).IsRequired();
             items.Ignore(item => item.Subtotal);

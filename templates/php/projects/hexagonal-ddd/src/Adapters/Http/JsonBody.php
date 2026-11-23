@@ -18,10 +18,10 @@ final readonly class JsonBody
         try {
             $decoded = json_decode($request->getContent(), true, 64, JSON_THROW_ON_ERROR);
         } catch (JsonException $error) {
-            throw new InvalidRequest('JSON inválido: ' . $error->getMessage());
+            throw new InvalidRequest('Invalid JSON: ' . $error->getMessage());
         }
         if (!is_array($decoded) || ($decoded !== [] && array_is_list($decoded))) {
-            throw new InvalidRequest('O corpo deve ser um objeto JSON.');
+            throw new InvalidRequest('The body must be a JSON object.');
         }
 
         return new self($decoded);
@@ -31,7 +31,7 @@ final readonly class JsonBody
     {
         $value = $this->fields[$name] ?? null;
         if (!is_string($value)) {
-            throw new InvalidRequest("{$name}: deve ser um texto.");
+            throw new InvalidRequest("{$name}: must be a string.");
         }
 
         return $value;
@@ -50,7 +50,7 @@ final readonly class JsonBody
     {
         $value = $this->fields[$name] ?? null;
         if (!is_int($value)) {
-            throw new InvalidRequest("{$name}: deve ser um número inteiro.");
+            throw new InvalidRequest("{$name}: must be an integer.");
         }
 
         return $value;
@@ -60,7 +60,7 @@ final readonly class JsonBody
     {
         $value = $this->fields[$name] ?? null;
         if (!is_int($value) && !is_float($value)) {
-            throw new InvalidRequest("{$name}: deve ser um número.");
+            throw new InvalidRequest("{$name}: must be a number.");
         }
 
         return $value;

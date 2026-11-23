@@ -47,10 +47,10 @@ describe('SampleItem use cases', () => {
   afterEach(() => close());
 
   it('creates, renames, lists and deletes', async () => {
-    const id = await commands.execute(new CreateSampleItem('Primeiro'));
-    await commands.execute(new RenameSampleItem(id, 'Segundo'));
+    const id = await commands.execute(new CreateSampleItem('First'));
+    await commands.execute(new RenameSampleItem(id, 'Second'));
 
-    expect(await queries.execute(new GetSampleItemById(id))).toEqual({ id, name: 'Segundo', createdAt: '2026-01-01T00:00:00.000Z' });
+    expect(await queries.execute(new GetSampleItemById(id))).toEqual({ id, name: 'Second', createdAt: '2026-01-01T00:00:00.000Z' });
     expect(await queries.execute(new ListSampleItems())).toHaveLength(1);
 
     await commands.execute(new DeleteSampleItem(id));

@@ -30,7 +30,7 @@ func TestPublisherDeliversToReceiver(t *testing.T) {
 }
 
 func TestHandlerFailureIsAPublishFailure(t *testing.T) {
-	for _, failure := range []error{errors.New("banco fora do ar"), messaging.Reject(errors.New("payload inválido"))} {
+	for _, failure := range []error{errors.New("database down"), messaging.Reject(errors.New("invalid payload"))} {
 		srv := httptest.NewServer(Receiver(func(context.Context, messaging.Envelope) error { return failure }))
 		err := NewPublisher(srv.URL).Publish(context.Background(), messaging.Envelope{ID: "1", Type: "x"})
 		srv.Close()

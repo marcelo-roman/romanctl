@@ -1,4 +1,4 @@
-description: Controller de API com rotas de exemplo
+description: API controller with example routes
 aliases: [api]
 patches:
   - file: Program.cs

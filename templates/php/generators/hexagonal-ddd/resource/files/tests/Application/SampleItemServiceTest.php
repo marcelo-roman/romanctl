@@ -21,10 +21,10 @@ final class SampleItemServiceTest extends TestCase
 
     public function testCreateRenameAndDelete(): void
     {
-        $id = $this->service->create('Primeiro');
-        $this->service->rename($id, 'Segundo');
+        $id = $this->service->create('First');
+        $this->service->rename($id, 'Second');
 
-        self::assertSame('Segundo', $this->service->get($id)->name);
+        self::assertSame('Second', $this->service->get($id)->name);
         self::assertSame([$id], array_map(static fn ($view) => $view->id, $this->service->listRecent()));
 
         $this->service->delete($id);
@@ -42,8 +42,8 @@ final class SampleItemServiceTest extends TestCase
 
     public function testInvalidIdIsARuleViolation(): void
     {
-        $this->expectExceptionObject(new BusinessRuleViolation('Identificador inválido.'));
+        $this->expectExceptionObject(new BusinessRuleViolation('Invalid identifier.'));
 
-        $this->service->rename('abc', 'Nome');
+        $this->service->rename('abc', 'Name');
     }
 }

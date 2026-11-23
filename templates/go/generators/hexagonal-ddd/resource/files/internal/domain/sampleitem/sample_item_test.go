@@ -13,8 +13,8 @@ func TestCreateRequiresName(t *testing.T) {
 	if _, err := Create(" ", time.Now()); !errors.As(err, &rule) {
 		t.Fatalf("expected rule error, got %v", err)
 	}
-	e, err := Create("  Primeiro ", time.Now())
-	if err != nil || e.Name() != "Primeiro" {
+	e, err := Create("  First ", time.Now())
+	if err != nil || e.Name() != "First" {
 		t.Fatalf("%v %v", e, err)
 	}
 }

@@ -17,7 +17,7 @@ export function PlaceOrderButton({ orderId }: PlaceOrderButtonProps) {
   return (
     <div>
       <button type="button" disabled={place.isPending} onClick={() => place.mutate({ orderId })}>
-        Realizar pedido
+        Place order
       </button>
       {place.isError && <p role="alert">{errorMessage(place.error)}</p>}
     </div>

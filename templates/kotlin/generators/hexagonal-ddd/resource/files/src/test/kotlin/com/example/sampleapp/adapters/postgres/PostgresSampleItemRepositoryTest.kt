@@ -15,14 +15,14 @@ class PostgresSampleItemRepositoryTest {
     fun `round trip`() {
         val repository = PostgresSampleItemRepository(TestDatabase.connectOrSkip())
         val now = Instant.now().truncatedTo(ChronoUnit.MICROS)
-        val sampleItem = SampleItem.create("Primeiro", now)
+        val sampleItem = SampleItem.create("First", now)
         repository.save(sampleItem)
-        sampleItem.rename("Segundo")
+        sampleItem.rename("Second")
         repository.save(sampleItem)
 
         val loaded = assertNotNull(repository.findById(sampleItem.id))
 
-        assertEquals("Segundo", loaded.name)
+        assertEquals("Second", loaded.name)
         assertEquals(now, loaded.createdAt)
         assertTrue(repository.list(200).any { it.id == sampleItem.id })
         assertTrue(repository.delete(sampleItem.id))

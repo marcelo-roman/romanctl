@@ -33,19 +33,19 @@ final readonly class ProblemSubscriber implements EventSubscriberInterface
     private function problemFor(Throwable $error): Response
     {
         if ($error instanceof InvalidRequest) {
-            return ApiResponse::problem(Response::HTTP_BAD_REQUEST, 'Requisição inválida', $error->getMessage());
+            return ApiResponse::problem(Response::HTTP_BAD_REQUEST, 'Invalid request', $error->getMessage());
         }
         if ($error instanceof BusinessRuleViolation) {
-            return ApiResponse::problem(Response::HTTP_UNPROCESSABLE_ENTITY, 'Regra de negócio violada', $error->getMessage());
+            return ApiResponse::problem(Response::HTTP_UNPROCESSABLE_ENTITY, 'Business rule violated', $error->getMessage());
         }
         if ($error instanceof NotFound) {
-            return ApiResponse::problem(Response::HTTP_NOT_FOUND, 'Não encontrado', $error->getMessage());
+            return ApiResponse::problem(Response::HTTP_NOT_FOUND, 'Not found', $error->getMessage());
         }
         if ($error instanceof HttpExceptionInterface) {
-            return ApiResponse::problem($error->getStatusCode(), 'Requisição não atendida', $error->getMessage());
+            return ApiResponse::problem($error->getStatusCode(), 'Request not fulfilled', $error->getMessage());
         }
         $this->logger->error('request failed: {message}', ['message' => $error->getMessage(), 'exception' => $error]);
 
-        return ApiResponse::problem(Response::HTTP_INTERNAL_SERVER_ERROR, 'Erro interno');
+        return ApiResponse::problem(Response::HTTP_INTERNAL_SERVER_ERROR, 'Internal error');
     }
 }

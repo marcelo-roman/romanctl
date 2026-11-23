@@ -32,5 +32,5 @@ class SampleItemService(private val repository: SampleItemRepository, private va
 
     private fun load(id: String): SampleItem = repository.findById(Identifier.parse(id)) ?: throw notFound()
 
-    private fun notFound() = NotFoundException("SampleItem não encontrado.")
+    private fun notFound() = NotFoundException("SampleItem not found.")
 }

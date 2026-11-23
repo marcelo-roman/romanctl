@@ -17,7 +17,7 @@ func newOrder(t *testing.T) *order.Order {
 	t.Helper()
 	o, _ := order.Create("Ana", time.Now().UTC().Truncate(time.Microsecond))
 	price, _ := order.NewMoney(350, "BRL")
-	if err := o.AddItem("Caneta", 2, price); err != nil {
+	if err := o.AddItem("Pen", 2, price); err != nil {
 		t.Fatal(err)
 	}
 	return o

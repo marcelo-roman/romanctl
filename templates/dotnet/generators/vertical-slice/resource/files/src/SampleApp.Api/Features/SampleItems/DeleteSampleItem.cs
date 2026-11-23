@@ -14,7 +14,7 @@ public static class DeleteSampleItem
     {
         var sampleItem = await db.SampleItems.FirstOrDefaultAsync(sampleItem => sampleItem.Id == id, cancellationToken);
         if (sampleItem is null)
-            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Não encontrado", detail: $"SampleItem {id} não encontrado.");
+            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Not found", detail: $"SampleItem {id} not found.");
 
         db.SampleItems.Remove(sampleItem);
         await db.SaveChangesAsync(cancellationToken);

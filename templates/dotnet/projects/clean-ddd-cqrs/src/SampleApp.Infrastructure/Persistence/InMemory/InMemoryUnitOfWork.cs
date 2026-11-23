@@ -4,7 +4,7 @@ using SampleApp.Domain.Common;
 
 namespace SampleApp.Infrastructure.Persistence.InMemory;
 
-/// <summary>Guarda o que mudou no escopo atual e só grava em SaveChangesAsync, como um banco faria.</summary>
+/// <summary>Keeps what changed in the current scope and only writes on SaveChangesAsync, as a database would.</summary>
 internal sealed class InMemoryUnitOfWork(IDomainEventPublisher publisher) : IUnitOfWork
 {
     private readonly List<(IAggregateRoot Aggregate, Action Commit)> _tracked = [];

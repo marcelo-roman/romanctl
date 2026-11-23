@@ -11,9 +11,9 @@ class SampleItemTest {
 
     @Test
     fun `create trims the name`() {
-        val sampleItem = SampleItem.create("  Primeiro  ", now)
+        val sampleItem = SampleItem.create("  First  ", now)
 
-        assertEquals("Primeiro", sampleItem.name)
+        assertEquals("First", sampleItem.name)
         assertEquals(now, sampleItem.createdAt)
     }
 
@@ -21,16 +21,16 @@ class SampleItemTest {
     fun `name is required`() {
         val error = assertFailsWith<BusinessRuleException> { SampleItem.create(" ", now) }
 
-        assertEquals("O nome é obrigatório.", error.message)
+        assertEquals("Name is required.", error.message)
     }
 
     @Test
     fun `rename validates the new name`() {
-        val sampleItem = SampleItem.create("Primeiro", now)
+        val sampleItem = SampleItem.create("First", now)
 
-        sampleItem.rename("Segundo")
+        sampleItem.rename("Second")
 
-        assertEquals("Segundo", sampleItem.name)
+        assertEquals("Second", sampleItem.name)
         assertFailsWith<BusinessRuleException> { sampleItem.rename("") }
     }
 }

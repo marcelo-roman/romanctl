@@ -15,11 +15,11 @@ describe('SampleItemService', () => {
   });
 
   it('creates, renames and deletes', async () => {
-    const created = await service.create({ name: '  Primeiro  ' });
-    expect(created.name).toBe('Primeiro');
+    const created = await service.create({ name: '  First  ' });
+    expect(created.name).toBe('First');
 
-    await service.rename(created.id, { name: 'Segundo' });
-    expect((await service.get(created.id)).name).toBe('Segundo');
+    await service.rename(created.id, { name: 'Second' });
+    expect((await service.get(created.id)).name).toBe('Second');
     expect((await service.list({})).map((item) => item.id)).toEqual([created.id]);
 
     await service.delete(created.id);

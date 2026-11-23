@@ -10,10 +10,10 @@ class Money(amount: BigDecimal, currency: String) {
 
     init {
         if (amount.signum() < 0) {
-            throw BusinessRuleException("O valor não pode ser negativo.")
+            throw BusinessRuleException("Amount cannot be negative.")
         }
         if (!CURRENCY.matches(currency.trim())) {
-            throw BusinessRuleException("A moeda deve ter 3 letras, como BRL.")
+            throw BusinessRuleException("Currency must have 3 letters, like BRL.")
         }
         this.amount = amount.setScale(2, RoundingMode.HALF_EVEN)
         this.currency = currency.trim().uppercase()
@@ -23,7 +23,7 @@ class Money(amount: BigDecimal, currency: String) {
 
     operator fun plus(other: Money): Money {
         if (other.currency != currency) {
-            throw BusinessRuleException("Não é possível somar moedas diferentes.")
+            throw BusinessRuleException("Cannot add different currencies.")
         }
         return Money(amount.add(other.amount), currency)
     }
@@ -40,7 +40,7 @@ class Money(amount: BigDecimal, currency: String) {
 
         fun of(amount: BigDecimal?, currency: String?): Money {
             if (amount == null) {
-                throw BusinessRuleException("O valor é obrigatório.")
+                throw BusinessRuleException("Amount is required.")
             }
             if (currency.isNullOrEmpty()) {
                 return Money(amount, DEFAULT_CURRENCY)

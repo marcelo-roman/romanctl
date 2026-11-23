@@ -3,7 +3,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from sample_app.domain.shared.errors import BusinessRuleError
 
-DEFAULT_CURRENCY = "BRL"
+DEFAULT_CURRENCY = "USD"
 CENTS = Decimal(100)
 
 
@@ -14,10 +14,10 @@ class Money:
 
     def __post_init__(self) -> None:
         if self.cents < 0:
-            raise BusinessRuleError("O valor não pode ser negativo.")
+            raise BusinessRuleError("The amount cannot be negative.")
         currency = self.currency.strip()
         if len(currency) != 3 or not currency.isalpha():
-            raise BusinessRuleError("A moeda deve ter 3 letras, como BRL.")
+            raise BusinessRuleError("The currency must have 3 letters, like USD.")
         object.__setattr__(self, "currency", currency.upper())
 
     @classmethod
@@ -38,5 +38,5 @@ class Money:
 
     def add(self, other: "Money") -> "Money":
         if other.currency != self.currency:
-            raise BusinessRuleError("Não é possível somar moedas diferentes.")
+            raise BusinessRuleError("Cannot add different currencies.")
         return Money(self.cents + other.cents, self.currency)

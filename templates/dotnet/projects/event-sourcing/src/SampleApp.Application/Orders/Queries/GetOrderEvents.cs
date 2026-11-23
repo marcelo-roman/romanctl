@@ -12,7 +12,7 @@ internal sealed class GetOrderEventsHandler(IEventStore store) : IQueryHandler<G
     {
         var stream = await store.ReadStreamAsync(query.OrderId, cancellationToken);
         if (stream.Count == 0)
-            throw new NotFoundException($"Pedido {query.OrderId} não encontrado.");
+            throw new NotFoundException($"Order {query.OrderId} not found.");
 
         return stream.Select(EventDto.From).ToList();
     }

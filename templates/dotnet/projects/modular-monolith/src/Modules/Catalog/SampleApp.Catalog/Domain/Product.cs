@@ -15,7 +15,7 @@ internal sealed class Product
     public static Product Create(string name, Money price, DateTimeOffset now)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException("O nome do produto é obrigatório.");
+            throw new DomainException("Product name is required.");
 
         return new Product
         {
@@ -29,7 +29,7 @@ internal sealed class Product
     public void RecordSale(int quantity)
     {
         if (quantity <= 0)
-            throw new DomainException("A quantidade vendida deve ser maior que zero.");
+            throw new DomainException("Sold quantity must be greater than zero.");
 
         SoldQuantity += quantity;
     }

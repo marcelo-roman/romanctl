@@ -19,10 +19,10 @@ def test_migrations_apply_and_revert(postgres: None) -> None:
 
 @pytest.mark.django_db
 def test_task_round_trip(postgres: None) -> None:
-    task = create_task(title="  Comprar pão ", due_date=timezone.localdate())
+    task = create_task(title="  Buy bread ", due_date=timezone.localdate())
 
     loaded = get_task(task.id)
-    assert loaded.title == "Comprar pão"
+    assert loaded.title == "Buy bread"
     assert loaded.due_date == timezone.localdate()
     assert loaded.created_at == task.created_at
 

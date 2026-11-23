@@ -1,11 +1,10 @@
-# Mensageria
+# Messaging
 
-Sem broker: o relay do `orders` entrega cada evento com um `POST` em `/events` do `billing`, no endereço de
-`BILLING_URL` (padrão `http://localhost:8092`). Um barramento dentro de um processo não atravessaria de um serviço
-para o outro.
+No broker: the `orders` relay delivers each event with a `POST` to `billing`'s `/events`, at the `BILLING_URL` address
+(default `http://localhost:8092`). An in-process bus would not cross from one service to the other.
 
-O outbox e a inbox continuam valendo: o evento só sai do outbox quando o `billing` responde 2xx, e enquanto o
-`billing` estiver fora do ar o relay tenta de novo com espera crescente. O `billing` responde 204 quando processou,
-503 numa falha passageira e 422 para um evento que nunca vai ser aceito.
+The outbox and the inbox still apply: the event only leaves the outbox when `billing` answers 2xx, and while `billing`
+is down the relay retries with growing backoff. `billing` answers 204 when it processed the event, 503 on a transient
+failure and 422 for an event that will never be accepted.
 
-Para trocar por RabbitMQ, gere o projeto com `--with rabbitmq`.
+To switch to RabbitMQ, generate the project with `--with rabbitmq`.

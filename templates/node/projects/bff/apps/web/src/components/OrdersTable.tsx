@@ -7,15 +7,15 @@ interface OrdersTableProps {
 
 export function OrdersTable({ orders }: OrdersTableProps) {
   if (orders.length === 0) {
-    return <p>Nenhum pedido ainda.</p>;
+    return <p>No orders yet.</p>;
   }
   return (
     <table>
       <thead>
         <tr>
-          <th>Cliente</th>
-          <th>Situação</th>
-          <th>Itens</th>
+          <th>Customer</th>
+          <th>Status</th>
+          <th>Items</th>
           <th>Total</th>
         </tr>
       </thead>

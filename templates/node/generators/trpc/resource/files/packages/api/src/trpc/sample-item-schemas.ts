@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
-const id = z.uuid({ error: 'Identificador inválido.' });
+const id = z.uuid({ error: 'Invalid identifier.' });
 const name = z
-  .string({ error: 'Informe o nome.' })
+  .string({ error: 'Enter the name.' })
   .trim()
-  .min(1, { error: 'Informe o nome.' })
-  .max(200, { error: 'O nome tem no máximo 200 caracteres.' });
+  .min(1, { error: 'Enter the name.' })
+  .max(200, { error: 'The name has at most 200 characters.' });
 
 export const createSampleItemInput = z.object({ name });
 

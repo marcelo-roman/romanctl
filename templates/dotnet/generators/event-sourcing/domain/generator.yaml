@@ -1,2 +1,2 @@
-description: Agregado com event sourcing, com os eventos de criação e de renomeação
+description: Event-sourced aggregate, with the creation and rename events
 aliases: [aggregate, entity, agregado, dominio]

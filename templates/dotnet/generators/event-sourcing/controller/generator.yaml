@@ -1,4 +1,4 @@
-description: Endpoints HTTP do agregado, com Minimal API
+description: HTTP endpoints for the aggregate, with Minimal API
 aliases: [endpoint, endpoints, api]
 requires:
   - path: src/SampleApp.Application/SampleItems/Commands/CreateSampleItem.cs

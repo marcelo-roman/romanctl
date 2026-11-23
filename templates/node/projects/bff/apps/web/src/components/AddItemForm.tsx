@@ -19,7 +19,7 @@ export function AddItemForm({ suggestions, pending, onAdd }: AddItemFormProps) {
   return (
     <form className="inline-form" onSubmit={submit}>
       <label>
-        Produto
+        Product
         <select value={productId} onChange={(event) => setProductId(event.target.value)}>
           {suggestions.map((product) => (
             <option key={product.id} value={product.id}>
@@ -29,11 +29,11 @@ export function AddItemForm({ suggestions, pending, onAdd }: AddItemFormProps) {
         </select>
       </label>
       <label>
-        Quantidade
+        Quantity
         <input type="number" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
       </label>
       <button type="submit" disabled={pending}>
-        Adicionar
+        Add
       </button>
     </form>
   );

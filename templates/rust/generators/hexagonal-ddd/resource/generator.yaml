@@ -1,4 +1,4 @@
-description: CRUD completo - domínio, caso de uso, repositório, rotas HTTP e testes
+description: Full CRUD - domain, use case, repository, HTTP routes and tests
 aliases: [crud, scaffold]
 conditional:
   - path: src/adapters/postgres
@@ -58,4 +58,4 @@ patches:
       CREATE TABLE IF NOT EXISTS sample_items (id uuid PRIMARY KEY, name text NOT NULL, created_at timestamptz NOT NULL);
 after:
   - cargo fmt
-next: "Rotas em /sample-items. Rode cargo test para conferir.{{if .Postgres}} A tabela sample_items é criada na próxima inicialização.{{end}}"
+next: "Routes at /sample-items. Run cargo test to check.{{if .Postgres}} The sample_items table is created on the next start.{{end}}"

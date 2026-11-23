@@ -4,7 +4,7 @@ export interface SampleItem {
   createdAt: Date;
 }
 
-const unnamed = 'Sem nome';
+const unnamed = 'Unnamed';
 
 export function sampleItemLabel(sampleItem: SampleItem): string {
   return sampleItem.name.trim() || unnamed;

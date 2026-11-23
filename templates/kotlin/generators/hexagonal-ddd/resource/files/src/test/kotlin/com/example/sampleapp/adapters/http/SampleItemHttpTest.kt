@@ -12,13 +12,13 @@ import kotlin.test.assertTrue
 class SampleItemHttpTest {
     @Test
     fun crud() = apiTest {
-        val created = client.send(HttpMethod.Post, "/sample-items", """{"name":"Primeiro"}""")
+        val created = client.send(HttpMethod.Post, "/sample-items", """{"name":"First"}""")
         assertEquals(HttpStatusCode.Created, created.status)
         val id = created.createdId()
 
-        assertEquals(HttpStatusCode.NoContent, client.send(HttpMethod.Put, "/sample-items/$id", """{"name":"Segundo"}""").status)
+        assertEquals(HttpStatusCode.NoContent, client.send(HttpMethod.Put, "/sample-items/$id", """{"name":"Second"}""").status)
         val loaded = client.send(HttpMethod.Get, "/sample-items/$id").json().jsonObject
-        assertEquals("Segundo", loaded.getValue("name").jsonPrimitive.content)
+        assertEquals("Second", loaded.getValue("name").jsonPrimitive.content)
         val list = client.send(HttpMethod.Get, "/sample-items?limit=10").json().jsonArray
         assertTrue(list.any { it.jsonObject.getValue("id").jsonPrimitive.content == id })
 

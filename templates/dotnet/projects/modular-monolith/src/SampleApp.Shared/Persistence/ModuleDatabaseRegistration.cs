@@ -10,7 +10,7 @@ public static class ModuleDatabaseRegistration
     public static IHostApplicationBuilder AddModuleDatabase(this IHostApplicationBuilder builder)
     {
         var connectionString = builder.Configuration.GetConnectionString("Default")
-            ?? throw new InvalidOperationException("Falta a connection string Default.");
+            ?? throw new InvalidOperationException("The Default connection string is missing.");
 
         builder.Services.AddSingleton<IModuleDatabase>(new PostgresModuleDatabase(connectionString));
         return builder;

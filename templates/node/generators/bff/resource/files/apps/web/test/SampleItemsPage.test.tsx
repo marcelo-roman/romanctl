@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { SampleItemsPage } from '../src/pages/SampleItemsPage';
 import { mockFetch } from './fetch-mock';
 
-const first = { id: 'r1', name: 'Primeiro', createdOn: '10/03/2026' };
-const second = { id: 'r2', name: 'Segundo', createdOn: '11/03/2026' };
+const first = { id: 'r1', name: 'First', createdOn: '3/10/26' };
+const second = { id: 'r2', name: 'Second', createdOn: '3/11/26' };
 
 describe('SampleItemsPage', () => {
   it('lists, creates and removes through the BFF', async () => {
@@ -19,25 +19,25 @@ describe('SampleItemsPage', () => {
       return { body: { sampleItems: [first] } };
     });
     render(<SampleItemsPage />);
-    expect(await screen.findByText('Primeiro')).toBeTruthy();
+    expect(await screen.findByText('First')).toBeTruthy();
 
-    await userEvent.type(screen.getByLabelText('Nome'), 'Segundo');
-    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
-    expect(await screen.findByText('Segundo')).toBeTruthy();
-    expect(calls.at(-1)).toEqual({ method: 'POST', url: '/actions/sample-items', body: { name: 'Segundo' } });
+    await userEvent.type(screen.getByLabelText('Name'), 'Second');
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(await screen.findByText('Second')).toBeTruthy();
+    expect(calls.at(-1)).toEqual({ method: 'POST', url: '/actions/sample-items', body: { name: 'Second' } });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Remover Primeiro' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove First' }));
     expect(calls.at(-1)).toMatchObject({ method: 'DELETE', url: '/actions/sample-items/r1' });
-    expect(screen.queryByText('Primeiro')).toBeNull();
+    expect(screen.queryByText('First')).toBeNull();
   });
 
   it('shows the message the BFF sends', async () => {
-    mockFetch((call) => (call.method === 'POST' ? { status: 422, body: { message: 'O nome é obrigatório.' } } : { body: { sampleItems: [] } }));
+    mockFetch((call) => (call.method === 'POST' ? { status: 422, body: { message: 'The name is required.' } } : { body: { sampleItems: [] } }));
     render(<SampleItemsPage />);
-    await screen.findByText('Nenhum registro ainda.');
+    await screen.findByText('No items yet.');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }));
 
-    expect((await screen.findByRole('alert')).textContent).toBe('O nome é obrigatório.');
+    expect((await screen.findByRole('alert')).textContent).toBe('The name is required.');
   });
 });

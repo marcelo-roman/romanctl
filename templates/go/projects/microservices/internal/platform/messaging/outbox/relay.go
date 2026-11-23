@@ -38,7 +38,7 @@ func (r *Relay) RunOnce(ctx context.Context) (int, error) {
 	sent := 0
 	for _, e := range pending {
 		if err := r.publisher.Publish(ctx, e); err != nil {
-			return sent, fmt.Errorf("publicar %s %s: %w", e.Type, e.ID, err)
+			return sent, fmt.Errorf("publish %s %s: %w", e.Type, e.ID, err)
 		}
 		if err := r.store.MarkSent(ctx, e.ID); err != nil {
 			return sent, err

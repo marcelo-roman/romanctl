@@ -26,13 +26,13 @@ export function CreateOrderForm() {
   }
 
   return (
-    <form onSubmit={submit} aria-label="Novo pedido">
+    <form onSubmit={submit} aria-label="New order">
       <label>
-        Cliente
+        Customer
         <input name="customerName" autoComplete="off" />
       </label>
       <button type="submit" disabled={create.isPending}>
-        Criar pedido
+        Create order
       </button>
       {create.isError && <p role="alert">{errorMessage(create.error)}</p>}
     </form>

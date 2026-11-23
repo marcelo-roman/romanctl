@@ -7,7 +7,7 @@ object Identifier {
 
     fun parse(value: String): UUID {
         if (!format.matches(value)) {
-            throw BusinessRuleException("Identificador inválido.")
+            throw BusinessRuleException("Invalid identifier.")
         }
         return UUID.fromString(value)
     }

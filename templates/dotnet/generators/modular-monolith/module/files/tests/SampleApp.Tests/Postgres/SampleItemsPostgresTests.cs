@@ -12,15 +12,15 @@ namespace SampleApp.Tests.Postgres;
 public class SampleItemsPostgresTests
 {
     [PostgresFact]
-    public async Task SampleItem_vai_e_volta_do_esquema_do_modulo()
+    public async Task SampleItem_round_trips_through_the_module_schema()
     {
         await using var factory = new WebApplicationFactory<Program>();
         using var client = factory.CreateClient();
 
-        var id = await TestApi.CreateAsync(client, SampleItemEndpoints.Route, new { name = "Exemplo" });
+        var id = await TestApi.CreateAsync(client, SampleItemEndpoints.Route, new { name = "Example" });
         var found = await client.GetFromJsonAsync<SampleItemResponse>($"{SampleItemEndpoints.Route}/{id}");
 
-        Assert.Equal("Exemplo", found!.Name);
+        Assert.Equal("Example", found!.Name);
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<SampleItemsDbContext>();
         var tables = await db.Database

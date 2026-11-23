@@ -9,7 +9,7 @@ import (
 	"sample-app/internal/domain/shared"
 )
 
-var ErrNotFound = fmt.Errorf("Pedido %w.", shared.ErrNotFound)
+var ErrNotFound = fmt.Errorf("Order %w.", shared.ErrNotFound)
 
 type Repository interface {
 	Save(ctx context.Context, o *order.Order) error

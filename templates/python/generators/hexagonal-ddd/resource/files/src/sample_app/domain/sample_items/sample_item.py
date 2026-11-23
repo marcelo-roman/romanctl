@@ -32,5 +32,5 @@ class SampleItem:
 
 def _valid_name(name: str) -> str:
     if not name.strip():
-        raise BusinessRuleError("O nome é obrigatório.")
+        raise BusinessRuleError("The name is required.")
     return name.strip()

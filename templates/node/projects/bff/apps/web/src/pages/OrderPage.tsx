@@ -24,13 +24,13 @@ export function OrderPage({ id }: OrderPageProps) {
   const order = screen.data?.order;
   return (
     <section>
-      <Link to="/orders">Voltar para os pedidos</Link>
+      <Link to="/orders">Back to the orders</Link>
       <ErrorMessage message={action.error ?? screen.error} />
-      {screen.loading && !order && <p>Carregando...</p>}
+      {screen.loading && !order && <p>Loading...</p>}
       {order && (
         <>
-          <h1>Pedido de {order.customerName}</h1>
-          <p>Situação: {order.status}</p>
+          <h1>Order for {order.customerName}</h1>
+          <p>Status: {order.status}</p>
           <OrderItemsTable items={order.items} total={order.total} />
           {order.canAddItems && (
             <AddItemForm
@@ -41,7 +41,7 @@ export function OrderPage({ id }: OrderPageProps) {
           )}
           {order.canPlace && (
             <button type="button" disabled={action.pending} onClick={() => change(() => ordersBff.place(id))}>
-              Realizar pedido
+              Place order
             </button>
           )}
         </>

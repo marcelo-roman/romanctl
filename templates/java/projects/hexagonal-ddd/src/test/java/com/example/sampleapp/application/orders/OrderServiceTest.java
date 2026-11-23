@@ -48,7 +48,7 @@ class OrderServiceTest {
     @Test
     void placingPublishesEvent() {
         UUID id = service.create("Ana");
-        service.addItem(id, new AddItem("Caneta", 3, new BigDecimal("2.50"), null));
+        service.addItem(id, new AddItem("Pen", 3, new BigDecimal("2.50"), null));
         service.place(id);
 
         OrderView view = service.get(id);
@@ -63,7 +63,7 @@ class OrderServiceTest {
     void unknownOrderIsNotFound() {
         assertThatThrownBy(() -> service.place(UUID.randomUUID()))
                 .isInstanceOf(NotFoundException.class)
-                .hasMessage("Pedido não encontrado.");
+                .hasMessage("Order not found.");
     }
 
     @Test

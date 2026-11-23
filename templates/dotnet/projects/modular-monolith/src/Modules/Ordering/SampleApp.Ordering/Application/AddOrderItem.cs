@@ -12,9 +12,9 @@ internal sealed class AddOrderItemHandler(IOrderRepository orders, ICatalogApi c
     public async Task HandleAsync(AddOrderItem command, CancellationToken cancellationToken)
     {
         var order = await orders.FindAsync(command.OrderId, cancellationToken)
-            ?? throw new NotFoundException($"Pedido {command.OrderId} não encontrado.");
+            ?? throw new NotFoundException($"Order {command.OrderId} not found.");
         var product = await catalog.FindProductAsync(command.ProductId, cancellationToken)
-            ?? throw new NotFoundException($"Produto {command.ProductId} não encontrado.");
+            ?? throw new NotFoundException($"Product {command.ProductId} not found.");
 
         order.AddItem(product.Id, product.Name, command.Quantity, new Money(product.Price, product.Currency));
         await orders.SaveChangesAsync(cancellationToken);

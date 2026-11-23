@@ -20,18 +20,18 @@ describe('CreateOrderForm', () => {
   it('creates the order and shows it', async () => {
     const { user, router } = renderRoutes(routes);
 
-    await user.type(screen.getByLabelText('Cliente'), 'Ana');
-    await user.click(screen.getByRole('button', { name: 'Criar pedido' }));
+    await user.type(screen.getByLabelText('Customer'), 'Ana');
+    await user.click(screen.getByRole('button', { name: 'Create order' }));
 
-    expect(await screen.findByText('Ana: Rascunho')).toBeInTheDocument();
+    expect(await screen.findByText('Ana: Draft')).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/orders/order-1');
   });
 
   it('shows the detail of the problem the API returns', async () => {
     const { user } = renderRoutes(routes);
 
-    await user.click(screen.getByRole('button', { name: 'Criar pedido' }));
+    await user.click(screen.getByRole('button', { name: 'Create order' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('O nome do cliente é obrigatório.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('The customer name is required.');
   });
 });

@@ -5,34 +5,34 @@ import { routes } from './routes';
 
 describe('routes', () => {
   it('lists the recent orders on the home page and opens one', async () => {
-    seedOrder('Ana', { items: [{ productName: 'Caneta', quantity: 2, unitPrice: 3.5, subtotal: 7 }], total: 7 });
+    seedOrder('Ana', { items: [{ productName: 'Pen', quantity: 2, unitPrice: 3.5, subtotal: 7 }], total: 7 });
     const { user } = renderRoutes(routes, '/');
 
-    expect(screen.getByRole('heading', { name: 'Pedidos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Orders' })).toBeInTheDocument();
     await user.click(await screen.findByRole('link', { name: 'Ana' }));
 
-    const summary = await screen.findByRole('region', { name: 'Resumo do pedido' });
-    expect(within(summary).getByText('Caneta')).toBeInTheDocument();
-    expect(within(summary).getByText(/R\$\s7,00/, { selector: 'strong' })).toBeInTheDocument();
+    const summary = await screen.findByRole('region', { name: 'Order summary' });
+    expect(within(summary).getByText('Pen')).toBeInTheDocument();
+    expect(within(summary).getByText(/\$7\.00/, { selector: 'strong' })).toBeInTheDocument();
   });
 
   it('hides the draft actions once the order is placed', async () => {
     const order = seedOrder('Bia', { status: 'Placed' });
     renderRoutes(routes, `/orders/${order.id}`);
 
-    expect(await screen.findByText('Realizado')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Realizar pedido' })).not.toBeInTheDocument();
+    expect(await screen.findByText('Placed')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Place order' })).not.toBeInTheDocument();
   });
 
   it('shows the API detail when the order does not exist', async () => {
     renderRoutes(routes, '/orders/missing');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('não encontrado');
+    expect(await screen.findByRole('alert')).toHaveTextContent('not found');
   });
 
   it('answers unknown addresses with the not found page', () => {
-    renderRoutes(routes, '/nada-aqui');
+    renderRoutes(routes, '/nothing-here');
 
-    expect(screen.getByRole('heading', { name: 'Página não encontrada' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument();
   });
 });

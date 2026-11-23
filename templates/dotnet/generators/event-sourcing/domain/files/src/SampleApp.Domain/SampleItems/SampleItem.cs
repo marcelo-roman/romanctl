@@ -24,7 +24,7 @@ public sealed class SampleItem : EventSourcedAggregate
     }
 
     private static string RequireName(string name) =>
-        string.IsNullOrWhiteSpace(name) ? throw new DomainException("O nome é obrigatório.") : name.Trim();
+        string.IsNullOrWhiteSpace(name) ? throw new DomainException("Name is required.") : name.Trim();
 
     protected override void When(IDomainEvent domainEvent)
     {

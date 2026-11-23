@@ -22,13 +22,13 @@ describe('sample item queries', () => {
   it('exposes the problem detail when the sample item does not exist', async () => {
     server.use(
       http.get('*/api/sample-items/:id', () =>
-        HttpResponse.json({ status: 404, title: 'Não encontrado', detail: 'não encontrado' }, { status: 404 }),
+        HttpResponse.json({ status: 404, title: 'Not found', detail: 'not found' }, { status: 404 }),
       ),
     );
 
     const { result } = renderHook(() => useSampleItem('missing'), { wrapper });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(result.current.error).toMatchObject({ status: 404, detail: 'não encontrado' });
+    expect(result.current.error).toMatchObject({ status: 404, detail: 'not found' });
   });
 });

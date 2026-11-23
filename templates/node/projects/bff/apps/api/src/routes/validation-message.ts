@@ -1,11 +1,11 @@
 import type { FastifyError, FastifySchemaValidationError } from 'fastify';
 
 const typeNames: Record<string, string> = {
-  string: 'um texto',
-  boolean: 'verdadeiro ou falso',
-  integer: 'um número inteiro',
-  number: 'um número',
-  object: 'um objeto',
+  string: 'a string',
+  boolean: 'true or false',
+  integer: 'a whole number',
+  number: 'a number',
+  object: 'an object',
 };
 
 const formatNames: Record<string, string> = {
@@ -14,32 +14,32 @@ const formatNames: Record<string, string> = {
 
 function fieldOf(error: FastifySchemaValidationError, context: FastifyError['validationContext']): string {
   const path = error.instancePath.replace(/^\//, '').replaceAll('/', '.');
-  return path || context || 'corpo';
+  return path || context || 'body';
 }
 
 function describe(error: FastifySchemaValidationError, field: string): string {
   const { params } = error;
   switch (error.keyword) {
     case 'required':
-      return `O campo ${String(params.missingProperty)} é obrigatório.`;
+      return `The field ${String(params.missingProperty)} is required.`;
     case 'type':
-      return `O campo ${field} deve ser ${typeNames[String(params.type)] ?? String(params.type)}.`;
+      return `The field ${field} must be ${typeNames[String(params.type)] ?? String(params.type)}.`;
     case 'minLength':
-      return `O campo ${field} não pode ficar vazio.`;
+      return `The field ${field} cannot be empty.`;
     case 'maxLength':
-      return `O campo ${field} deve ter no máximo ${String(params.limit)} caracteres.`;
+      return `The field ${field} must have at most ${String(params.limit)} characters.`;
     case 'format':
-      return `O campo ${field} deve estar no formato ${formatNames[String(params.format)] ?? String(params.format)}.`;
+      return `The field ${field} must be in the ${formatNames[String(params.format)] ?? String(params.format)} format.`;
     case 'additionalProperties':
-      return `O campo ${String(params.additionalProperty)} não é aceito.`;
+      return `The field ${String(params.additionalProperty)} is not accepted.`;
   }
-  return `O campo ${field} é inválido.`;
+  return `The field ${field} is invalid.`;
 }
 
 export function validationMessage(errors: FastifySchemaValidationError[], context: FastifyError['validationContext']): string {
   const [first] = errors;
   if (!first) {
-    return 'Requisição inválida.';
+    return 'Bad request.';
   }
   return describe(first, fieldOf(first, context));
 }

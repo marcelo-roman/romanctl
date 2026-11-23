@@ -1,14 +1,14 @@
 const statusLabels: Record<string, string> = {
-  Draft: 'Rascunho',
-  Placed: 'Realizado',
+  Draft: 'Draft',
+  Placed: 'Placed',
 };
 
 export function formatMoney(amount: number, currency: string): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(amount);
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 }
 
 export function formatDate(iso: string): string {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso));
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso));
 }
 
 export function statusLabel(status: string): string {

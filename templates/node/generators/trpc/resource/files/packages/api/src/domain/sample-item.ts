@@ -5,10 +5,10 @@ const MAX_NAME_LENGTH = 200;
 function validName(name: string): string {
   const trimmed = name.trim();
   if (trimmed === '') {
-    throw new DomainError('O nome é obrigatório.');
+    throw new DomainError('The name is required.');
   }
   if (trimmed.length > MAX_NAME_LENGTH) {
-    throw new DomainError(`O nome tem no máximo ${MAX_NAME_LENGTH} caracteres.`);
+    throw new DomainError(`The name has at most ${MAX_NAME_LENGTH} characters.`);
   }
   return trimmed;
 }

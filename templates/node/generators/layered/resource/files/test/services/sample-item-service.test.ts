@@ -14,10 +14,10 @@ describe('SampleItemService', () => {
   });
 
   it('creates, renames and deletes', async () => {
-    const created = await service.create({ name: '  Primeiro  ' });
-    expect(created).toMatchObject({ name: 'Primeiro', createdAt: now });
+    const created = await service.create({ name: '  First  ' });
+    expect(created).toMatchObject({ name: 'First', createdAt: now });
 
-    const renamed = await service.rename(created.id, { name: 'Segundo' });
+    const renamed = await service.rename(created.id, { name: 'Second' });
     expect(await service.get(created.id)).toEqual(renamed);
     expect(await service.list({})).toEqual([renamed]);
 
@@ -31,7 +31,7 @@ describe('SampleItemService', () => {
   });
 
   it('reports unknown records', async () => {
-    await expect(service.rename(missingId, { name: 'Outro' })).rejects.toThrow(NotFoundError);
+    await expect(service.rename(missingId, { name: 'Other' })).rejects.toThrow(NotFoundError);
     await expect(service.delete(missingId)).rejects.toThrow(NotFoundError);
   });
 });

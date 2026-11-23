@@ -53,6 +53,6 @@ public class OrderService {
     }
 
     private Order load(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new NotFoundException("Pedido não encontrado."));
+        return repository.findById(id).orElseThrow(() -> new NotFoundException("Order not found."));
     }
 }

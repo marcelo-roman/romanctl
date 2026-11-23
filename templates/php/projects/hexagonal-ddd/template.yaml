@@ -1,7 +1,7 @@
 id: hexagonal-ddd
 stack: php
 arch: [ddd, hexagonal]
-description: API PHP com arquitetura hexagonal e DDD, com Symfony e Doctrine DBAL
+description: PHP API with hexagonal architecture and DDD, using Symfony and Doctrine DBAL
 services: [postgres]
 requires: [php]
 setup:

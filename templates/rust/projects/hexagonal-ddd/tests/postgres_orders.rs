@@ -31,10 +31,10 @@ async fn order_round_trip() {
     let created_at = Utc::now().trunc_subsecs(6);
     let mut order = Order::create("Ana", created_at).unwrap();
     order
-        .add_item("Caneta", 2, Money::new(350, "BRL").unwrap())
+        .add_item("Pen", 2, Money::new(350, "USD").unwrap())
         .unwrap();
     order
-        .add_item("Caderno", 1, Money::new(1200, "BRL").unwrap())
+        .add_item("Notebook", 1, Money::new(1200, "USD").unwrap())
         .unwrap();
     repository.save(&order).await.unwrap();
     order.place(Utc::now()).unwrap();

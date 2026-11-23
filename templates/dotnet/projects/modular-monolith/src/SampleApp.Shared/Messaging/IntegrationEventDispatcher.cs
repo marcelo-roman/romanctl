@@ -31,7 +31,7 @@ internal sealed class IntegrationEventDispatcher(
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
-                logger.LogError(exception, "Falha ao tratar o evento {Event} em {Handler}.",
+                logger.LogError(exception, "Failed to handle event {Event} in {Handler}.",
                     integrationEvent.GetType().Name, handler!.GetType().Name);
             }
         }

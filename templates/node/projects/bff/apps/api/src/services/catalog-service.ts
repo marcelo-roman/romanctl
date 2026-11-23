@@ -29,7 +29,7 @@ export class CatalogService {
   async get(id: string): Promise<CatalogProduct> {
     const product = await this.catalog.findById(id);
     if (!product) {
-      throw new NotFoundError(`Produto ${id} não encontrado no catálogo.`);
+      throw new NotFoundError(`Product ${id} not found in the catalog.`);
     }
     return product;
   }

@@ -10,7 +10,7 @@ import (
 	"sample-app/internal/services/orders/domain/shared"
 )
 
-var ErrNotFound = fmt.Errorf("Pedido %w.", shared.ErrNotFound)
+var ErrNotFound = fmt.Errorf("Order %w.", shared.ErrNotFound)
 
 type Store interface {
 	Save(ctx context.Context, o *order.Order, outbox []messaging.Envelope) error

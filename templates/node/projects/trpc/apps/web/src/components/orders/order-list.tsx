@@ -11,22 +11,22 @@ export function OrderList() {
   const orders = useQuery(trpc.orders.list.queryOptions());
 
   if (orders.isPending) {
-    return <p>Carregando pedidos...</p>;
+    return <p>Loading orders...</p>;
   }
   if (orders.isError) {
     return <p role="alert">{errorMessage(orders.error)}</p>;
   }
   if (orders.data.length === 0) {
-    return <p>Nenhum pedido ainda.</p>;
+    return <p>No orders yet.</p>;
   }
   return (
     <table>
       <thead>
         <tr>
-          <th>Cliente</th>
-          <th>Situação</th>
+          <th>Customer</th>
+          <th>Status</th>
           <th>Total</th>
-          <th>Criado em</th>
+          <th>Created at</th>
         </tr>
       </thead>
       <tbody>

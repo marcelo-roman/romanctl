@@ -16,11 +16,11 @@ export function NewOrderForm({ pending, onCreate }: NewOrderFormProps) {
   return (
     <form className="inline-form" onSubmit={submit}>
       <label>
-        Nome do cliente
+        Customer name
         <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} />
       </label>
       <button type="submit" disabled={pending}>
-        Criar pedido
+        Create order
       </button>
     </form>
   );

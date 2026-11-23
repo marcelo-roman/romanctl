@@ -1,7 +1,7 @@
 id: hexagonal-ddd
 stack: kotlin
 arch: [ddd, hexagonal]
-description: API Kotlin com arquitetura hexagonal e DDD, com Ktor e Gradle
+description: Kotlin API with hexagonal architecture and DDD, with Ktor and Gradle
 services: [postgres]
 requires: [java]
 setup:

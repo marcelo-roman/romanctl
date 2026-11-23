@@ -4,9 +4,9 @@ import { paths } from '@/shared/config';
 export function NotFoundPage() {
   return (
     <main className="page">
-      <h1>Página não encontrada</h1>
-      <p className="muted">O endereço não corresponde a nenhuma página.</p>
-      <Link to={paths.orders}>Voltar para os pedidos</Link>
+      <h1>Page not found</h1>
+      <p className="muted">The address does not match any page.</p>
+      <Link to={paths.orders}>Back to orders</Link>
     </main>
   );
 }

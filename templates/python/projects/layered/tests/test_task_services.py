@@ -16,12 +16,12 @@ def yesterday() -> date:
 
 
 def test_create_trims_the_title_and_starts_pending() -> None:
-    task = create_task(title="  Comprar pão  ", due_date=timezone.localdate())
+    task = create_task(title="  Buy bread  ", due_date=timezone.localdate())
 
-    assert task.title == "Comprar pão"
+    assert task.title == "Buy bread"
     assert task.done is False
     assert task.due_date == timezone.localdate()
-    assert get_task(task.id).title == "Comprar pão"
+    assert get_task(task.id).title == "Buy bread"
 
 
 @pytest.mark.parametrize("title", ["", "   ", "x" * 201])
@@ -31,33 +31,33 @@ def test_create_rejects_invalid_titles(title: str) -> None:
 
 
 def test_create_rejects_a_due_date_in_the_past() -> None:
-    with pytest.raises(BusinessRuleError, match="passado"):
-        create_task(title="Pagar a conta", due_date=yesterday())
+    with pytest.raises(BusinessRuleError, match="past"):
+        create_task(title="Pay the bill", due_date=yesterday())
 
     assert Task.objects.count() == 0
 
 
 def test_update_changes_only_what_was_sent() -> None:
-    task = create_task(title="Estudar")
+    task = create_task(title="Study")
 
     update_task(task, {"done": True})
-    update_task(task, {"title": " Estudar Django "})
+    update_task(task, {"title": " Study Django "})
 
     loaded = get_task(task.id)
-    assert loaded.title == "Estudar Django"
+    assert loaded.title == "Study Django"
     assert loaded.done is True
     assert loaded.due_date is None
 
 
 def test_update_rejects_moving_the_due_date_to_the_past() -> None:
-    task = create_task(title="Estudar")
+    task = create_task(title="Study")
 
     with pytest.raises(BusinessRuleError):
         update_task(task, {"due_date": yesterday()})
 
 
 def test_update_keeps_an_overdue_date_that_did_not_change() -> None:
-    task = create_task(title="Estudar")
+    task = create_task(title="Study")
     Task.objects.filter(pk=task.id).update(due_date=yesterday())
     overdue = get_task(task.id)
 
@@ -67,8 +67,8 @@ def test_update_keeps_an_overdue_date_that_did_not_change() -> None:
 
 
 def test_list_filters_by_status_and_returns_newest_first() -> None:
-    first = create_task(title="Primeira")
-    second = create_task(title="Segunda")
+    first = create_task(title="First")
+    second = create_task(title="Second")
     update_task(first, {"done": True})
 
     assert [task.id for task in list_tasks(limit=50)] == [second.id, first.id]
@@ -78,7 +78,7 @@ def test_list_filters_by_status_and_returns_newest_first() -> None:
 
 
 def test_delete_removes_the_task() -> None:
-    task = create_task(title="Descartável")
+    task = create_task(title="Disposable")
 
     delete_task(task)
 

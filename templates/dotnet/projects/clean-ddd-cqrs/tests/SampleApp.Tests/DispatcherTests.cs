@@ -63,12 +63,12 @@ public class DispatcherTests
     }
 
     [Fact]
-    public async Task Fluxo_completo_de_comandos_e_consultas()
+    public async Task Full_flow_of_commands_and_queries()
     {
         var (dispatcher, events) = Build();
 
         var id = await dispatcher.SendAsync(new CreateOrder("Ana"));
-        await dispatcher.SendAsync(new AddOrderItem(id, "Caneta", 2, 1.50m));
+        await dispatcher.SendAsync(new AddOrderItem(id, "Pen", 2, 1.50m));
         await dispatcher.SendAsync(new PlaceOrder(id));
 
         var order = await dispatcher.QueryAsync(new GetOrderById(id));
@@ -79,7 +79,7 @@ public class DispatcherTests
     }
 
     [Fact]
-    public async Task Pedido_inexistente_vira_NotFound()
+    public async Task Unknown_order_becomes_NotFound()
     {
         var (dispatcher, _) = Build();
 

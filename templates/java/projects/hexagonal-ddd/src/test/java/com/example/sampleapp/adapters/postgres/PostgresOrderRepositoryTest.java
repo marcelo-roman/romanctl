@@ -25,7 +25,7 @@ class PostgresOrderRepositoryTest {
     @Test
     void roundTrip() {
         Order order = Order.create("Ana", Instant.now().truncatedTo(ChronoUnit.MICROS));
-        order.addItem("Caneta", 2, Money.of(new BigDecimal("3.50"), "BRL"));
+        order.addItem("Pen", 2, Money.of(new BigDecimal("3.50"), "BRL"));
         repository.save(order);
         order.place(Instant.now());
         repository.save(order);

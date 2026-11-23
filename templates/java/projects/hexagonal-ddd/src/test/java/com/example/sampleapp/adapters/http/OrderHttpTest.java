@@ -33,7 +33,7 @@ class OrderHttpTest {
         UUID id = ApiClient.createdId(created);
 
         ResponseEntity<String> added = api.send(HttpMethod.POST, "/orders/" + id + "/items",
-                "{\"productName\":\"Caneta\",\"quantity\":2,\"unitPrice\":3.5}");
+                "{\"productName\":\"Pen\",\"quantity\":2,\"unitPrice\":3.5}");
         assertThat(added.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         assertThat(api.send(HttpMethod.POST, "/orders/" + id + "/place", null).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
@@ -48,7 +48,7 @@ class OrderHttpTest {
     void errorsBecomeProblems() {
         ResponseEntity<String> rule = api.send(HttpMethod.POST, "/orders", "{\"customerName\":\"\"}");
         assertThat(rule.getStatusCode().value()).isEqualTo(422);
-        assertThat(rule.getBody()).contains("O nome do cliente é obrigatório.");
+        assertThat(rule.getBody()).contains("Customer name is required.");
 
         ResponseEntity<String> missing = api.send(HttpMethod.GET, "/orders/" + UUID.randomUUID(), null);
         assertThat(missing.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);

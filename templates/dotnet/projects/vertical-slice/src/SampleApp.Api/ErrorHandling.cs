@@ -10,8 +10,8 @@ internal sealed class ErrorHandling(IProblemDetailsService problemDetails) : IEx
     {
         var (status, title) = exception switch
         {
-            DomainException => (StatusCodes.Status422UnprocessableEntity, "Regra de negócio violada"),
-            BadHttpRequestException badRequest => (badRequest.StatusCode, "Requisição inválida"),
+            DomainException => (StatusCodes.Status422UnprocessableEntity, "Business rule violated"),
+            BadHttpRequestException badRequest => (badRequest.StatusCode, "Invalid request"),
             _ => (0, ""),
         };
         if (status == 0)

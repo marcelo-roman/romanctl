@@ -10,18 +10,18 @@ public class OrderTests
     private static readonly Guid Notebook = Guid.NewGuid();
 
     [Fact]
-    public void Total_soma_os_subtotais_dos_itens()
+    public void Total_sums_item_subtotals()
     {
         var order = Order.Create("Ana", Now);
 
-        order.AddItem(Pen, "Caneta", 2, new Money(1.50m, "BRL"));
-        order.AddItem(Notebook, "Caderno", 1, new Money(10m, "BRL"));
+        order.AddItem(Pen, "Pen", 2, new Money(1.50m, "BRL"));
+        order.AddItem(Notebook, "Notebook", 1, new Money(10m, "BRL"));
 
         Assert.Equal(new Money(13m, "BRL"), order.Total);
     }
 
     [Fact]
-    public void Pedido_novo_comeca_em_rascunho_com_total_zero_em_BRL()
+    public void New_order_starts_as_draft_with_zero_total_in_BRL()
     {
         var order = Order.Create(" Ana ", Now);
 
@@ -32,11 +32,11 @@ public class OrderTests
     }
 
     [Fact]
-    public void Rejeita_cliente_sem_nome() =>
+    public void Rejects_customer_without_name() =>
         Assert.Throws<DomainException>(() => Order.Create(" ", Now));
 
     [Fact]
-    public void Nao_realiza_pedido_sem_itens()
+    public void Does_not_place_order_without_items()
     {
         var order = Order.Create("Ana", Now);
 
@@ -44,33 +44,33 @@ public class OrderTests
     }
 
     [Fact]
-    public void Realizar_o_pedido_impede_alteracoes()
+    public void Placing_the_order_prevents_changes()
     {
         var order = Order.Create("Ana", Now);
-        order.AddItem(Pen, "Caneta", 2, new Money(1.50m, "BRL"));
+        order.AddItem(Pen, "Pen", 2, new Money(1.50m, "BRL"));
 
         order.Place(Now.AddMinutes(1));
 
         Assert.Equal(OrderStatus.Placed, order.Status);
         Assert.Equal(Now.AddMinutes(1), order.PlacedAt);
-        Assert.Throws<DomainException>(() => order.AddItem(Notebook, "Caderno", 1, new Money(1m, "BRL")));
+        Assert.Throws<DomainException>(() => order.AddItem(Notebook, "Notebook", 1, new Money(1m, "BRL")));
         Assert.Throws<DomainException>(() => order.Place(Now));
     }
 
     [Fact]
-    public void Nao_mistura_moedas_no_mesmo_pedido()
+    public void Does_not_mix_currencies_in_the_same_order()
     {
         var order = Order.Create("Ana", Now);
-        order.AddItem(Pen, "Caneta", 1, new Money(1m, "BRL"));
+        order.AddItem(Pen, "Pen", 1, new Money(1m, "BRL"));
 
-        Assert.Throws<DomainException>(() => order.AddItem(Notebook, "Notebook", 1, new Money(1m, "USD")));
+        Assert.Throws<DomainException>(() => order.AddItem(Notebook, "Imported notebook", 1, new Money(1m, "USD")));
     }
 
     [Theory]
     [InlineData(true, "", 1)]
-    [InlineData(true, "Caneta", 0)]
-    [InlineData(false, "Caneta", 1)]
-    public void Rejeita_item_invalido(bool withProduct, string productName, int quantity)
+    [InlineData(true, "Pen", 0)]
+    [InlineData(false, "Pen", 1)]
+    public void Rejects_invalid_item(bool withProduct, string productName, int quantity)
     {
         var order = Order.Create("Ana", Now);
         var productId = withProduct ? Pen : Guid.Empty;

@@ -47,7 +47,7 @@ impl SampleItem {
 fn required_name(name: &str) -> Result<String, RuleViolation> {
     let name = name.trim();
     if name.is_empty() {
-        return Err(RuleViolation::new("O nome é obrigatório."));
+        return Err(RuleViolation::new("Name is required."));
     }
     Ok(name.to_owned())
 }

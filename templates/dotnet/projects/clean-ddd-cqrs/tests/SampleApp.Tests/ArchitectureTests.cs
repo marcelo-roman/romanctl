@@ -4,7 +4,7 @@ using SampleApp.Domain.Orders;
 
 namespace SampleApp.Tests;
 
-/// <summary>Falha se alguma camada passar a depender de uma camada mais externa.</summary>
+/// <summary>Fails if any layer starts depending on an outer layer.</summary>
 public class ArchitectureTests
 {
     private static IEnumerable<string> ProjectReferences(Assembly assembly) =>
@@ -13,15 +13,15 @@ public class ArchitectureTests
             .Where(name => name.StartsWith("SampleApp."));
 
     [Fact]
-    public void Domain_nao_depende_de_nenhuma_camada() =>
+    public void Domain_depends_on_no_other_layer() =>
         Assert.Empty(ProjectReferences(typeof(Order).Assembly));
 
     [Fact]
-    public void Application_depende_apenas_de_Domain() =>
+    public void Application_depends_only_on_Domain() =>
         Assert.Equal(["SampleApp.Domain"], ProjectReferences(typeof(DependencyInjection).Assembly));
 
     [Fact]
-    public void Domain_nao_usa_frameworks()
+    public void Domain_uses_no_frameworks()
     {
         var external = typeof(Order).Assembly.GetReferencedAssemblies()
             .Select(reference => reference.Name!)

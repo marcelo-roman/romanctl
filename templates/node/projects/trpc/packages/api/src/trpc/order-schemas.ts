@@ -1,31 +1,31 @@
 import { z } from 'zod';
 
-const orderId = z.uuid({ error: 'Identificador de pedido inválido.' });
+const orderId = z.uuid({ error: 'Invalid order identifier.' });
 
 export const createOrderInput = z.object({
   customerName: z
-    .string({ error: 'Informe o nome do cliente.' })
+    .string({ error: 'Enter the customer name.' })
     .trim()
-    .min(1, { error: 'Informe o nome do cliente.' })
-    .max(200, { error: 'O nome do cliente tem no máximo 200 caracteres.' }),
+    .min(1, { error: 'Enter the customer name.' })
+    .max(200, { error: 'The customer name has at most 200 characters.' }),
 });
 
 export const addItemInput = z.object({
   orderId,
   productName: z
-    .string({ error: 'Informe o nome do produto.' })
+    .string({ error: 'Enter the product name.' })
     .trim()
-    .min(1, { error: 'Informe o nome do produto.' })
-    .max(200, { error: 'O nome do produto tem no máximo 200 caracteres.' }),
+    .min(1, { error: 'Enter the product name.' })
+    .max(200, { error: 'The product name has at most 200 characters.' }),
   quantity: z
-    .number({ error: 'Informe a quantidade.' })
-    .int({ error: 'A quantidade deve ser um número inteiro.' })
-    .positive({ error: 'A quantidade deve ser maior que zero.' }),
-  unitPrice: z.number({ error: 'Informe o preço unitário.' }).nonnegative({ error: 'O preço não pode ser negativo.' }),
+    .number({ error: 'Enter the quantity.' })
+    .int({ error: 'The quantity must be a whole number.' })
+    .positive({ error: 'The quantity must be greater than zero.' }),
+  unitPrice: z.number({ error: 'Enter the unit price.' }).nonnegative({ error: 'The price cannot be negative.' }),
   currency: z
     .string()
     .trim()
-    .regex(/^[A-Za-z]{3}$/, { error: 'A moeda deve ter 3 letras, como BRL.' })
+    .regex(/^[A-Za-z]{3}$/, { error: 'The currency must have 3 letters, like USD.' })
     .optional(),
 });
 

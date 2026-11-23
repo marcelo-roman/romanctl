@@ -16,7 +16,7 @@ func Receiver(handler messaging.Handler) http.Handler {
 			return
 		}
 		if err := e.Validate(); err != nil {
-			httpx.WriteProblem(w, http.StatusBadRequest, "Evento inválido", err.Error())
+			httpx.WriteProblem(w, http.StatusBadRequest, "Invalid event", err.Error())
 			return
 		}
 		err := handler(r.Context(), e)
@@ -24,10 +24,10 @@ func Receiver(handler messaging.Handler) http.Handler {
 		case err == nil:
 			w.WriteHeader(http.StatusNoContent)
 		case errors.Is(err, messaging.ErrRejected):
-			httpx.WriteProblem(w, http.StatusUnprocessableEntity, "Evento recusado", err.Error())
+			httpx.WriteProblem(w, http.StatusUnprocessableEntity, "Event rejected", err.Error())
 		default:
 			slog.Error("event handling failed", "id", e.ID, "type", e.Type, "error", err)
-			httpx.WriteProblem(w, http.StatusServiceUnavailable, "Evento não processado", "")
+			httpx.WriteProblem(w, http.StatusServiceUnavailable, "Event not processed", "")
 		}
 	})
 }

@@ -15,10 +15,10 @@ export class CatalogProduct {
   static create(name: string, price: Money, now: Date): CatalogProduct {
     const trimmed = name.trim();
     if (trimmed === '') {
-      throw new DomainError('O nome do produto é obrigatório.');
+      throw new DomainError('The product name is required.');
     }
     if (trimmed.length > CATALOG_NAME_MAX_LENGTH) {
-      throw new DomainError(`O nome do produto deve ter no máximo ${CATALOG_NAME_MAX_LENGTH} caracteres.`);
+      throw new DomainError(`The product name must have at most ${CATALOG_NAME_MAX_LENGTH} characters.`);
     }
     return new CatalogProduct(randomUUID(), trimmed, price, now);
   }

@@ -45,7 +45,7 @@ class OrderServiceTest {
     @Test
     fun `places an order and publishes the event`() {
         val id = service.create("Ana")
-        service.addItem(id.toString(), AddItem("Caneta", 2, BigDecimal("3.5"), null))
+        service.addItem(id.toString(), AddItem("Pen", 2, BigDecimal("3.5"), null))
 
         service.place(id.toString())
 
@@ -66,12 +66,12 @@ class OrderServiceTest {
     fun `malformed id breaks a rule`() {
         val error = assertFailsWith<BusinessRuleException> { service.place("abc") }
 
-        assertEquals("Identificador inválido.", error.message)
+        assertEquals("Invalid identifier.", error.message)
     }
 
     @Test
     fun `list honours the limit`() {
-        repeat(3) { service.create("Cliente $it") }
+        repeat(3) { service.create("Customer $it") }
 
         assertEquals(2, service.list(2).size)
         assertEquals(3, service.list(null).size)

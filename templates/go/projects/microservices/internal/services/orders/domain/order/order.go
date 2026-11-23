@@ -20,7 +20,7 @@ type Order struct {
 
 func Create(customerName string, now time.Time) (*Order, error) {
 	if strings.TrimSpace(customerName) == "" {
-		return nil, shared.Rule("O nome do cliente é obrigatório.")
+		return nil, shared.Rule("Customer name is required.")
 	}
 	return &Order{id: shared.NewID(), customerName: strings.TrimSpace(customerName), status: Draft, createdAt: now}, nil
 }
@@ -49,10 +49,10 @@ func (o *Order) Total() Money {
 
 func (o *Order) AddItem(productName string, quantity int, unitPrice Money) error {
 	if o.status != Draft {
-		return shared.Rule("Um pedido já realizado não pode ser alterado.")
+		return shared.Rule("A placed order cannot be changed.")
 	}
 	if len(o.items) > 0 && o.items[0].unitPrice.currency != unitPrice.currency {
-		return shared.Rule("Todos os itens do pedido devem usar a mesma moeda.")
+		return shared.Rule("All order items must use the same currency.")
 	}
 	item, err := newItem(productName, quantity, unitPrice)
 	if err != nil {
@@ -64,10 +64,10 @@ func (o *Order) AddItem(productName string, quantity int, unitPrice Money) error
 
 func (o *Order) Place(now time.Time) error {
 	if o.status != Draft {
-		return shared.Rule("O pedido já foi realizado.")
+		return shared.Rule("The order has already been placed.")
 	}
 	if len(o.items) == 0 {
-		return shared.Rule("Um pedido sem itens não pode ser realizado.")
+		return shared.Rule("An order without items cannot be placed.")
 	}
 	o.status = Placed
 	total := o.Total()

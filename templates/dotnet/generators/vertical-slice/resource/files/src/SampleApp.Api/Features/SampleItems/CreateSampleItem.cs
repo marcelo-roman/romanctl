@@ -17,7 +17,7 @@ public static class CreateSampleItem
     {
         var errors = new Dictionary<string, string[]>();
         if (request.Name is null)
-            errors["name"] = ["Informe o nome."];
+            errors["name"] = ["Name is required."];
         return errors;
     }
 

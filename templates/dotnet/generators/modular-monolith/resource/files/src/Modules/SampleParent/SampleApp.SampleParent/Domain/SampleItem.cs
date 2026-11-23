@@ -20,7 +20,7 @@ internal sealed class SampleItem
     public void Rename(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException("O nome é obrigatório.");
+            throw new DomainException("Name is required.");
 
         Name = name.Trim();
     }

@@ -9,8 +9,8 @@ import { OrderSummary } from '@/widgets/order-summary';
 
 function DraftActions({ order }: { order: Order }) {
   return (
-    <section className="card" aria-label="Itens">
-      <h2>Adicionar item</h2>
+    <section className="card" aria-label="Items">
+      <h2>Add item</h2>
       <AddOrderItemForm orderId={order.id} />
       <PlaceOrderButton orderId={order.id} />
     </section>
@@ -21,7 +21,7 @@ function OrderContent({ id }: { id: string }) {
   const { data, error, isPending } = useOrder(id);
 
   if (isPending) {
-    return <p className="muted">Carregando pedido...</p>;
+    return <p className="muted">Loading order...</p>;
   }
   if (error) {
     return <Alert tone="error">{errorMessage(error)}</Alert>;
@@ -39,8 +39,8 @@ export function OrderDetailsPage() {
 
   return (
     <main className="page">
-      <Link to={paths.orders}>← Pedidos</Link>
-      <h1>Pedido</h1>
+      <Link to={paths.orders}>← Orders</Link>
+      <h1>Order</h1>
       <OrderContent id={id} />
     </main>
   );

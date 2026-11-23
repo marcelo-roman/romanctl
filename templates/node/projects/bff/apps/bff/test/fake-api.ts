@@ -24,5 +24,5 @@ export async function startFakeApi(routes: (app: FastifyInstance) => void): Prom
 }
 
 export function problem(status: number, detail: string) {
-  return { status, title: 'Erro', detail };
+  return { status, title: 'Error', detail };
 }

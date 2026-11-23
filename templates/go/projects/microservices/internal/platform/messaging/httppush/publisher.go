@@ -38,7 +38,7 @@ func (p *Publisher) Publish(ctx context.Context, e messaging.Envelope) error {
 	defer res.Body.Close()
 	_, _ = io.Copy(io.Discard, res.Body)
 	if res.StatusCode >= http.StatusMultipleChoices {
-		return fmt.Errorf("%s respondeu %d", p.url, res.StatusCode)
+		return fmt.Errorf("%s answered %d", p.url, res.StatusCode)
 	}
 	return nil
 }

@@ -28,7 +28,7 @@ function lineOf(item: OrderItem, index: number): SummaryLine {
 }
 
 function unitsLabel(units: number): string {
-  return units === 1 ? '1 unidade' : `${units} unidades`;
+  return units === 1 ? '1 unit' : `${units} units`;
 }
 
 export function summaryOf(order: Order): Summary {

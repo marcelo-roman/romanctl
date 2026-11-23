@@ -19,7 +19,7 @@ def delete_sample_item(sample_item: SampleItem) -> None:
 def _valid_name(name: str) -> str:
     trimmed = name.strip()
     if not trimmed:
-        raise BusinessRuleError("O nome é obrigatório.")
+        raise BusinessRuleError("The name is required.")
     if len(trimmed) > NAME_MAX_LENGTH:
-        raise BusinessRuleError(f"O nome passa de {NAME_MAX_LENGTH} caracteres.")
+        raise BusinessRuleError(f"The name exceeds {NAME_MAX_LENGTH} characters.")
     return trimmed

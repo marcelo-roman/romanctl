@@ -35,16 +35,16 @@ public class ModuleBoundaryTests
         string.Join(", ", result.FailingTypeNames ?? []);
 
     [Fact]
-    public void A_API_compoe_os_modulos_e_cada_um_tem_contratos()
+    public void The_API_composes_the_modules_and_each_has_contracts()
     {
         var modules = Modules();
 
-        Assert.True(modules.Count >= 2, "A API deveria registrar pelo menos dois módulos.");
+        Assert.True(modules.Count >= 2, "The API should register at least two modules.");
         Assert.All(modules, module => Assert.NotNull(ContractsOf(module)));
     }
 
     [Fact]
-    public void Um_modulo_so_conhece_os_contratos_dos_outros()
+    public void A_module_only_knows_the_contracts_of_the_others()
     {
         var modules = Modules();
         foreach (var module in modules)
@@ -53,12 +53,12 @@ public class ModuleBoundaryTests
 
             var result = Types.InAssembly(module).ShouldNot().HaveDependencyOnAny(others).GetResult();
 
-            Assert.True(result.IsSuccessful, $"{Name(module)} usa o interior de outro módulo: {Describe(result)}");
+            Assert.True(result.IsSuccessful, $"{Name(module)} uses the internals of another module: {Describe(result)}");
         }
     }
 
     [Fact]
-    public void Contratos_nao_dependem_de_implementacao_nem_de_frameworks()
+    public void Contracts_depend_on_no_implementation_or_framework()
     {
         var modules = Modules();
         var forbidden = InternalTypesOf(modules).Concat(Frameworks).ToArray();
@@ -66,22 +66,22 @@ public class ModuleBoundaryTests
         {
             var result = Types.InAssembly(contracts).ShouldNot().HaveDependencyOnAny(forbidden).GetResult();
 
-            Assert.True(result.IsSuccessful, $"{Name(contracts)} depende do que não deveria: {Describe(result)}");
+            Assert.True(result.IsSuccessful, $"{Name(contracts)} depends on something it should not: {Describe(result)}");
         }
     }
 
     [Fact]
-    public void Shared_nao_conhece_nenhum_modulo()
+    public void Shared_knows_no_module()
     {
         var modules = Modules().Select(Name).ToArray();
 
         var result = Types.InAssembly(Shared).ShouldNot().HaveDependencyOnAny(modules).GetResult();
 
-        Assert.True(result.IsSuccessful, $"Shared depende de um módulo: {Describe(result)}");
+        Assert.True(result.IsSuccessful, $"Shared depends on a module: {Describe(result)}");
     }
 
     [Fact]
-    public void Dominio_de_cada_modulo_nao_depende_das_outras_camadas_nem_de_frameworks()
+    public void Each_module_domain_depends_on_no_other_layer_or_framework()
     {
         foreach (var module in Modules())
         {
@@ -93,7 +93,7 @@ public class ModuleBoundaryTests
                 .ShouldNot().HaveDependencyOnAny(layers.Concat(Frameworks).ToArray())
                 .GetResult();
 
-            Assert.True(result.IsSuccessful, $"O domínio de {name} depende de fora dele: {Describe(result)}");
+            Assert.True(result.IsSuccessful, $"The domain of {name} depends on something outside it: {Describe(result)}");
         }
     }
 }

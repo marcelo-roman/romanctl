@@ -50,9 +50,9 @@ def violations(root: Path) -> list[str]:
                 if parts[0] not in apps or len(parts) < 2 or parts[1] not in ALLOWED:
                     continue
                 if parts[1] not in ALLOWED[layer]:
-                    errors.append(f"{app}.{layer}: {layer} não pode importar {'.'.join(parts[:2])}")
+                    errors.append(f"{app}.{layer}: {layer} must not import {'.'.join(parts[:2])}")
             if layer == "views":
-                errors.extend(f"{app}.views: views não podem usar o ORM ({call})" for call in orm_calls(tree))
+                errors.extend(f"{app}.views: views must not use the ORM ({call})" for call in orm_calls(tree))
     return errors
 
 
@@ -72,9 +72,9 @@ def test_violations_are_reported(tmp_path: Path) -> None:
     (app / "models.py").write_text("from notes.selectors import find\n")
 
     assert violations(tmp_path) == [
-        "notes.views: views não pode importar notes.models",
-        "notes.views: views não podem usar o ORM (objects)",
-        "notes.views: views não podem usar o ORM (save)",
-        "notes.selectors: selectors não pode importar notes.services",
-        "notes.models: models não pode importar notes.selectors",
+        "notes.views: views must not import notes.models",
+        "notes.views: views must not use the ORM (objects)",
+        "notes.views: views must not use the ORM (save)",
+        "notes.selectors: selectors must not import notes.services",
+        "notes.models: models must not import notes.selectors",
     ]

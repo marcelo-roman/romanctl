@@ -1,7 +1,7 @@
 id: trpc
 stack: node
 arch: [trpc]
-description: Monorepo full-stack com Next.js e tRPC (npm workspaces), React Query, zod e pg, em TypeScript
+description: Full-stack monorepo with Next.js and tRPC (npm workspaces), React Query, zod and pg, in TypeScript
 services: [postgres]
 requires: [node]
 setup:

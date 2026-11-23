@@ -6,14 +6,14 @@ export function SampleItemForm() {
 
   return (
     <form className="form" onSubmit={form.submit} aria-label="Sample Item">
-      <Field label="Nome" htmlFor="sample-item-name">
+      <Field label="Name" htmlFor="sample-item-name">
         <Input id="sample-item-name" value={form.values.name} onChange={(event) => form.change('name')(event.target.value)} />
       </Field>
       <Button type="submit" disabled={form.isPending}>
-        {form.isPending ? 'Enviando...' : 'Enviar'}
+        {form.isPending ? 'Submitting...' : 'Submit'}
       </Button>
       {form.error && <Alert tone="error">{form.error}</Alert>}
-      {form.succeeded && <Alert tone="success">Enviado.</Alert>}
+      {form.succeeded && <Alert tone="success">Submitted.</Alert>}
     </form>
   );
 }

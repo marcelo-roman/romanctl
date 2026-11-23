@@ -57,12 +57,12 @@ def service(repository: FakeOrderRepository, events: FakeEventPublisher) -> Orde
 
 def test_placing_publishes_event(service: OrderService, events: FakeEventPublisher) -> None:
     order_id = service.create("Ana")
-    service.add_item(order_id, AddItem("Caneta", 3, Decimal("2.5")))
+    service.add_item(order_id, AddItem("Pen", 3, Decimal("2.5")))
     service.place(order_id)
 
     view = service.get(order_id)
-    assert (view.status, view.total, view.currency) == ("Placed", Decimal("7.5"), "BRL")
-    assert events.published == [OrderPlaced(order_id, 750, "BRL", NOW)]
+    assert (view.status, view.total, view.currency) == ("Placed", Decimal("7.5"), "USD")
+    assert events.published == [OrderPlaced(order_id, 750, "USD", NOW)]
 
 
 def test_explicit_currency_is_kept(service: OrderService) -> None:

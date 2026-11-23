@@ -14,7 +14,7 @@ public static class PlaceOrder
     {
         var order = await db.Orders.FirstOrDefaultAsync(order => order.Id == id, cancellationToken);
         if (order is null)
-            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Não encontrado", detail: $"Pedido {id} não encontrado.");
+            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Not found", detail: $"Order {id} not found.");
 
         order.Place();
         await db.SaveChangesAsync(cancellationToken);

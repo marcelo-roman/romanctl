@@ -1,4 +1,4 @@
-description: Agregado com event sourcing completo - eventos, comandos, consultas, projeção, endpoints e testes
+description: Fully event-sourced aggregate - events, commands, queries, projection, endpoints and tests
 aliases: [crud, scaffold]
 includes: [domain, application, controller, test]
-next: "Rotas em /sample-items, com o fluxo de eventos em /sample-items/{id}/events. Rode dotnet test para conferir."
+next: "Routes at /sample-items, with the event stream at /sample-items/{id}/events. Run dotnet test to check."

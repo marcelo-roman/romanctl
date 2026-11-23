@@ -25,10 +25,10 @@ describe.skipIf(!databaseUrl)(suiteTitle('orders in PostgreSQL'), () => {
   it('saves and loads an order with its items', async () => {
     const createdAt = new Date(Date.now() + 60_000);
     const order = Order.create('Ana', createdAt);
-    order.addItem('Caneta', 2, Money.fromCents(350, 'BRL'));
+    order.addItem('Pen', 2, Money.fromCents(350, 'USD'));
     await repository.save(order);
 
-    order.addItem('Caderno', 1, Money.fromCents(1200, 'BRL'));
+    order.addItem('Notebook', 1, Money.fromCents(1200, 'USD'));
     order.place(createdAt);
     await repository.save(order);
 
@@ -36,11 +36,11 @@ describe.skipIf(!databaseUrl)(suiteTitle('orders in PostgreSQL'), () => {
     expect(loaded?.customerName).toBe('Ana');
     expect(loaded?.status).toBe('Placed');
     expect(loaded?.createdAt).toEqual(createdAt);
-    expect(loaded?.total).toEqual(Money.fromCents(1900, 'BRL'));
-    expect(loaded?.items.map((item) => item.productName)).toEqual(['Caneta', 'Caderno']);
+    expect(loaded?.total).toEqual(Money.fromCents(1900, 'USD'));
+    expect(loaded?.items.map((item) => item.productName)).toEqual(['Pen', 'Notebook']);
 
     const view = await readStore.findById(order.id.value);
-    expect(view).toMatchObject({ id: order.id.value, total: 19, currency: 'BRL' });
+    expect(view).toMatchObject({ id: order.id.value, total: 19, currency: 'USD' });
     const latest = await readStore.list(1);
     expect(latest.map((o) => o.id)).toEqual([order.id.value]);
   });

@@ -15,7 +15,7 @@ impl Id {
     pub fn parse(value: &str) -> Result<Self, RuleViolation> {
         Uuid::try_parse(value)
             .map(Self)
-            .map_err(|_| RuleViolation::new("Identificador inválido."))
+            .map_err(|_| RuleViolation::new("Invalid identifier."))
     }
 
     pub fn from_uuid(value: Uuid) -> Self {

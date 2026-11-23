@@ -1,7 +1,7 @@
 id: hexagonal-ddd
 stack: python
 arch: [ddd, hexagonal]
-description: API Python com arquitetura hexagonal e DDD, com FastAPI e uv
+description: Python API with hexagonal architecture and DDD, using FastAPI and uv
 services: [postgres]
 requires: [uv]
 setup:

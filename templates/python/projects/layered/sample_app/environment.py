@@ -2,7 +2,7 @@ import os
 
 from django.core.exceptions import ImproperlyConfigured
 
-DEVELOPMENT_SECRET_KEY = "django-insecure-somente-para-desenvolvimento"
+DEVELOPMENT_SECRET_KEY = "django-insecure-development-only"
 
 
 def flag(name: str, default: bool) -> bool:
@@ -17,7 +17,7 @@ def secret_key(debug: bool) -> str:
     if key:
         return key
     if not debug:
-        raise ImproperlyConfigured("Defina DJANGO_SECRET_KEY quando DJANGO_DEBUG for false.")
+        raise ImproperlyConfigured("Set DJANGO_SECRET_KEY when DJANGO_DEBUG is false.")
     return DEVELOPMENT_SECRET_KEY
 
 

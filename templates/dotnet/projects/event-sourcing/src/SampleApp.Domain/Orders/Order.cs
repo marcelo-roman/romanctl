@@ -21,7 +21,7 @@ public sealed class Order : EventSourcedAggregate
     public static Order Create(Guid id, string customerName, DateTimeOffset now)
     {
         if (string.IsNullOrWhiteSpace(customerName))
-            throw new DomainException("O nome do cliente é obrigatório.");
+            throw new DomainException("Customer name is required.");
 
         var order = new Order { Id = id };
         order.Raise(new OrderCreated(customerName.Trim(), now));
@@ -31,13 +31,13 @@ public sealed class Order : EventSourcedAggregate
     public void AddItem(string productName, int quantity, Money unitPrice)
     {
         if (Status != OrderStatus.Draft)
-            throw new DomainException("Um pedido já realizado não pode ser alterado.");
+            throw new DomainException("A placed order cannot be changed.");
         if (string.IsNullOrWhiteSpace(productName))
-            throw new DomainException("O nome do produto é obrigatório.");
+            throw new DomainException("Product name is required.");
         if (quantity <= 0)
-            throw new DomainException("A quantidade deve ser maior que zero.");
+            throw new DomainException("Quantity must be greater than zero.");
         if (_lines.Count > 0 && unitPrice.Currency != Currency)
-            throw new DomainException("Todos os itens do pedido devem usar a mesma moeda.");
+            throw new DomainException("All order items must use the same currency.");
 
         Raise(new ItemAdded(productName.Trim(), quantity, unitPrice.Amount, unitPrice.Currency));
     }
@@ -45,9 +45,9 @@ public sealed class Order : EventSourcedAggregate
     public void Place(DateTimeOffset now)
     {
         if (Status != OrderStatus.Draft)
-            throw new DomainException("O pedido já foi realizado.");
+            throw new DomainException("The order has already been placed.");
         if (_lines.Count == 0)
-            throw new DomainException("Um pedido sem itens não pode ser realizado.");
+            throw new DomainException("An order without items cannot be placed.");
 
         var total = Total;
         Raise(new OrderPlaced(total.Amount, total.Currency, now));

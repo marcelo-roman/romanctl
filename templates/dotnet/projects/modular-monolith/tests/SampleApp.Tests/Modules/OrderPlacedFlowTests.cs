@@ -8,12 +8,12 @@ namespace SampleApp.Tests.Modules;
 public class OrderPlacedFlowTests
 {
     [Fact]
-    public async Task Pedido_realizado_chega_ao_catalogo_pelo_evento_de_integracao()
+    public async Task Placed_order_reaches_the_catalog_through_the_integration_event()
     {
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
-        var pen = await TestApi.CreateProductAsync(client, "Caneta", 1.50m);
-        var notebook = await TestApi.CreateProductAsync(client, "Caderno", 10m);
+        var pen = await TestApi.CreateProductAsync(client, "Pen", 1.50m);
+        var notebook = await TestApi.CreateProductAsync(client, "Notebook", 10m);
         var id = await TestApi.CreateOrderAsync(client);
         Assert.Equal(HttpStatusCode.NoContent, await TestApi.AddItemAsync(client, id, pen, 2));
         Assert.Equal(HttpStatusCode.NoContent, await TestApi.AddItemAsync(client, id, notebook, 1));

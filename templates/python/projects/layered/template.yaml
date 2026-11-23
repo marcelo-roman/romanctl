@@ -1,7 +1,7 @@
 id: layered
 stack: python
 arch: [layered]
-description: API Python em camadas com Django, Django REST Framework e uv
+description: Layered Python API with Django, Django REST Framework and uv
 services: [postgres]
 requires: [uv]
 setup:

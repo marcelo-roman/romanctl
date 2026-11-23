@@ -1,4 +1,4 @@
-description: Persistência do agregado - EF Core com Postgres, ou em memória
+description: Aggregate persistence - EF Core with Postgres, or in memory
 aliases: [repo, persistence, repositorio]
 requires:
   - path: src/SampleApp.Domain/SampleItems/ISampleItemRepository.cs
@@ -24,4 +24,4 @@ patches:
       services.AddSingleton<SampleApp.Infrastructure.Persistence.InMemory.InMemorySampleItemStore>();
       services.AddScoped<SampleApp.Domain.SampleItems.ISampleItemRepository, SampleApp.Infrastructure.Persistence.InMemory.InMemorySampleItemRepository>();
       services.AddScoped<SampleApp.Application.SampleItems.ISampleItemReadStore, SampleApp.Infrastructure.Persistence.InMemory.InMemorySampleItemReadStore>();
-next: "{{if .Postgres}}O EnsureCreated não altera um banco que já existe: em desenvolvimento, apague o banco sample_app para criar a tabela nova, ou adote migrações.{{end}}"
+next: "{{if .Postgres}}EnsureCreated does not change a database that already exists: in development, drop the sample_app database to create the new table, or adopt migrations.{{end}}"

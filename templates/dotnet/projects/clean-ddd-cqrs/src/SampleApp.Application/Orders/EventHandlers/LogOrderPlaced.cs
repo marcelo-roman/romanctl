@@ -8,7 +8,7 @@ internal sealed class LogOrderPlaced(ILogger<LogOrderPlaced> logger) : IDomainEv
 {
     public Task HandleAsync(OrderPlaced domainEvent, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Pedido {OrderId} realizado: {Total} {Currency}",
+        logger.LogInformation("Order {OrderId} placed: {Total} {Currency}",
             domainEvent.OrderId.Value, domainEvent.Total, domainEvent.Currency);
         return Task.CompletedTask;
     }

@@ -14,7 +14,7 @@ export class Order {
 
   static create(customerName: string, now: Date): Order {
     if (customerName.trim() === '') {
-      throw new DomainError('O nome do cliente é obrigatório.');
+      throw new DomainError('The customer name is required.');
     }
     return new Order(crypto.randomUUID(), customerName.trim(), OrderStatus.Draft, now, []);
   }
@@ -38,21 +38,21 @@ export class Order {
 
   addItem(productName: string, quantity: number, unitPrice: Money): void {
     if (this.state !== OrderStatus.Draft) {
-      throw new InvalidStateError('Um pedido já realizado não pode ser alterado.');
+      throw new InvalidStateError('An order that has been placed cannot be changed.');
     }
     const first = this.lines[0];
     if (first && first.unitPrice.currency !== unitPrice.currency) {
-      throw new DomainError('Todos os itens do pedido devem usar a mesma moeda.');
+      throw new DomainError('All order items must use the same currency.');
     }
     this.lines.push(OrderItem.create(productName, quantity, unitPrice));
   }
 
   place(): void {
     if (this.state !== OrderStatus.Draft) {
-      throw new InvalidStateError('O pedido já foi realizado.');
+      throw new InvalidStateError('The order has already been placed.');
     }
     if (this.lines.length === 0) {
-      throw new DomainError('Um pedido sem itens não pode ser realizado.');
+      throw new DomainError('An order without items cannot be placed.');
     }
     this.state = OrderStatus.Placed;
   }

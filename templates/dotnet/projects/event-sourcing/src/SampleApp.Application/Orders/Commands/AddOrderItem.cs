@@ -13,7 +13,7 @@ internal sealed class AddOrderItemHandler(IAggregateRepository repository) : ICo
     public async Task<bool> HandleAsync(AddOrderItem command, CancellationToken cancellationToken)
     {
         var order = await repository.LoadAsync<Order>(command.OrderId, cancellationToken)
-            ?? throw new NotFoundException($"Pedido {command.OrderId} não encontrado.");
+            ?? throw new NotFoundException($"Order {command.OrderId} not found.");
 
         order.AddItem(command.ProductName, command.Quantity, new Money(command.UnitPrice, command.Currency ?? Order.DefaultCurrency));
         await repository.SaveAsync(order, cancellationToken);

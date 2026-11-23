@@ -1,3 +1,3 @@
-description: Entidade FSD - modelo, contrato da API, consultas do TanStack Query e testes
+description: FSD entity - model, API contract, TanStack Query queries and tests
 aliases: [entidade]
-next: "Entidade em src/entities/sample-item, exportada pelo index.ts e lida de GET /sample-items. Rode npm test para conferir."
+next: "Entity in src/entities/sample-item, exported by index.ts and read from GET /sample-items. Run npm test to check."

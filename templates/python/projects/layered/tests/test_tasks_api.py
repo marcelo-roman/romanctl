@@ -11,7 +11,7 @@ pytestmark = pytest.mark.django_db
 PROBLEM_JSON = "application/problem+json"
 
 
-def create(api_client: APIClient, title: str = "Comprar pão", **fields: object) -> dict:
+def create(api_client: APIClient, title: str = "Buy bread", **fields: object) -> dict:
     response = api_client.post("/tasks", {"title": title, **fields}, format="json")
     assert response.status_code == 201, response.content
     return response.json()
@@ -35,13 +35,13 @@ def test_health(api_client: APIClient) -> None:
 
 def test_task_lifecycle(api_client: APIClient) -> None:
     due = (timezone.localdate() + timedelta(days=3)).isoformat()
-    response = api_client.post("/tasks", {"title": "  Comprar pão  ", "due_date": due}, format="json")
+    response = api_client.post("/tasks", {"title": "  Buy bread  ", "due_date": due}, format="json")
 
     assert response.status_code == 201
     task = response.json()
     assert response["Location"] == f"/tasks/{task['id']}"
     assert set(task) == {"id", "title", "done", "due_date", "created_at"}
-    assert task["title"] == "Comprar pão"
+    assert task["title"] == "Buy bread"
     assert task["done"] is False
     assert task["due_date"] == due
 
@@ -51,15 +51,15 @@ def test_task_lifecycle(api_client: APIClient) -> None:
     assert patched.status_code == 200
     assert patched.json()["done"] is True
     assert patched.json()["due_date"] is None
-    assert patched.json()["title"] == "Comprar pão"
+    assert patched.json()["title"] == "Buy bread"
 
     assert api_client.delete(f"/tasks/{task['id']}").status_code == 204
     assert_problem(api_client.get(f"/tasks/{task['id']}"), 404)
 
 
 def test_list_filters_and_limits(api_client: APIClient) -> None:
-    first = create(api_client, "Primeira")
-    second = create(api_client, "Segunda")
+    first = create(api_client, "First")
+    second = create(api_client, "Second")
     api_client.patch(f"/tasks/{first['id']}", {"done": True}, format="json")
 
     assert [task["id"] for task in api_client.get("/tasks").json()] == [second["id"], first["id"]]
@@ -70,18 +70,18 @@ def test_list_filters_and_limits(api_client: APIClient) -> None:
 
 
 def test_list_returns_fifty_by_default(api_client: APIClient) -> None:
-    Task.objects.bulk_create(Task(title=f"Tarefa {number}") for number in range(55))
+    Task.objects.bulk_create(Task(title=f"Task {number}") for number in range(55))
 
     assert len(api_client.get("/tasks").json()) == 50
     assert len(api_client.get("/tasks?limit=200").json()) == 55
 
 
-@pytest.mark.parametrize("query", ["limit=0", "limit=201", "limit=muitas", "done=talvez"])
+@pytest.mark.parametrize("query", ["limit=0", "limit=201", "limit=many", "done=maybe"])
 def test_invalid_query_is_400(api_client: APIClient, query: str) -> None:
     assert_problem(api_client.get(f"/tasks?{query}"), 400)
 
 
-@pytest.mark.parametrize("body", [{}, {"title": "   "}, {"title": "x" * 201}, {"title": "Ok", "due_date": "ontem"}])
+@pytest.mark.parametrize("body", [{}, {"title": "   "}, {"title": "x" * 201}, {"title": "Ok", "due_date": "yesterday"}])
 def test_invalid_body_is_400(api_client: APIClient, body: dict) -> None:
     problem = assert_problem(api_client.post("/tasks", body, format="json"), 400)
 
@@ -101,18 +101,18 @@ def test_malformed_json_is_400(api_client: APIClient) -> None:
 def test_due_date_in_the_past_is_422(api_client: APIClient) -> None:
     yesterday = (timezone.localdate() - timedelta(days=1)).isoformat()
 
-    response = api_client.post("/tasks", {"title": "Atrasada", "due_date": yesterday}, format="json")
+    response = api_client.post("/tasks", {"title": "Overdue", "due_date": yesterday}, format="json")
 
     problem = assert_problem(response, 422)
 
-    assert problem["title"] == "Regra de negócio violada"
-    assert "passado" in problem["detail"]
+    assert problem["title"] == "Business rule violated"
+    assert "past" in problem["detail"]
 
 
 def test_patch_validates_the_body(api_client: APIClient) -> None:
     task = create(api_client)
 
-    assert_problem(api_client.patch(f"/tasks/{task['id']}", {"done": "talvez"}, format="json"), 400)
+    assert_problem(api_client.patch(f"/tasks/{task['id']}", {"done": "maybe"}, format="json"), 400)
     assert_problem(api_client.patch(f"/tasks/{task['id']}", {"title": ""}, format="json"), 400)
 
 
@@ -132,7 +132,7 @@ def test_unknown_route_is_404(api_client: APIClient) -> None:
 def test_unsupported_method_is_405(api_client: APIClient) -> None:
     task = create(api_client)
 
-    response = api_client.put(f"/tasks/{task['id']}", {"title": "Outra"}, format="json")
+    response = api_client.put(f"/tasks/{task['id']}", {"title": "Another"}, format="json")
 
     assert_problem(response, 405)
     assert "PATCH" in response["Allow"]

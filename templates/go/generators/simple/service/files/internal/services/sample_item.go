@@ -1,12 +1,12 @@
-// Package services contém as regras da aplicação.
+// Package services holds the application rules.
 package services
 
 import "context"
 
-// SampleItemService concentra as operações de SampleItem.
+// SampleItemService gathers the SampleItem operations.
 type SampleItemService struct{}
 
-// Get busca pelo identificador.
+// Get finds by identifier.
 func (s *SampleItemService) Get(ctx context.Context, id string) (string, error) {
 	return id, nil
 }

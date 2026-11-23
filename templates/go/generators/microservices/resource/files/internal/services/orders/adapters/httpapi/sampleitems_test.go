@@ -15,20 +15,20 @@ func TestSampleItemCrud(t *testing.T) {
 	srv := httptest.NewServer(NewHandler(Services{SampleItems: sampleitems.NewService(memory.NewSampleItemRepository(), time.Now)}))
 	t.Cleanup(srv.Close)
 
-	res := send(t, "POST", srv.URL+"/sample-items", `{"name":"Primeiro"}`)
+	res := send(t, "POST", srv.URL+"/sample-items", `{"name":"First"}`)
 	if res.StatusCode != http.StatusCreated {
 		t.Fatalf("create: %d", res.StatusCode)
 	}
 	var created struct{ ID string }
 	_ = json.NewDecoder(res.Body).Decode(&created)
 
-	if res := send(t, "PUT", srv.URL+"/sample-items/"+created.ID, `{"name":"Segundo"}`); res.StatusCode != http.StatusNoContent {
+	if res := send(t, "PUT", srv.URL+"/sample-items/"+created.ID, `{"name":"Second"}`); res.StatusCode != http.StatusNoContent {
 		t.Fatalf("rename: %d", res.StatusCode)
 	}
 	res = send(t, "GET", srv.URL+"/sample-items/"+created.ID, ``)
 	var got sampleItemResponse
 	_ = json.NewDecoder(res.Body).Decode(&got)
-	if got.Name != "Segundo" {
+	if got.Name != "Second" {
 		t.Fatalf("got %+v", got)
 	}
 	if res := send(t, "DELETE", srv.URL+"/sample-items/"+created.ID, ``); res.StatusCode != http.StatusNoContent {

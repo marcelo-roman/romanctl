@@ -11,7 +11,7 @@ describe('orderOf', () => {
       createdAt: '2026-01-02T10:00:00Z',
       total: 7,
       currency: 'USD',
-      items: [{ productName: 'Caneta', quantity: 2, unitPrice: 3.5, subtotal: 7 }],
+      items: [{ productName: 'Pen', quantity: 2, unitPrice: 3.5, subtotal: 7 }],
     });
 
     expect(order.status).toBe('Placed');

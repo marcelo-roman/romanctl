@@ -25,11 +25,11 @@ public class EventBusTests
     public sealed class FailingHandler : IIntegrationEventHandler<SomethingHappened>
     {
         public Task HandleAsync(SomethingHappened integrationEvent, CancellationToken cancellationToken) =>
-            throw new InvalidOperationException("Falha de propósito.");
+            throw new InvalidOperationException("Deliberate failure.");
     }
 
     [Fact]
-    public async Task Entrega_o_evento_aos_handlers_fora_da_requisicao_mesmo_se_um_falhar()
+    public async Task Delivers_the_event_to_handlers_outside_the_request_even_if_one_fails()
     {
         var received = new Received();
         await using var provider = new ServiceCollection()

@@ -15,7 +15,7 @@ public static class RenameSampleItem
     {
         var errors = new Dictionary<string, string[]>();
         if (request.Name is null)
-            errors["name"] = ["Informe o nome."];
+            errors["name"] = ["Name is required."];
         return errors;
     }
 
@@ -28,7 +28,7 @@ public static class RenameSampleItem
 
         var sampleItem = await db.SampleItems.FirstOrDefaultAsync(sampleItem => sampleItem.Id == id, cancellationToken);
         if (sampleItem is null)
-            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Não encontrado", detail: $"SampleItem {id} não encontrado.");
+            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Not found", detail: $"SampleItem {id} not found.");
 
         sampleItem.Rename(request.Name!);
         await db.SaveChangesAsync(cancellationToken);

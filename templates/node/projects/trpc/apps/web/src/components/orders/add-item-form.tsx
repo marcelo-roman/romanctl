@@ -33,25 +33,25 @@ export function AddItemForm({ orderId }: AddItemFormProps) {
   }
 
   return (
-    <form onSubmit={submit} aria-label="Adicionar item">
+    <form onSubmit={submit} aria-label="Add item">
       <label>
-        Produto
+        Product
         <input name="productName" autoComplete="off" />
       </label>
       <label>
-        Quantidade
+        Quantity
         <input name="quantity" inputMode="numeric" defaultValue="1" />
       </label>
       <label>
-        Preço unitário
+        Unit price
         <input name="unitPrice" inputMode="decimal" />
       </label>
       <label>
-        Moeda
-        <input name="currency" defaultValue="BRL" maxLength={3} />
+        Currency
+        <input name="currency" defaultValue="USD" maxLength={3} />
       </label>
       <button type="submit" disabled={addItem.isPending}>
-        Adicionar item
+        Add item
       </button>
       {addItem.isError && <p role="alert">{errorMessage(addItem.error)}</p>}
     </form>

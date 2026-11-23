@@ -34,7 +34,7 @@ func NewHandler(s Services) http.Handler {
 
 func decode(w http.ResponseWriter, r *http.Request, into any) bool {
 	if err := json.NewDecoder(r.Body).Decode(into); err != nil {
-		writeJSON(w, http.StatusBadRequest, problem{Status: http.StatusBadRequest, Title: "Requisição inválida", Detail: err.Error()})
+		writeJSON(w, http.StatusBadRequest, problem{Status: http.StatusBadRequest, Title: "Invalid request", Detail: err.Error()})
 		return false
 	}
 	return true
@@ -44,12 +44,12 @@ func writeError(w http.ResponseWriter, err error) {
 	var ruleErr *shared.RuleError
 	switch {
 	case errors.Is(err, shared.ErrNotFound):
-		writeJSON(w, http.StatusNotFound, problem{Status: http.StatusNotFound, Title: "Não encontrado", Detail: err.Error()})
+		writeJSON(w, http.StatusNotFound, problem{Status: http.StatusNotFound, Title: "Not found", Detail: err.Error()})
 	case errors.As(err, &ruleErr):
-		writeJSON(w, http.StatusUnprocessableEntity, problem{Status: http.StatusUnprocessableEntity, Title: "Regra de negócio violada", Detail: err.Error()})
+		writeJSON(w, http.StatusUnprocessableEntity, problem{Status: http.StatusUnprocessableEntity, Title: "Business rule violated", Detail: err.Error()})
 	default:
 		slog.Error("request failed", "error", err)
-		writeJSON(w, http.StatusInternalServerError, problem{Status: http.StatusInternalServerError, Title: "Erro interno"})
+		writeJSON(w, http.StatusInternalServerError, problem{Status: http.StatusInternalServerError, Title: "Internal error"})
 	}
 }
 

@@ -14,11 +14,11 @@ describe('OrderService', () => {
   it('creates, fills and places an order, saving every step', async () => {
     const orders = service();
     const created = await orders.create(' Ana ');
-    await orders.addItem({ orderId: created.id, productName: 'Caneta', quantity: 2, unitPrice: 3.5 });
-    await orders.addItem({ orderId: created.id, productName: 'Caderno', quantity: 1, unitPrice: 12, currency: 'brl' });
+    await orders.addItem({ orderId: created.id, productName: 'Pen', quantity: 2, unitPrice: 3.5 });
+    await orders.addItem({ orderId: created.id, productName: 'Notebook', quantity: 1, unitPrice: 12, currency: 'usd' });
     const placed = await orders.place(created.id);
 
-    expect(placed).toMatchObject({ customerName: 'Ana', status: 'Placed', total: 19, currency: 'BRL' });
+    expect(placed).toMatchObject({ customerName: 'Ana', status: 'Placed', total: 19, currency: 'USD' });
     expect(await orders.byId(created.id)).toEqual(placed);
   });
 
@@ -35,9 +35,9 @@ describe('OrderService', () => {
     await expect(orders.byId(crypto.randomUUID())).rejects.toThrow(NotFoundError);
     const order = await orders.create('Ana');
     await expect(orders.place(order.id)).rejects.toThrow(DomainError);
-    await orders.addItem({ orderId: order.id, productName: 'Caneta', quantity: 1, unitPrice: 1 });
-    await expect(orders.addItem({ orderId: order.id, productName: 'Pen', quantity: 1, unitPrice: 1, currency: 'USD' })).rejects.toThrow(
-      'mesma moeda',
+    await orders.addItem({ orderId: order.id, productName: 'Pen', quantity: 1, unitPrice: 1 });
+    await expect(orders.addItem({ orderId: order.id, productName: 'Pen', quantity: 1, unitPrice: 1, currency: 'EUR' })).rejects.toThrow(
+      'same currency',
     );
     await orders.place(order.id);
     await expect(orders.place(order.id)).rejects.toThrow(InvalidStateError);

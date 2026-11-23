@@ -6,10 +6,10 @@ export const SAMPLE_ITEM_NAME_MAX_LENGTH = 200;
 function requiredName(name: string): string {
   const trimmed = name.trim();
   if (trimmed === '') {
-    throw new DomainError('O nome é obrigatório.');
+    throw new DomainError('The name is required.');
   }
   if (trimmed.length > SAMPLE_ITEM_NAME_MAX_LENGTH) {
-    throw new DomainError(`O nome deve ter no máximo ${SAMPLE_ITEM_NAME_MAX_LENGTH} caracteres.`);
+    throw new DomainError(`The name must have at most ${SAMPLE_ITEM_NAME_MAX_LENGTH} characters.`);
   }
   return trimmed;
 }

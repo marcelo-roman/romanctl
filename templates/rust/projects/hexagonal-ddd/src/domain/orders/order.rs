@@ -17,7 +17,7 @@ impl Order {
     pub fn create(customer_name: &str, now: DateTime<Utc>) -> Result<Self, RuleViolation> {
         let customer_name = customer_name.trim();
         if customer_name.is_empty() {
-            return Err(RuleViolation::new("O nome do cliente é obrigatório."));
+            return Err(RuleViolation::new("Customer name is required."));
         }
         Ok(Self {
             id: Id::generate(),
@@ -84,13 +84,11 @@ impl Order {
         unit_price: Money,
     ) -> Result<(), RuleViolation> {
         if self.status != OrderStatus::Draft {
-            return Err(RuleViolation::new(
-                "Um pedido já realizado não pode ser alterado.",
-            ));
+            return Err(RuleViolation::new("A placed order cannot be changed."));
         }
         if !self.items.is_empty() && unit_price.currency() != self.currency() {
             return Err(RuleViolation::new(
-                "Todos os itens do pedido devem usar a mesma moeda.",
+                "All order items must use the same currency.",
             ));
         }
         self.items
@@ -100,11 +98,11 @@ impl Order {
 
     pub fn place(&mut self, now: DateTime<Utc>) -> Result<(), RuleViolation> {
         if self.status != OrderStatus::Draft {
-            return Err(RuleViolation::new("O pedido já foi realizado."));
+            return Err(RuleViolation::new("The order has already been placed."));
         }
         if self.items.is_empty() {
             return Err(RuleViolation::new(
-                "Um pedido sem itens não pode ser realizado.",
+                "An order without items cannot be placed.",
             ));
         }
         self.status = OrderStatus::Placed;

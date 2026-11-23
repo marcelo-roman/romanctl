@@ -31,7 +31,7 @@ func (e *SampleItem) CreatedAt() time.Time { return e.createdAt }
 
 func (e *SampleItem) Rename(name string) error {
 	if strings.TrimSpace(name) == "" {
-		return shared.Rule("O nome é obrigatório.")
+		return shared.Rule("Name is required.")
 	}
 	e.name = strings.TrimSpace(name)
 	return nil

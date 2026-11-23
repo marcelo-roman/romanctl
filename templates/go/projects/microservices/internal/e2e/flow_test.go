@@ -67,7 +67,7 @@ func placeOrder(t *testing.T, s system) string {
 	if code := call(t, "POST", s.orders.URL+"/orders", `{"customerName":"Ana"}`, &created); code != http.StatusCreated {
 		t.Fatalf("create: %d", code)
 	}
-	if code := call(t, "POST", s.orders.URL+"/orders/"+created.ID+"/items", `{"productName":"Caneta","quantity":3,"unitPrice":2.5}`, nil); code != http.StatusNoContent {
+	if code := call(t, "POST", s.orders.URL+"/orders/"+created.ID+"/items", `{"productName":"Pen","quantity":3,"unitPrice":2.5}`, nil); code != http.StatusNoContent {
 		t.Fatalf("add item: %d", code)
 	}
 	if code := call(t, "POST", s.orders.URL+"/orders/"+created.ID+"/place", ``, nil); code != http.StatusNoContent {

@@ -14,13 +14,13 @@ describe('/sample-items', () => {
   afterEach(() => app.close());
 
   it('creates, reads, renames, lists and deletes', async () => {
-    const created = await app.inject({ method: 'POST', url: '/sample-items', payload: { name: 'Primeiro' } });
+    const created = await app.inject({ method: 'POST', url: '/sample-items', payload: { name: 'First' } });
     expect(created.statusCode).toBe(201);
     const { id } = created.json();
     expect(created.headers.location).toBe(`/sample-items/${id}`);
 
-    const renamed = await app.inject({ method: 'PUT', url: `/sample-items/${id}`, payload: { name: 'Segundo' } });
-    expect(renamed.json()).toMatchObject({ id, name: 'Segundo' });
+    const renamed = await app.inject({ method: 'PUT', url: `/sample-items/${id}`, payload: { name: 'Second' } });
+    expect(renamed.json()).toMatchObject({ id, name: 'Second' });
 
     const read = await app.inject({ method: 'GET', url: `/sample-items/${id}` });
     expect(read.json()).toEqual(renamed.json());
@@ -35,7 +35,7 @@ describe('/sample-items', () => {
   it('answers problems for invalid and unknown records', async () => {
     const empty = await app.inject({ method: 'POST', url: '/sample-items', payload: { name: '   ' } });
     expect(empty.statusCode).toBe(422);
-    expect(empty.json()).toEqual({ status: 422, title: 'Regra de negócio violada', detail: 'O nome é obrigatório.' });
+    expect(empty.json()).toEqual({ status: 422, title: 'Business rule violated', detail: 'The name is required.' });
 
     const missing = await app.inject({ method: 'GET', url: `/sample-items/${missingId}` });
     expect(missing.statusCode).toBe(404);

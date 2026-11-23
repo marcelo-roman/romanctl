@@ -12,9 +12,9 @@ internal sealed class ErrorHandling(IProblemDetailsService problemDetails) : IEx
     {
         var (status, title) = exception switch
         {
-            NotFoundException => (StatusCodes.Status404NotFound, "Não encontrado"),
-            DomainException => (StatusCodes.Status422UnprocessableEntity, "Regra de negócio violada"),
-            BadHttpRequestException badRequest => (badRequest.StatusCode, "Requisição inválida"),
+            NotFoundException => (StatusCodes.Status404NotFound, "Not found"),
+            DomainException => (StatusCodes.Status422UnprocessableEntity, "Business rule violated"),
+            BadHttpRequestException badRequest => (badRequest.StatusCode, "Invalid request"),
             _ => (0, ""),
         };
         if (status == 0)

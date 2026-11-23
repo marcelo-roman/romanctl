@@ -3,8 +3,7 @@ export function parseDecimal(value: string): number {
   if (normalized === '') {
     return Number.NaN;
   }
-  const decimal = normalized.includes(',') ? normalized.replace(/\./g, '').replace(',', '.') : normalized;
-  return Number(decimal);
+  return Number(normalized.replace(/,/g, ''));
 }
 
 export function parseInteger(value: string): number {

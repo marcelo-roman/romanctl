@@ -20,7 +20,7 @@ public static class GetSampleItem
     {
         var sampleItem = await db.SampleItems.AsNoTracking().FirstOrDefaultAsync(sampleItem => sampleItem.Id == id, cancellationToken);
         if (sampleItem is null)
-            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Não encontrado", detail: $"SampleItem {id} não encontrado.");
+            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Not found", detail: $"SampleItem {id} not found.");
 
         return TypedResults.Ok(Response.From(sampleItem));
     }

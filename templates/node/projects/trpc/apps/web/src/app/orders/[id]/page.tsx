@@ -9,7 +9,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
   const { id } = await params;
   return (
     <>
-      <Link href="/">Voltar para os pedidos</Link>
+      <Link href="/">Back to orders</Link>
       <OrderDetails orderId={id} />
     </>
   );

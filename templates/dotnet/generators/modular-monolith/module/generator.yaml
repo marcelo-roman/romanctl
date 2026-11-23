@@ -1,4 +1,4 @@
-description: Módulo novo - projetos de implementação e de contratos, DbContext com esquema próprio, CRUD de uma entidade, rotas e testes, registrado no host e na solução
+description: New module - implementation and contracts projects, DbContext with its own schema, CRUD for one entity, routes and tests, registered in the host and in the solution
 aliases: [modulo, bounded-context]
 conditional:
   - path: tests/SampleApp.Tests/Postgres
@@ -26,4 +26,4 @@ patches:
   - file: src/SampleApp.Api/Modules.cs
     before: "// romanctl:endpoints"
     text: app.MapSampleItemsEndpoints();
-next: "Módulo SampleItems em src/Modules/SampleItems, com a entidade SampleItem, rotas em /sample-items e contratos em SampleApp.SampleItems.Contracts, registrado em Modules.cs, na solução e nos projetos da API e dos testes. Rode dotnet test para conferir.{{if .Postgres}} As tabelas ficam no esquema sample_items, criado na próxima inicialização em desenvolvimento.{{end}}"
+next: "Module SampleItems in src/Modules/SampleItems, with the SampleItem entity, routes at /sample-items and contracts in SampleApp.SampleItems.Contracts, registered in Modules.cs, in the solution and in the API and test projects. Run dotnet test to check.{{if .Postgres}} The tables live in the sample_items schema, created on the next startup in development.{{end}}"

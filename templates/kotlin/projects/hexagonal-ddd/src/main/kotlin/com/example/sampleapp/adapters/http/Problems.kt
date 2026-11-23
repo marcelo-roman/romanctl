@@ -19,20 +19,20 @@ private val problemJson = ContentType("application", "problem+json")
 
 fun StatusPagesConfig.problems() {
     exception<BusinessRuleException> { call, cause ->
-        call.problem(HttpStatusCode.UnprocessableEntity, "Regra de negócio violada", cause.message.orEmpty())
+        call.problem(HttpStatusCode.UnprocessableEntity, "Business rule violated", cause.message.orEmpty())
     }
     exception<NotFoundException> { call, cause ->
-        call.problem(HttpStatusCode.NotFound, "Não encontrado", cause.message.orEmpty())
+        call.problem(HttpStatusCode.NotFound, "Not found", cause.message.orEmpty())
     }
     exception<BadRequestException> { call, cause ->
-        call.problem(HttpStatusCode.BadRequest, "Requisição inválida", cause.message.orEmpty())
+        call.problem(HttpStatusCode.BadRequest, "Invalid request", cause.message.orEmpty())
     }
     exception<ContentTransformationException> { call, cause ->
-        call.problem(HttpStatusCode.BadRequest, "Requisição inválida", cause.message.orEmpty())
+        call.problem(HttpStatusCode.BadRequest, "Invalid request", cause.message.orEmpty())
     }
     exception<Throwable> { call, cause ->
         call.application.log.error("request failed", cause)
-        call.problem(HttpStatusCode.InternalServerError, "Erro interno", "Erro inesperado.")
+        call.problem(HttpStatusCode.InternalServerError, "Internal error", "Unexpected error.")
     }
 }
 

@@ -20,10 +20,10 @@ final readonly class OrderItem
     public static function create(string $productName, int $quantity, Money $unitPrice): self
     {
         if (trim($productName) === '') {
-            throw new BusinessRuleViolation('O nome do produto é obrigatório.');
+            throw new BusinessRuleViolation('Product name is required.');
         }
         if ($quantity <= 0) {
-            throw new BusinessRuleViolation('A quantidade deve ser maior que zero.');
+            throw new BusinessRuleViolation('Quantity must be greater than zero.');
         }
 
         return new self(Identifier::generate(), trim($productName), $quantity, $unitPrice);

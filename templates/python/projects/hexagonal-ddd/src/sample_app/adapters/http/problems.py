@@ -19,20 +19,20 @@ def problem(status: int, title: str, detail: str = "") -> JSONResponse:
 
 async def invalid_request(_: Request, error: Exception) -> JSONResponse:
     errors = error.errors() if isinstance(error, RequestValidationError) else []
-    return problem(400, "Requisição inválida", "; ".join(_describe(item) for item in errors))
+    return problem(400, "Invalid request", "; ".join(_describe(item) for item in errors))
 
 
 async def business_rule(_: Request, error: Exception) -> JSONResponse:
-    return problem(422, "Regra de negócio violada", str(error))
+    return problem(422, "Business rule violated", str(error))
 
 
 async def not_found(_: Request, error: Exception) -> JSONResponse:
-    return problem(404, "Não encontrado", str(error))
+    return problem(404, "Not found", str(error))
 
 
 async def unexpected(_: Request, error: Exception) -> JSONResponse:
     logger.error("request failed", exc_info=error)
-    return problem(500, "Erro interno")
+    return problem(500, "Internal error")
 
 
 def register_problems(app: FastAPI) -> None:

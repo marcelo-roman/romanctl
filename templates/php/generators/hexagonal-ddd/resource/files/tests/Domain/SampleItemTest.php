@@ -13,22 +13,22 @@ final class SampleItemTest extends TestCase
 {
     public function testCreateTrimsName(): void
     {
-        self::assertSame('Primeiro', SampleItem::create('  Primeiro ', new DateTimeImmutable())->name());
+        self::assertSame('First', SampleItem::create('  First ', new DateTimeImmutable())->name());
     }
 
     public function testCreateRequiresName(): void
     {
-        $this->expectExceptionObject(new BusinessRuleViolation('O nome é obrigatório.'));
+        $this->expectExceptionObject(new BusinessRuleViolation('Name is required.'));
 
         SampleItem::create(' ', new DateTimeImmutable());
     }
 
     public function testRenameRequiresName(): void
     {
-        $sampleItem = SampleItem::create('Primeiro', new DateTimeImmutable());
-        $sampleItem->rename('Segundo');
+        $sampleItem = SampleItem::create('First', new DateTimeImmutable());
+        $sampleItem->rename('Second');
 
-        self::assertSame('Segundo', $sampleItem->name());
+        self::assertSame('Second', $sampleItem->name());
         $this->expectException(BusinessRuleViolation::class);
 
         $sampleItem->rename('');

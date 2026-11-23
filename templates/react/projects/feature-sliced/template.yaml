@@ -1,7 +1,7 @@
 id: feature-sliced
 stack: react
 arch: [feature-sliced]
-description: Front-end React com Feature-Sliced Design para a API de pedidos, com Vite, TypeScript, React Router e TanStack Query
+description: React front-end with Feature-Sliced Design for the orders API, with Vite, TypeScript, React Router and TanStack Query
 services: []
 requires: [node]
 setup:

@@ -11,13 +11,13 @@ public record Money(BigDecimal amount, String currency) {
 
     public Money {
         if (amount == null) {
-            throw new BusinessRuleException("O valor é obrigatório.");
+            throw new BusinessRuleException("Amount is required.");
         }
         if (amount.signum() < 0) {
-            throw new BusinessRuleException("O valor não pode ser negativo.");
+            throw new BusinessRuleException("Amount cannot be negative.");
         }
         if (currency == null || currency.strip().length() != 3) {
-            throw new BusinessRuleException("A moeda deve ter 3 letras, como BRL.");
+            throw new BusinessRuleException("Currency must have 3 letters, like BRL.");
         }
         amount = amount.setScale(2, RoundingMode.HALF_EVEN);
         currency = currency.strip().toUpperCase(Locale.ROOT);
@@ -40,7 +40,7 @@ public record Money(BigDecimal amount, String currency) {
 
     public Money add(Money other) {
         if (!other.currency.equals(currency)) {
-            throw new BusinessRuleException("Não é possível somar moedas diferentes.");
+            throw new BusinessRuleException("Cannot add different currencies.");
         }
         return new Money(amount.add(other.amount), currency);
     }

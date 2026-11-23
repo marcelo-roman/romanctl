@@ -7,6 +7,6 @@ export class LogOrderPlaced implements IEventHandler<OrderPlaced> {
   private readonly logger = new Logger(LogOrderPlaced.name);
 
   handle(event: OrderPlaced): void {
-    this.logger.log(`Pedido ${event.orderId} realizado: ${event.total} ${event.currency}`);
+    this.logger.log(`Order ${event.orderId} placed: ${event.total} ${event.currency}`);
   }
 }

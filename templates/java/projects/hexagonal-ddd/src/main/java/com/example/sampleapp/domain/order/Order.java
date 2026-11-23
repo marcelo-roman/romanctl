@@ -26,7 +26,7 @@ public final class Order {
 
     public static Order create(String customerName, Instant now) {
         if (customerName == null || customerName.isBlank()) {
-            throw new BusinessRuleException("O nome do cliente é obrigatório.");
+            throw new BusinessRuleException("Customer name is required.");
         }
         return new Order(UUID.randomUUID(), customerName.strip(), OrderStatus.DRAFT, now, List.of());
     }
@@ -62,20 +62,20 @@ public final class Order {
 
     public void addItem(String productName, int quantity, Money unitPrice) {
         if (status != OrderStatus.DRAFT) {
-            throw new BusinessRuleException("Um pedido já realizado não pode ser alterado.");
+            throw new BusinessRuleException("A placed order cannot be changed.");
         }
         if (!items.isEmpty() && !items.getFirst().unitPrice().currency().equals(unitPrice.currency())) {
-            throw new BusinessRuleException("Todos os itens do pedido devem usar a mesma moeda.");
+            throw new BusinessRuleException("All order items must use the same currency.");
         }
         items.add(OrderItem.create(productName, quantity, unitPrice));
     }
 
     public void place(Instant now) {
         if (status != OrderStatus.DRAFT) {
-            throw new BusinessRuleException("O pedido já foi realizado.");
+            throw new BusinessRuleException("The order has already been placed.");
         }
         if (items.isEmpty()) {
-            throw new BusinessRuleException("Um pedido sem itens não pode ser realizado.");
+            throw new BusinessRuleException("An order without items cannot be placed.");
         }
         status = OrderStatus.PLACED;
         Money total = total();

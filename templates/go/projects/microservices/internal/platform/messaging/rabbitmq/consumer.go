@@ -50,7 +50,7 @@ func (c *Consumer) Run(ctx context.Context, handler messaging.Handler) error {
 			return nil
 		case d, open := <-deliveries:
 			if !open {
-				return errors.New("a conexão com o RabbitMQ caiu")
+				return errors.New("the RabbitMQ connection dropped")
 			}
 			if err := c.deliver(ctx, handler, d); err != nil {
 				return err

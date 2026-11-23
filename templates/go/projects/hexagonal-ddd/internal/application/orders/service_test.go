@@ -43,7 +43,7 @@ func TestPlacingPublishesEvent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := svc.AddItem(ctx, id, AddItem{ProductName: "Caneta", Quantity: 3, UnitPrice: 250}); err != nil {
+	if err := svc.AddItem(ctx, id, AddItem{ProductName: "Pen", Quantity: 3, UnitPrice: 250}); err != nil {
 		t.Fatal(err)
 	}
 	if err := svc.Place(ctx, id); err != nil {

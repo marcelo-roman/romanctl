@@ -1,4 +1,4 @@
-description: DTO, leitura, comandos de criar, renomear e remover, e consultas
+description: DTO, read model, create, rename and delete commands, and queries
 aliases: [app, usecases]
 requires:
   - path: src/SampleApp.Domain/SampleItems/SampleItem.cs

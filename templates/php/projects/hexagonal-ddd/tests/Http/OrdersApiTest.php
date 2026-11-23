@@ -25,7 +25,7 @@ final class OrdersApiTest extends ApiTestCase
         $id = $this->json($response)['id'];
         self::assertSame("/orders/{$id}", $response->headers->get('Location'));
 
-        $item = ['productName' => 'Caneta', 'quantity' => 2, 'unitPrice' => 3.5];
+        $item = ['productName' => 'Pen', 'quantity' => 2, 'unitPrice' => 3.5];
         self::assertSame(204, $this->send('POST', "/orders/{$id}/items", $item)->getStatusCode());
         self::assertSame(204, $this->send('POST', "/orders/{$id}/place")->getStatusCode());
 
@@ -33,8 +33,8 @@ final class OrdersApiTest extends ApiTestCase
         self::assertSame('Placed', $order['status']);
         self::assertSame('Ana', $order['customerName']);
         self::assertEquals(7, $order['total']);
-        self::assertSame('BRL', $order['currency']);
-        self::assertEquals([['productName' => 'Caneta', 'quantity' => 2, 'unitPrice' => 3.5, 'subtotal' => 7]], $order['items']);
+        self::assertSame('USD', $order['currency']);
+        self::assertEquals([['productName' => 'Pen', 'quantity' => 2, 'unitPrice' => 3.5, 'subtotal' => 7]], $order['items']);
     }
 
     public function testListReturnsMostRecentFirst(): void
@@ -53,7 +53,7 @@ final class OrdersApiTest extends ApiTestCase
         self::assertSame(422, $response->getStatusCode());
         self::assertSame('application/problem+json', $response->headers->get('Content-Type'));
         self::assertSame(
-            ['status' => 422, 'title' => 'Regra de negócio violada', 'detail' => 'O nome do cliente é obrigatório.'],
+            ['status' => 422, 'title' => 'Business rule violated', 'detail' => 'Customer name is required.'],
             $this->json($response),
         );
     }
@@ -70,7 +70,7 @@ final class OrdersApiTest extends ApiTestCase
         $response = $this->send('GET', '/orders/abc');
 
         self::assertSame(422, $response->getStatusCode());
-        self::assertSame('Identificador inválido.', $this->json($response)['detail']);
+        self::assertSame('Invalid identifier.', $this->json($response)['detail']);
     }
 
     public function testMissingOrderIs404(): void
@@ -78,7 +78,7 @@ final class OrdersApiTest extends ApiTestCase
         $response = $this->send('GET', '/orders/' . self::MISSING_ID);
 
         self::assertSame(404, $response->getStatusCode());
-        self::assertSame('Pedido não encontrado.', $this->json($response)['detail']);
+        self::assertSame('Order not found.', $this->json($response)['detail']);
     }
 
     #[DataProvider('invalidBodies')]
@@ -87,7 +87,7 @@ final class OrdersApiTest extends ApiTestCase
         $response = $this->send('POST', '/orders', $body);
 
         self::assertSame(400, $response->getStatusCode());
-        self::assertSame('Requisição inválida', $this->json($response)['title']);
+        self::assertSame('Invalid request', $this->json($response)['title']);
     }
 
     public static function invalidBodies(): iterable
@@ -101,7 +101,7 @@ final class OrdersApiTest extends ApiTestCase
     public function testInvalidItemIs400(): void
     {
         $id = $this->createOrder();
-        $item = ['productName' => 'Caneta', 'quantity' => 'dois', 'unitPrice' => 3.5];
+        $item = ['productName' => 'Pen', 'quantity' => 'two', 'unitPrice' => 3.5];
 
         self::assertSame(400, $this->send('POST', "/orders/{$id}/items", $item)->getStatusCode());
     }

@@ -1,6 +1,6 @@
 use crate::domain::shared::RuleViolation;
 
-pub const DEFAULT_CURRENCY: &str = "BRL";
+pub const DEFAULT_CURRENCY: &str = "USD";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Money {
@@ -11,11 +11,13 @@ pub struct Money {
 impl Money {
     pub fn new(cents: i64, currency: &str) -> Result<Self, RuleViolation> {
         if cents < 0 {
-            return Err(RuleViolation::new("O valor não pode ser negativo."));
+            return Err(RuleViolation::new("Amount cannot be negative."));
         }
         let currency = currency.trim();
         if currency.len() != 3 || !currency.chars().all(|c| c.is_ascii_alphabetic()) {
-            return Err(RuleViolation::new("A moeda deve ter 3 letras, como BRL."));
+            return Err(RuleViolation::new(
+                "Currency must have 3 letters, like USD.",
+            ));
         }
         Ok(Self {
             cents,
@@ -32,7 +34,7 @@ impl Money {
 
     pub fn from_decimal(amount: f64, currency: &str) -> Result<Self, RuleViolation> {
         if !amount.is_finite() {
-            return Err(RuleViolation::new("O valor informado é inválido."));
+            return Err(RuleViolation::new("The amount provided is invalid."));
         }
         Self::new((amount * 100.0).round() as i64, currency)
     }
@@ -58,9 +60,7 @@ impl Money {
 
     pub fn add(&self, other: &Money) -> Result<Self, RuleViolation> {
         if other.currency != self.currency {
-            return Err(RuleViolation::new(
-                "Não é possível somar moedas diferentes.",
-            ));
+            return Err(RuleViolation::new("Cannot add different currencies."));
         }
         Ok(Self {
             cents: self.cents + other.cents,

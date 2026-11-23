@@ -20,7 +20,7 @@ func NewID() ID {
 
 func ParseID(s string) (ID, error) {
 	if !idFormat.MatchString(s) {
-		return "", Rule("Identificador inválido.")
+		return "", Rule("Invalid identifier.")
 	}
 	return ID(s), nil
 }

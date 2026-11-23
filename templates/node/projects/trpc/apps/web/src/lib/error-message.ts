@@ -1,7 +1,7 @@
 import { TRPCClientError } from '@trpc/client';
 
-const FALLBACK = 'Algo deu errado. Tente de novo em instantes.';
-const INVALID_INPUT = 'Confira os dados informados.';
+const FALLBACK = 'Something went wrong. Try again in a moment.';
+const INVALID_INPUT = 'Check the data you entered.';
 
 function issuesOf(data: unknown): string[] {
   if (typeof data !== 'object' || data === null || !('issues' in data) || !Array.isArray(data.issues)) {

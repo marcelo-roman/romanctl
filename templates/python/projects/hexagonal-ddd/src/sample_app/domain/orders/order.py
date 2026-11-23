@@ -29,7 +29,7 @@ class Order:
     @classmethod
     def create(cls, customer_name: str, now: datetime) -> "Order":
         if not customer_name.strip():
-            raise BusinessRuleError("O nome do cliente é obrigatório.")
+            raise BusinessRuleError("The customer name is required.")
         return cls(new_id(), customer_name.strip(), OrderStatus.DRAFT, now)
 
     @property
@@ -67,16 +67,16 @@ class Order:
 
     def add_item(self, product_name: str, quantity: int, unit_price: Money) -> None:
         if self._status != OrderStatus.DRAFT:
-            raise BusinessRuleError("Um pedido já realizado não pode ser alterado.")
+            raise BusinessRuleError("An order that has been placed cannot be changed.")
         if self._items and unit_price.currency != self.currency:
-            raise BusinessRuleError("Todos os itens do pedido devem usar a mesma moeda.")
+            raise BusinessRuleError("All order items must use the same currency.")
         self._items.append(OrderItem.create(product_name, quantity, unit_price))
 
     def place(self, now: datetime) -> None:
         if self._status != OrderStatus.DRAFT:
-            raise BusinessRuleError("O pedido já foi realizado.")
+            raise BusinessRuleError("The order has already been placed.")
         if not self._items:
-            raise BusinessRuleError("Um pedido sem itens não pode ser realizado.")
+            raise BusinessRuleError("An order without items cannot be placed.")
         self._status = OrderStatus.PLACED
         total = self.total
         self._events.append(OrderPlaced(self._id, total.cents, total.currency, now))

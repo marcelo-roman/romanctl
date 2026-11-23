@@ -1,6 +1,6 @@
 import { DomainError } from '../shared/domain-error.js';
 
-export const DEFAULT_CURRENCY = 'BRL';
+export const DEFAULT_CURRENCY = 'USD';
 
 export class Money {
   private constructor(
@@ -10,10 +10,10 @@ export class Money {
 
   static fromCents(cents: number, currency: string = DEFAULT_CURRENCY): Money {
     if (!Number.isFinite(cents) || cents < 0) {
-      throw new DomainError('O valor não pode ser negativo.');
+      throw new DomainError('The amount cannot be negative.');
     }
     if (currency.trim().length !== 3) {
-      throw new DomainError('A moeda deve ter 3 letras, como BRL.');
+      throw new DomainError('The currency must have 3 letters, like USD.');
     }
     return new Money(Math.round(cents), currency.trim().toUpperCase());
   }
@@ -32,7 +32,7 @@ export class Money {
 
   add(other: Money): Money {
     if (other.currency !== this.currency) {
-      throw new DomainError('Não é possível somar moedas diferentes.');
+      throw new DomainError('Cannot add different currencies.');
     }
     return new Money(this.cents + other.cents, this.currency);
   }

@@ -13,6 +13,6 @@ export class MemoryCatalogRepository implements CatalogRepository {
   }
 
   async list(): Promise<CatalogProduct[]> {
-    return [...this.products.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    return [...this.products.values()].sort((a, b) => a.name.localeCompare(b.name, 'en-US'));
   }
 }

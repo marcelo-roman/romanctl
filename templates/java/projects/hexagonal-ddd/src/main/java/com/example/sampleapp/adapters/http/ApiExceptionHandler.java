@@ -16,12 +16,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(BusinessRuleException.class)
     public ProblemDetail businessRule(BusinessRuleException exception) {
-        return problem(UNPROCESSABLE, "Regra de negócio violada", exception.getMessage());
+        return problem(UNPROCESSABLE, "Business rule violated", exception.getMessage());
     }
 
     @ExceptionHandler(NotFoundException.class)
     public ProblemDetail notFound(NotFoundException exception) {
-        return problem(HttpStatus.NOT_FOUND, "Não encontrado", exception.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Not found", exception.getMessage());
     }
 
     private static ProblemDetail problem(HttpStatusCode status, String title, String detail) {

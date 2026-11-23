@@ -12,26 +12,26 @@ describe('catalog API', () => {
   afterEach(() => app.close());
 
   it('adds, lists and reads products', async () => {
-    const created = await app.inject({ method: 'POST', url: '/catalog/products', payload: { name: 'Caneta', price: 3.5 } });
+    const created = await app.inject({ method: 'POST', url: '/catalog/products', payload: { name: 'Pen', price: 3.5 } });
     expect(created.statusCode).toBe(201);
     const product = created.json();
-    expect(product).toEqual({ id: product.id, name: 'Caneta', price: 3.5, currency: 'BRL' });
+    expect(product).toEqual({ id: product.id, name: 'Pen', price: 3.5, currency: 'USD' });
     expect(created.headers.location).toBe(`/catalog/products/${product.id}`);
 
-    await app.inject({ method: 'POST', url: '/catalog/products', payload: { name: 'Caderno', price: 12 } });
+    await app.inject({ method: 'POST', url: '/catalog/products', payload: { name: 'Notebook', price: 12 } });
     const list = await app.inject({ method: 'GET', url: '/catalog/products' });
-    expect(list.json().map((p: { name: string }) => p.name)).toEqual(['Caderno', 'Caneta']);
+    expect(list.json().map((p: { name: string }) => p.name)).toEqual(['Notebook', 'Pen']);
 
     const read = await app.inject({ method: 'GET', url: `/catalog/products/${product.id}` });
     expect(read.json()).toEqual(product);
   });
 
   it('answers problems for invalid and unknown products', async () => {
-    const invalid = await app.inject({ method: 'POST', url: '/catalog/products', payload: { name: 'Caneta', price: 1, currency: 'REAL' } });
+    const invalid = await app.inject({ method: 'POST', url: '/catalog/products', payload: { name: 'Pen', price: 1, currency: 'REAL' } });
     expect(invalid.statusCode).toBe(422);
 
     const missing = await app.inject({ method: 'GET', url: '/catalog/products/00000000-0000-4000-8000-000000000000' });
     expect(missing.statusCode).toBe(404);
-    expect(missing.json().detail).toContain('não encontrado no catálogo');
+    expect(missing.json().detail).toContain('not found in the catalog');
   });
 });

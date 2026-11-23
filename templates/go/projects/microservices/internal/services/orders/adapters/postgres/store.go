@@ -146,7 +146,7 @@ func (s *Store) items(ctx context.Context, orderIDs []string) (map[string][]orde
 		}
 		price, err := order.NewMoney(cents, currency)
 		if err != nil {
-			return nil, errors.Join(errors.New("preço inválido gravado no pedido "+orderID), err)
+			return nil, errors.Join(errors.New("invalid price stored for order "+orderID), err)
 		}
 		out[orderID] = append(out[orderID], order.RestoreItem(shared.ID(id), product, quantity, price))
 	}

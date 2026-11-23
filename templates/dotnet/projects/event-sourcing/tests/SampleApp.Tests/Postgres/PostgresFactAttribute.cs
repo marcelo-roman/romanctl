@@ -7,6 +7,6 @@ public sealed class PostgresFactAttribute : FactAttribute
     public PostgresFactAttribute()
     {
         if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(Variable)))
-            Skip = $"Defina {Variable} para rodar contra o PostgreSQL.";
+            Skip = $"Set {Variable} to run against PostgreSQL.";
     }
 }

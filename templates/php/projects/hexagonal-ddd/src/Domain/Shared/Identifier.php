@@ -25,7 +25,7 @@ final class Identifier
     {
         $normalized = strtolower(trim($value));
         if (preg_match(self::PATTERN, $normalized) !== 1) {
-            throw new BusinessRuleViolation('Identificador inválido.');
+            throw new BusinessRuleViolation('Invalid identifier.');
         }
 
         return $normalized;

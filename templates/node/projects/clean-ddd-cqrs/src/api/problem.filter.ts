@@ -15,10 +15,10 @@ interface ProblemResponse {
 }
 
 const titles: Record<number, string> = {
-  [HttpStatus.BAD_REQUEST]: 'Requisição inválida',
-  [HttpStatus.NOT_FOUND]: 'Não encontrado',
-  [HttpStatus.UNPROCESSABLE_ENTITY]: 'Regra de negócio violada',
-  [HttpStatus.INTERNAL_SERVER_ERROR]: 'Erro interno',
+  [HttpStatus.BAD_REQUEST]: 'Invalid request',
+  [HttpStatus.NOT_FOUND]: 'Not found',
+  [HttpStatus.UNPROCESSABLE_ENTITY]: 'Business rule violated',
+  [HttpStatus.INTERNAL_SERVER_ERROR]: 'Internal error',
 };
 
 @Catch()

@@ -20,13 +20,13 @@ class PostgresSampleItemRepositoryTest {
 
     @Test
     void roundTrip() {
-        SampleItem sampleItem = SampleItem.create("Primeiro", Instant.now().truncatedTo(ChronoUnit.MICROS));
+        SampleItem sampleItem = SampleItem.create("First", Instant.now().truncatedTo(ChronoUnit.MICROS));
         repository.save(sampleItem);
-        sampleItem.rename("Segundo");
+        sampleItem.rename("Second");
         repository.save(sampleItem);
 
         SampleItem loaded = repository.findById(sampleItem.id()).orElseThrow();
-        assertThat(loaded.name()).isEqualTo("Segundo");
+        assertThat(loaded.name()).isEqualTo("Second");
         assertThat(loaded.createdAt()).isEqualTo(sampleItem.createdAt());
         assertThat(repository.list(200)).extracting(SampleItem::id).contains(sampleItem.id());
 

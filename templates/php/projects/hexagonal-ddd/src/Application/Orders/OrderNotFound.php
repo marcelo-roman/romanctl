@@ -10,6 +10,6 @@ final class OrderNotFound extends NotFound
 {
     public function __construct()
     {
-        parent::__construct('Pedido não encontrado.');
+        parent::__construct('Order not found.');
     }
 }

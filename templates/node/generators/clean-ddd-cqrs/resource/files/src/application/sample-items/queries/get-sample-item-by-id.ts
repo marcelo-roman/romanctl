@@ -18,7 +18,7 @@ export class GetSampleItemByIdHandler implements IQueryHandler<GetSampleItemById
   async execute(query: GetSampleItemById): Promise<SampleItemView> {
     const sampleItem = await this.store.findById(SampleItemId.parse(query.id).value);
     if (!sampleItem) {
-      throw new NotFoundError(`SampleItem ${query.id} não encontrado.`);
+      throw new NotFoundError(`SampleItem ${query.id} not found.`);
     }
     return sampleItem;
   }

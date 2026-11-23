@@ -1,4 +1,4 @@
-description: Testes das regras do agregado
+description: Tests for the aggregate rules
 aliases: [tests, teste]
 requires:
   - path: src/SampleApp.Domain/SampleItems/SampleItem.cs

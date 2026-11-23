@@ -4,7 +4,7 @@ import { OrdersTable } from '@/widgets/orders-table';
 export function OrdersListPage() {
   return (
     <main className="page">
-      <h1>Pedidos</h1>
+      <h1>Orders</h1>
       <CreateOrderForm />
       <OrdersTable />
     </main>

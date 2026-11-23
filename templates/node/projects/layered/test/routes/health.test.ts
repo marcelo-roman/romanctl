@@ -19,10 +19,10 @@ describe('health and unknown routes', () => {
   });
 
   it('answers unknown routes with a 404 problem', async () => {
-    const response = await app.inject({ method: 'GET', url: '/nada?x=1' });
+    const response = await app.inject({ method: 'GET', url: '/nothing?x=1' });
 
     expect(response.statusCode).toBe(404);
     expect(response.headers['content-type']).toContain('application/problem+json');
-    expect(response.json()).toEqual({ status: 404, title: 'Não encontrado', detail: 'A rota GET /nada não existe.' });
+    expect(response.json()).toEqual({ status: 404, title: 'Not found', detail: 'Route GET /nothing does not exist.' });
   });
 });

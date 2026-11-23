@@ -1,16 +1,16 @@
 import type { FastifySchemaValidationError } from 'fastify';
 
 const fieldNames: Record<string, string> = {
-  customerName: 'nome do cliente',
-  productId: 'produto',
-  quantity: 'quantidade',
-  name: 'nome',
+  customerName: 'customer name',
+  productId: 'product',
+  quantity: 'quantity',
+  name: 'name',
 };
 
 const typeNames: Record<string, string> = {
-  string: 'um texto',
-  integer: 'um número inteiro',
-  number: 'um número',
+  string: 'a string',
+  integer: 'a whole number',
+  number: 'a number',
 };
 
 function fieldName(field: string): string {
@@ -20,16 +20,16 @@ function fieldName(field: string): string {
 export function validationMessage(errors: FastifySchemaValidationError[]): string {
   const [first] = errors;
   if (!first) {
-    return 'requisição inválida.';
+    return 'bad request.';
   }
   const field = fieldName(first.instancePath.replace(/^\//, ''));
   switch (first.keyword) {
     case 'required':
-      return `informe o campo ${fieldName(String(first.params.missingProperty))}.`;
+      return `fill in the ${fieldName(String(first.params.missingProperty))} field.`;
     case 'type':
-      return `o campo ${field} deve ser ${typeNames[String(first.params.type)] ?? String(first.params.type)}.`;
+      return `the ${field} field must be ${typeNames[String(first.params.type)] ?? String(first.params.type)}.`;
     case 'minLength':
-      return `o campo ${field} não pode ficar vazio.`;
+      return `the ${field} field cannot be empty.`;
   }
-  return `o campo ${field} é inválido.`;
+  return `the ${field} field is invalid.`;
 }

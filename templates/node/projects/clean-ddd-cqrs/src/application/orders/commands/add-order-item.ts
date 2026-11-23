@@ -24,7 +24,7 @@ export class AddOrderItemHandler implements ICommandHandler<AddOrderItem, void> 
   async execute(command: AddOrderItem): Promise<void> {
     const order = await this.orders.findById(OrderId.parse(command.orderId));
     if (!order) {
-      throw new NotFoundError(`Pedido ${command.orderId} não encontrado.`);
+      throw new NotFoundError(`Order ${command.orderId} not found.`);
     }
     order.addItem(command.productName, command.quantity, Money.fromAmount(command.unitPrice, command.currency));
     await this.orders.save(order);

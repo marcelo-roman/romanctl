@@ -23,26 +23,26 @@ export function SampleItemList() {
 
   return (
     <section>
-      <form onSubmit={submit} aria-label="Novo registro">
+      <form onSubmit={submit} aria-label="New record">
         <label>
-          Nome
+          Name
           <input name="name" autoComplete="off" />
         </label>
         <button type="submit" disabled={create.isPending}>
-          Criar
+          Create
         </button>
         {create.isError && <p role="alert">{errorMessage(create.error)}</p>}
       </form>
       {remove.isError && <p role="alert">{errorMessage(remove.error)}</p>}
-      {sampleItems.isPending && <p>Carregando...</p>}
+      {sampleItems.isPending && <p>Loading...</p>}
       {sampleItems.isError && <p role="alert">{errorMessage(sampleItems.error)}</p>}
-      {sampleItems.data?.length === 0 && <p>Nenhum registro ainda.</p>}
+      {sampleItems.data?.length === 0 && <p>No records yet.</p>}
       {sampleItems.data && sampleItems.data.length > 0 && (
         <table>
           <thead>
             <tr>
-              <th>Nome</th>
-              <th>Criado em</th>
+              <th>Name</th>
+              <th>Created at</th>
               <th />
             </tr>
           </thead>
@@ -53,7 +53,7 @@ export function SampleItemList() {
                 <td>{formatDate(sampleItem.createdAt)}</td>
                 <td>
                   <button type="button" disabled={remove.isPending} onClick={() => remove.mutate({ id: sampleItem.id })}>
-                    Remover {sampleItem.name}
+                    Remove {sampleItem.name}
                   </button>
                 </td>
               </tr>

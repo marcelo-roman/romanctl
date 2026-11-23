@@ -28,6 +28,6 @@ object BigDecimalSerializer : KSerializer<BigDecimal> {
 
     override fun deserialize(decoder: Decoder): BigDecimal {
         val text = if (decoder is JsonDecoder) decoder.decodeJsonElement().jsonPrimitive.content else decoder.decodeString()
-        return text.toBigDecimalOrNull() ?: throw SerializationException("Número inválido: $text")
+        return text.toBigDecimalOrNull() ?: throw SerializationException("Invalid number: $text")
     }
 }

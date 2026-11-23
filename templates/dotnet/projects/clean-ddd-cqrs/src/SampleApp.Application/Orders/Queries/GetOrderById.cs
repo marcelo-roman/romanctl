@@ -9,5 +9,5 @@ internal sealed class GetOrderByIdHandler(IOrderReadStore store) : IQueryHandler
 {
     public async Task<OrderDto> HandleAsync(GetOrderById query, CancellationToken cancellationToken) =>
         await store.FindAsync(query.OrderId, cancellationToken)
-        ?? throw new NotFoundException($"Pedido {query.OrderId} não encontrado.");
+        ?? throw new NotFoundException($"Order {query.OrderId} not found.");
 }

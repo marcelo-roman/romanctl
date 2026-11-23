@@ -11,13 +11,13 @@ export class OrderItem {
 
   static create(productName: string, quantity: number, unitPrice: Money): OrderItem {
     if (productName.trim() === '') {
-      throw new DomainError('O nome do produto é obrigatório.');
+      throw new DomainError('The product name is required.');
     }
     if (!Number.isInteger(quantity)) {
-      throw new DomainError('A quantidade deve ser um número inteiro.');
+      throw new DomainError('The quantity must be a whole number.');
     }
     if (quantity <= 0) {
-      throw new DomainError('A quantidade deve ser maior que zero.');
+      throw new DomainError('The quantity must be greater than zero.');
     }
     return new OrderItem(crypto.randomUUID(), productName.trim(), quantity, unitPrice);
   }

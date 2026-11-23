@@ -46,7 +46,7 @@ def test_order_lifecycle(client: TestClient) -> None:
     order_id = response.json()["id"]
     assert response.headers["location"] == f"/orders/{order_id}"
 
-    item = {"productName": "Caneta", "quantity": 2, "unitPrice": 3.5}
+    item = {"productName": "Pen", "quantity": 2, "unitPrice": 3.5}
     assert client.post(f"/orders/{order_id}/items", json=item).status_code == 204
     assert client.post(f"/orders/{order_id}/place").status_code == 204
 
@@ -54,8 +54,8 @@ def test_order_lifecycle(client: TestClient) -> None:
     assert order["status"] == "Placed"
     assert order["customerName"] == "Ana"
     assert order["total"] == 7
-    assert order["currency"] == "BRL"
-    assert order["items"] == [{"productName": "Caneta", "quantity": 2, "unitPrice": 3.5, "subtotal": 7}]
+    assert order["currency"] == "USD"
+    assert order["items"] == [{"productName": "Pen", "quantity": 2, "unitPrice": 3.5, "subtotal": 7}]
 
 
 def test_list_returns_most_recent_first(client: TestClient) -> None:
@@ -71,8 +71,8 @@ def test_business_rule_violation_is_422(client: TestClient) -> None:
 
     assert response.status_code == 422
     assert response.headers["content-type"] == "application/problem+json"
-    assert response.json() == {"status": 422, "title": "Regra de negócio violada",
-                               "detail": "O nome do cliente é obrigatório."}
+    assert response.json() == {"status": 422, "title": "Business rule violated",
+                               "detail": "The customer name is required."}
 
 
 def test_placing_an_empty_order_is_422(client: TestClient) -> None:
@@ -85,7 +85,7 @@ def test_missing_order_is_404(client: TestClient) -> None:
     response = client.get(f"/orders/{MISSING_ID}")
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "Pedido não encontrado."
+    assert response.json()["detail"] == "Order not found."
 
 
 @pytest.mark.parametrize("body", ["{", '{"quantity": 1}', '{"customerName": null}'])
@@ -93,4 +93,4 @@ def test_invalid_body_is_400(client: TestClient, body: str) -> None:
     response = client.post("/orders", content=body, headers={"content-type": "application/json"})
 
     assert response.status_code == 400
-    assert response.json()["title"] == "Requisição inválida"
+    assert response.json()["title"] == "Invalid request"

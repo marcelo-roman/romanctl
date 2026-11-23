@@ -41,5 +41,5 @@ class OrderService(
     }
 
     private fun load(id: String): Order =
-        repository.findById(Identifier.parse(id)) ?: throw NotFoundException("Pedido não encontrado.")
+        repository.findById(Identifier.parse(id)) ?: throw NotFoundException("Order not found.")
 }

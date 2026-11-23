@@ -1,4 +1,4 @@
-description: Rotas REST em um router próprio, com dados em memória
+description: REST routes in their own router, with in-memory data
 aliases: [controller, router, rota, api]
 patches:
   - file: index.js

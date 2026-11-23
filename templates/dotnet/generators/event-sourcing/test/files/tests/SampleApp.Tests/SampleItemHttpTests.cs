@@ -13,17 +13,17 @@ public class SampleItemHttpTests(ApiFactory factory) : IClassFixture<ApiFactory>
     private readonly HttpClient _client = factory.CreateClient();
 
     [Fact]
-    public async Task Cria_renomeia_e_le_pela_projecao()
+    public async Task Creates_renames_and_reads_through_the_projection()
     {
-        var created = await _client.PostAsJsonAsync("/sample-items", new { name = "Primeiro" });
+        var created = await _client.PostAsJsonAsync("/sample-items", new { name = "First" });
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
         var id = (await created.Content.ReadFromJsonAsync<Created>())!.Id;
 
-        var renamed = await _client.PutAsJsonAsync($"/sample-items/{id}", new { name = "Segundo" });
+        var renamed = await _client.PutAsJsonAsync($"/sample-items/{id}", new { name = "Second" });
         Assert.Equal(HttpStatusCode.NoContent, renamed.StatusCode);
 
         var summary = await _client.GetFromJsonAsync<SampleItemSummary>($"/sample-items/{id}");
-        Assert.Equal("Segundo", summary!.Name);
+        Assert.Equal("Second", summary!.Name);
         Assert.Contains(await _client.GetFromJsonAsync<List<SampleItemSummary>>("/sample-items?limit=200") ?? [], item => item.Id == id);
 
         var events = (await _client.GetFromJsonAsync<List<StreamEvent>>($"/sample-items/{id}/events"))!;
@@ -31,7 +31,7 @@ public class SampleItemHttpTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Nome_vazio_vira_422_e_inexistente_vira_404()
+    public async Task Empty_name_becomes_422_and_unknown_becomes_404()
     {
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await _client.PostAsJsonAsync("/sample-items", new { name = " " })).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync($"/sample-items/{Guid.NewGuid()}")).StatusCode);

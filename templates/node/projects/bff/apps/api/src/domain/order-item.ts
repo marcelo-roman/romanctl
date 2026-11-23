@@ -15,16 +15,16 @@ export class OrderItem {
   static create(productName: string, quantity: number, unitPrice: Money): OrderItem {
     const name = productName.trim();
     if (name === '') {
-      throw new DomainError('O nome do produto é obrigatório.');
+      throw new DomainError('The product name is required.');
     }
     if (name.length > PRODUCT_NAME_MAX_LENGTH) {
-      throw new DomainError(`O nome do produto deve ter no máximo ${PRODUCT_NAME_MAX_LENGTH} caracteres.`);
+      throw new DomainError(`The product name must have at most ${PRODUCT_NAME_MAX_LENGTH} characters.`);
     }
     if (!Number.isInteger(quantity)) {
-      throw new DomainError('A quantidade deve ser um número inteiro.');
+      throw new DomainError('The quantity must be a whole number.');
     }
     if (quantity <= 0) {
-      throw new DomainError('A quantidade deve ser maior que zero.');
+      throw new DomainError('The quantity must be greater than zero.');
     }
     return new OrderItem(randomUUID(), name, quantity, unitPrice);
   }

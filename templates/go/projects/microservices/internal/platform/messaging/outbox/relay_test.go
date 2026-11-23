@@ -65,7 +65,7 @@ func (p *flakyPublisher) Publish(_ context.Context, e messaging.Envelope) error 
 	p.attempts++
 	if p.failures > 0 {
 		p.failures--
-		return errors.New("broker fora do ar")
+		return errors.New("broker down")
 	}
 	p.published = append(p.published, e.ID)
 	return nil

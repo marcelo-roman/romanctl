@@ -27,7 +27,7 @@ export class SampleItem extends AggregateRoot {
 
   rename(name: string): void {
     if (name.trim() === '') {
-      throw new DomainError('O nome é obrigatório.');
+      throw new DomainError('Name is required.');
     }
     this.currentName = name.trim();
   }

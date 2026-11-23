@@ -32,8 +32,8 @@ function problem(status: number, title: string, detail: string) {
   return HttpResponse.json({ status, title, detail }, { status });
 }
 
-const notFound = () => problem(404, 'Não encontrado', 'não encontrado');
-const rule = (detail: string) => problem(422, 'Regra de negócio violada', detail);
+const notFound = () => problem(404, 'Not found', 'not found');
+const rule = (detail: string) => problem(422, 'Business rule violated', detail);
 
 function cents(value: number): number {
   return Math.round(value * 100);
@@ -49,13 +49,13 @@ function addItem(order: FakeOrder, body: AddItemBody): FakeOrder {
 
 function itemViolation(order: FakeOrder, body: AddItemBody): string | undefined {
   if (order.status === 'Placed') {
-    return 'Um pedido já realizado não pode ser alterado.';
+    return 'An order that was already placed cannot be changed.';
   }
   if (!body.productName?.trim()) {
-    return 'O nome do produto é obrigatório.';
+    return 'The product name is required.';
   }
   if (!body.quantity || body.quantity <= 0) {
-    return 'A quantidade deve ser maior que zero.';
+    return 'The quantity must be greater than zero.';
   }
   return undefined;
 }
@@ -68,7 +68,7 @@ export function seedOrder(customerName: string, changes: Partial<FakeOrder> = {}
     status: 'Draft',
     createdAt: new Date(Date.UTC(2026, 0, sequence)).toISOString(),
     total: 0,
-    currency: 'BRL',
+    currency: 'USD',
     items: [],
     ...changes,
   };
@@ -85,7 +85,7 @@ export const ordersApi = [
   http.post(base, async ({ request }) => {
     const body = (await request.json()) as { customerName?: string };
     if (!body.customerName?.trim()) {
-      return rule('O nome do cliente é obrigatório.');
+      return rule('The customer name is required.');
     }
     return HttpResponse.json({ id: seedOrder(body.customerName.trim()).id }, { status: 201 });
   }),
@@ -108,10 +108,10 @@ export const ordersApi = [
       return notFound();
     }
     if (order.status === 'Placed') {
-      return rule('O pedido já foi realizado.');
+      return rule('The order was already placed.');
     }
     if (order.items.length === 0) {
-      return rule('Um pedido sem itens não pode ser realizado.');
+      return rule('An order without items cannot be placed.');
     }
     orders.set(order.id, { ...order, status: 'Placed' });
     return new HttpResponse(null, { status: 204 });

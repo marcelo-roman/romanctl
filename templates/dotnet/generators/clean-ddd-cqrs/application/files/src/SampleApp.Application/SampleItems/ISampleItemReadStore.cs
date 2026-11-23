@@ -1,6 +1,6 @@
 namespace SampleApp.Application.SampleItems;
 
-/// <summary>Lado de leitura do CQRS: devolve DTOs e não passa pelo agregado para alterar nada.</summary>
+/// <summary>CQRS read side: returns DTOs and never goes through the aggregate to change anything.</summary>
 public interface ISampleItemReadStore
 {
     Task<SampleItemDto?> FindAsync(Guid id, CancellationToken cancellationToken);

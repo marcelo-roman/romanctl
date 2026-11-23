@@ -30,22 +30,22 @@ export function SampleItemsPage() {
       <h1>Sample Items</h1>
       <form className="inline-form" onSubmit={create}>
         <label>
-          Nome
+          Name
           <input value={name} onChange={(event) => setName(event.target.value)} />
         </label>
         <button type="submit" disabled={action.pending}>
-          Adicionar
+          Add
         </button>
       </form>
       <ErrorMessage message={action.error ?? screen.error} />
-      {screen.loading && !screen.data && <p>Carregando...</p>}
-      {screen.data && sampleItems.length === 0 && <p>Nenhum registro ainda.</p>}
+      {screen.loading && !screen.data && <p>Loading...</p>}
+      {screen.data && sampleItems.length === 0 && <p>No items yet.</p>}
       {sampleItems.length > 0 && (
         <table>
           <thead>
             <tr>
-              <th>Nome</th>
-              <th>Criado em</th>
+              <th>Name</th>
+              <th>Created on</th>
               <th />
             </tr>
           </thead>
@@ -56,7 +56,7 @@ export function SampleItemsPage() {
                 <td>{sampleItem.createdOn}</td>
                 <td>
                   <button type="button" disabled={action.pending} onClick={() => change(() => sampleItemsBff.delete(sampleItem.id))}>
-                    Remover {sampleItem.name}
+                    Remove {sampleItem.name}
                   </button>
                 </td>
               </tr>

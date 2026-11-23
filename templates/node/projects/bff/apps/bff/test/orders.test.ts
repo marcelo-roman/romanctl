@@ -6,8 +6,8 @@ import { type FakeApi, problem, startFakeApi } from './fake-api.js';
 const orderId = '6f9619ff-8b86-4d11-b42d-00c04fc964ff';
 const missingId = '00000000-0000-4000-8000-000000000000';
 
-const caneta = { id: 'p-caneta', name: 'Caneta', price: 3.5, currency: 'BRL' };
-const caderno = { id: 'p-caderno', name: 'Caderno', price: 12, currency: 'BRL' };
+const pen = { id: 'p-pen', name: 'Pen', price: 3.5, currency: 'USD' };
+const notebook = { id: 'p-notebook', name: 'Notebook', price: 12, currency: 'USD' };
 
 function apiOrder(overrides: Record<string, unknown> = {}) {
   return {
@@ -15,13 +15,13 @@ function apiOrder(overrides: Record<string, unknown> = {}) {
     customerName: 'Ana',
     status: 'Draft',
     createdAt: '2026-03-10T12:00:00.000Z',
-    currency: 'BRL',
+    currency: 'USD',
     total: 19,
     canAddItems: true,
     canPlace: true,
     items: [
-      { id: 'i1', productName: 'Caneta', quantity: 2, unitPrice: 3.5, subtotal: 7 },
-      { id: 'i2', productName: 'Caderno', quantity: 1, unitPrice: 12, subtotal: 12 },
+      { id: 'i1', productName: 'Pen', quantity: 2, unitPrice: 3.5, subtotal: 7 },
+      { id: 'i2', productName: 'Notebook', quantity: 1, unitPrice: 12, subtotal: 12 },
     ],
     ...overrides,
   };
@@ -36,22 +36,22 @@ describe('BFF orders', () => {
       fake.get('/orders', async () => [apiOrder(), apiOrder({ id: 'o2', customerName: 'Bia', status: 'Placed', total: 0, items: [] })]);
       fake.get('/orders/:id', async (request, reply) => {
         const { id } = request.params as { id: string };
-        return id === orderId ? apiOrder() : reply.status(404).send(problem(404, `Pedido ${id} não encontrado.`));
+        return id === orderId ? apiOrder() : reply.status(404).send(problem(404, `Order ${id} not found.`));
       });
       fake.post('/orders', async (_request, reply) => reply.status(201).send(apiOrder({ items: [], total: 0, canPlace: false })));
       fake.post('/orders/:id/items', async (request, reply) => {
         const body = request.body as { quantity: number };
         if (body.quantity <= 0) {
-          return reply.status(422).send(problem(422, 'A quantidade deve ser maior que zero.'));
+          return reply.status(422).send(problem(422, 'The quantity must be greater than zero.'));
         }
         return apiOrder();
       });
       fake.post('/orders/:id/place', async () => apiOrder({ status: 'Placed', canAddItems: false, canPlace: false }));
-      fake.get('/catalog/products', async () => [caderno, caneta]);
+      fake.get('/catalog/products', async () => [notebook, pen]);
       fake.get('/catalog/products/:id', async (request, reply) => {
         const { id } = request.params as { id: string };
-        const product = [caneta, caderno].find((p) => p.id === id);
-        return product ?? reply.status(404).send(problem(404, `Produto ${id} não encontrado no catálogo.`));
+        const product = [pen, notebook].find((p) => p.id === id);
+        return product ?? reply.status(404).send(problem(404, `Product ${id} not found in the catalog.`));
       });
     });
     app = buildApp({ apiUrl: api.url });
@@ -69,8 +69,8 @@ describe('BFF orders', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       orders: [
-        { id: orderId, customerName: 'Ana', status: 'Rascunho', itemCount: 3, total: 'R$ 19,00' },
-        { id: 'o2', customerName: 'Bia', status: 'Realizado', itemCount: 0, total: 'R$ 0,00' },
+        { id: orderId, customerName: 'Ana', status: 'Draft', itemCount: 3, total: '$19.00' },
+        { id: 'o2', customerName: 'Bia', status: 'Placed', itemCount: 0, total: '$0.00' },
       ],
     });
   });
@@ -82,18 +82,18 @@ describe('BFF orders', () => {
       order: {
         id: orderId,
         customerName: 'Ana',
-        status: 'Rascunho',
-        total: 'R$ 19,00',
+        status: 'Draft',
+        total: '$19.00',
         canAddItems: true,
         canPlace: true,
         items: [
-          { id: 'i1', productName: 'Caneta', quantity: 2, unitPrice: 'R$ 3,50', subtotal: 'R$ 7,00' },
-          { id: 'i2', productName: 'Caderno', quantity: 1, unitPrice: 'R$ 12,00', subtotal: 'R$ 12,00' },
+          { id: 'i1', productName: 'Pen', quantity: 2, unitPrice: '$3.50', subtotal: '$7.00' },
+          { id: 'i2', productName: 'Notebook', quantity: 1, unitPrice: '$12.00', subtotal: '$12.00' },
         ],
       },
       suggestions: [
-        { id: 'p-caderno', name: 'Caderno', price: 'R$ 12,00' },
-        { id: 'p-caneta', name: 'Caneta', price: 'R$ 3,50' },
+        { id: 'p-notebook', name: 'Notebook', price: '$12.00' },
+        { id: 'p-pen', name: 'Pen', price: '$3.50' },
       ],
     });
   });
@@ -107,44 +107,44 @@ describe('BFF orders', () => {
   });
 
   it('resolves the product name and price from the catalog before adding the item', async () => {
-    const response = await app.inject({ method: 'POST', url: `/actions/orders/${orderId}/items`, payload: { productId: 'p-caneta', quantity: 2 } });
+    const response = await app.inject({ method: 'POST', url: `/actions/orders/${orderId}/items`, payload: { productId: 'p-pen', quantity: 2 } });
 
     expect(response.statusCode).toBe(200);
     expect(response.json().order.items).toHaveLength(2);
     expect(api.calls.find((call) => call.url === `/orders/${orderId}/items`)?.body).toEqual({
-      productName: 'Caneta',
+      productName: 'Pen',
       quantity: 2,
       unitPrice: 3.5,
-      currency: 'BRL',
+      currency: 'USD',
     });
   });
 
   it('places the order and hides suggestions once it cannot change', async () => {
     const response = await app.inject({ method: 'POST', url: `/actions/orders/${orderId}/place` });
 
-    expect(response.json().order).toMatchObject({ status: 'Realizado', canAddItems: false, canPlace: false });
+    expect(response.json().order).toMatchObject({ status: 'Placed', canAddItems: false, canPlace: false });
     expect(response.json().suggestions).toEqual([]);
   });
 
   it('translates API errors into messages for the screen', async () => {
-    const rule = await app.inject({ method: 'POST', url: `/actions/orders/${orderId}/items`, payload: { productId: 'p-caneta', quantity: 0 } });
+    const rule = await app.inject({ method: 'POST', url: `/actions/orders/${orderId}/items`, payload: { productId: 'p-pen', quantity: 0 } });
     expect(rule.statusCode).toBe(422);
-    expect(rule.json()).toEqual({ message: 'A quantidade deve ser maior que zero.' });
+    expect(rule.json()).toEqual({ message: 'The quantity must be greater than zero.' });
 
     const order = await app.inject({ method: 'GET', url: `/screens/orders/${missingId}` });
     expect(order.statusCode).toBe(404);
-    expect(order.json()).toEqual({ message: 'Pedido não encontrado.' });
+    expect(order.json()).toEqual({ message: 'Order not found.' });
 
-    const product = await app.inject({ method: 'POST', url: `/actions/orders/${orderId}/items`, payload: { productId: 'nenhum', quantity: 1 } });
+    const product = await app.inject({ method: 'POST', url: `/actions/orders/${orderId}/items`, payload: { productId: 'none', quantity: 1 } });
     expect(product.statusCode).toBe(404);
-    expect(product.json()).toEqual({ message: 'Produto não encontrado no catálogo.' });
+    expect(product.json()).toEqual({ message: 'Product not found in the catalog.' });
   });
 
   it('checks the shape of the request before calling the API', async () => {
-    const response = await app.inject({ method: 'POST', url: `/actions/orders/${orderId}/items`, payload: { productId: 'p-caneta', quantity: 'dois' } });
+    const response = await app.inject({ method: 'POST', url: `/actions/orders/${orderId}/items`, payload: { productId: 'p-pen', quantity: 'two' } });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toEqual({ message: 'Confira os dados informados: o campo quantidade deve ser um número inteiro.' });
+    expect(response.json()).toEqual({ message: 'Check the data you entered: the quantity field must be a whole number.' });
     expect(api.calls).toEqual([]);
   });
 });
@@ -159,7 +159,7 @@ describe('BFF without the API', () => {
     const response = await app.inject({ method: 'GET', url: '/screens/orders' });
 
     expect(response.statusCode).toBe(502);
-    expect(response.json()).toEqual({ message: 'O serviço de pedidos não respondeu. Tente de novo em instantes.' });
+    expect(response.json()).toEqual({ message: 'The orders service did not answer. Try again in a moment.' });
     await app.close();
   });
 

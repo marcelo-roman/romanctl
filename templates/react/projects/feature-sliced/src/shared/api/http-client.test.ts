@@ -18,20 +18,20 @@ describe('http client', () => {
   });
 
   it('turns a problem response into an ApiError with the detail', async () => {
-    server.use(http.get('*/api/broken', () => HttpResponse.json({ status: 422, title: 'Regra', detail: 'Não pode.' }, { status: 422 })));
+    server.use(http.get('*/api/broken', () => HttpResponse.json({ status: 422, title: 'Rule', detail: 'Not allowed.' }, { status: 422 })));
 
     const error = await getJson('/broken').catch((caught: unknown) => caught);
 
-    expect(error).toMatchObject({ status: 422, title: 'Regra', detail: 'Não pode.' });
-    expect(errorMessage(error)).toBe('Não pode.');
+    expect(error).toMatchObject({ status: 422, title: 'Rule', detail: 'Not allowed.' });
+    expect(errorMessage(error)).toBe('Not allowed.');
   });
 
-  it('falls back to a Portuguese title when the body is not a problem', async () => {
+  it('falls back to a default title when the body is not a problem', async () => {
     server.use(http.get('*/api/plain', () => new HttpResponse('oops', { status: 404 })));
 
     const error = await getJson('/plain').catch((caught: unknown) => caught);
 
-    expect(errorMessage(error)).toBe('Não encontrado.');
+    expect(errorMessage(error)).toBe('Not found.');
   });
 
   it('explains when the API cannot be reached', async () => {
@@ -39,6 +39,6 @@ describe('http client', () => {
 
     const error = await getJson('/down').catch((caught: unknown) => caught);
 
-    expect(errorMessage(error)).toBe('Não foi possível falar com a API. Confira se ela está no ar.');
+    expect(errorMessage(error)).toBe('Could not reach the API. Check that it is running.');
   });
 });

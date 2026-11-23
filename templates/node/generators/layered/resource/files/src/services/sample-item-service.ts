@@ -16,10 +16,10 @@ export interface ListSampleItemsInput {
 function requiredName(name: string): string {
   const trimmed = name.trim();
   if (trimmed === '') {
-    throw new ValidationError('O nome é obrigatório.');
+    throw new ValidationError('Name is required.');
   }
   if (trimmed.length > NAME_MAX_LENGTH) {
-    throw new ValidationError(`O nome deve ter no máximo ${NAME_MAX_LENGTH} caracteres.`);
+    throw new ValidationError(`Name must be at most ${NAME_MAX_LENGTH} characters.`);
   }
   return trimmed;
 }
@@ -43,7 +43,7 @@ export class SampleItemService {
   async get(id: string): Promise<SampleItem> {
     const sampleItem = await this.sampleItems.findById(id);
     if (!sampleItem) {
-      throw new NotFoundError(`Registro ${id} não encontrado.`);
+      throw new NotFoundError(`Record ${id} not found.`);
     }
     return sampleItem;
   }
@@ -58,7 +58,7 @@ export class SampleItemService {
   async delete(id: string): Promise<void> {
     const removed = await this.sampleItems.remove(id);
     if (!removed) {
-      throw new NotFoundError(`Registro ${id} não encontrado.`);
+      throw new NotFoundError(`Record ${id} not found.`);
     }
   }
 }

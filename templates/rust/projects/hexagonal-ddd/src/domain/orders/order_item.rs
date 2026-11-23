@@ -17,10 +17,10 @@ impl OrderItem {
     ) -> Result<Self, RuleViolation> {
         let product_name = product_name.trim();
         if product_name.is_empty() {
-            return Err(RuleViolation::new("O nome do produto é obrigatório."));
+            return Err(RuleViolation::new("Product name is required."));
         }
         if quantity <= 0 {
-            return Err(RuleViolation::new("A quantidade deve ser maior que zero."));
+            return Err(RuleViolation::new("Quantity must be greater than zero."));
         }
         Ok(Self {
             id: Id::generate(),

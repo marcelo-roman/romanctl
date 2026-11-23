@@ -16,7 +16,7 @@ describe.skipIf(!databaseUrl)(suiteTitle('sample items in PostgreSQL'), () => {
   afterAll(() => database?.close());
 
   it('saves, renames, lists and removes', async () => {
-    const sampleItem = { id: randomUUID(), name: 'Primeiro', createdAt: new Date(Date.now() + 60_000) };
+    const sampleItem = { id: randomUUID(), name: 'First', createdAt: new Date(Date.now() + 60_000) };
     await repository.save(sampleItem);
     await repository.save({ ...sampleItem, name: 'Renomeado' });
 

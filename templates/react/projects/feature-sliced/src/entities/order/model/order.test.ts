@@ -9,8 +9,8 @@ const order: Order = {
   createdAt: new Date('2026-01-02T10:00:00Z'),
   total: money(12.5),
   items: [
-    { productName: 'Caneta', quantity: 2, unitPrice: money(3.5), subtotal: money(7) },
-    { productName: 'Caderno', quantity: 1, unitPrice: money(5.5), subtotal: money(5.5) },
+    { productName: 'Pen', quantity: 2, unitPrice: money(3.5), subtotal: money(7) },
+    { productName: 'Notebook', quantity: 1, unitPrice: money(5.5), subtotal: money(5.5) },
   ],
 };
 
@@ -25,8 +25,8 @@ describe('order', () => {
     expect(isDraft({ ...order, status: 'Placed' })).toBe(false);
   });
 
-  it('labels the status in Portuguese', () => {
-    expect(statusLabel('Draft')).toBe('Rascunho');
-    expect(statusLabel('Placed')).toBe('Realizado');
+  it('labels the status for display', () => {
+    expect(statusLabel('Draft')).toBe('Draft');
+    expect(statusLabel('Placed')).toBe('Placed');
   });
 });

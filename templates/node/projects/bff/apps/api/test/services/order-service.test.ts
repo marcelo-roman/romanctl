@@ -19,7 +19,7 @@ describe('OrderService', () => {
 
   it('persists every step of an order', async () => {
     const order = await service.create({ customerName: 'Ana' });
-    await service.addItem(order.id, { productName: 'Caneta', quantity: 2, unitPrice: 3.5 });
+    await service.addItem(order.id, { productName: 'Pen', quantity: 2, unitPrice: 3.5 });
     await service.place(order.id);
 
     const stored = await service.get(order.id);
@@ -30,7 +30,7 @@ describe('OrderService', () => {
 
   it('does not keep changes rejected by the order', async () => {
     const order = await service.create({ customerName: 'Ana' });
-    await expect(service.addItem(order.id, { productName: 'Caneta', quantity: 0, unitPrice: 1 })).rejects.toThrow(DomainError);
+    await expect(service.addItem(order.id, { productName: 'Pen', quantity: 0, unitPrice: 1 })).rejects.toThrow(DomainError);
     expect((await service.get(order.id)).items).toHaveLength(0);
   });
 
@@ -47,7 +47,7 @@ describe('CatalogService', () => {
     await service.seed(starterCatalog);
 
     const names = (await service.list()).map((product) => product.name);
-    expect(names).toEqual(['Caderno', 'Caneta', 'Mochila']);
+    expect(names).toEqual(['Backpack', 'Notebook', 'Pen']);
   });
 
   it('reports unknown products', async () => {

@@ -1,4 +1,4 @@
-description: Comandos, consultas, modelo de leitura e projeção do agregado
+description: Commands, queries, read model and projection of the aggregate
 aliases: [app, usecases, projection, projecao]
 requires:
   - path: src/SampleApp.Domain/SampleItems/SampleItem.cs

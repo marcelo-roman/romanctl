@@ -12,7 +12,7 @@ internal sealed class RenameSampleItemHandler(ISampleItemRepository repository, 
     public async Task<bool> HandleAsync(RenameSampleItem command, CancellationToken cancellationToken)
     {
         var sampleItem = await repository.GetByIdAsync(new SampleItemId(command.Id), cancellationToken)
-            ?? throw new NotFoundException($"SampleItem {command.Id} não encontrado.");
+            ?? throw new NotFoundException($"SampleItem {command.Id} not found.");
 
         sampleItem.Rename(command.Name);
         await unitOfWork.SaveChangesAsync(cancellationToken);

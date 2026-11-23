@@ -36,47 +36,47 @@ final class OrderTest extends TestCase
         self::assertSame('Ana', $order->customerName());
         self::assertSame(OrderStatus::Draft, $order->status());
         self::assertSame($this->now, $order->createdAt());
-        self::assertEquals(new Money(0, 'BRL'), $order->total());
+        self::assertEquals(new Money(0, 'USD'), $order->total());
         self::assertSame(36, strlen($order->id()));
     }
 
     public function testTotalSumsItems(): void
     {
         $order = $this->draft();
-        $order->addItem('Caneta', 2, new Money(350, 'brl'));
-        $order->addItem('Caderno', 1, new Money(1200, 'brl'));
+        $order->addItem('Pen', 2, new Money(350, 'usd'));
+        $order->addItem('Notebook', 1, new Money(1200, 'usd'));
 
-        self::assertEquals(new Money(1900, 'BRL'), $order->total());
-        self::assertEquals(new Money(700, 'BRL'), $order->items()[0]->subtotal());
+        self::assertEquals(new Money(1900, 'USD'), $order->total());
+        self::assertEquals(new Money(700, 'USD'), $order->items()[0]->subtotal());
     }
 
     public function testItemRequiresProduct(): void
     {
-        $this->expectExceptionObject(new BusinessRuleViolation('O nome do produto é obrigatório.'));
+        $this->expectExceptionObject(new BusinessRuleViolation('Product name is required.'));
 
         $this->draft()->addItem(' ', 1, new Money(100));
     }
 
     public function testItemRequiresPositiveQuantity(): void
     {
-        $this->expectExceptionObject(new BusinessRuleViolation('A quantidade deve ser maior que zero.'));
+        $this->expectExceptionObject(new BusinessRuleViolation('Quantity must be greater than zero.'));
 
-        $this->draft()->addItem('Caneta', 0, new Money(100));
+        $this->draft()->addItem('Pen', 0, new Money(100));
     }
 
     public function testItemsMustShareCurrency(): void
     {
         $order = $this->draft();
-        $order->addItem('Caneta', 1, new Money(100, 'BRL'));
+        $order->addItem('Pen', 1, new Money(100, 'USD'));
 
         $this->expectException(BusinessRuleViolation::class);
 
-        $order->addItem('Pen', 1, new Money(100, 'USD'));
+        $order->addItem('Pen', 1, new Money(100, 'EUR'));
     }
 
     public function testPlaceRequiresItems(): void
     {
-        $this->expectExceptionObject(new BusinessRuleViolation('Um pedido sem itens não pode ser realizado.'));
+        $this->expectExceptionObject(new BusinessRuleViolation('An order without items cannot be placed.'));
 
         $this->draft()->place($this->now);
     }
@@ -84,34 +84,34 @@ final class OrderTest extends TestCase
     public function testPlaceRaisesEventOnce(): void
     {
         $order = $this->draft();
-        $order->addItem('Caneta', 1, new Money(100));
+        $order->addItem('Pen', 1, new Money(100));
         $order->place($this->now);
 
         self::assertSame(OrderStatus::Placed, $order->status());
-        self::assertEquals([new OrderPlaced($order->id(), 100, 'BRL', $this->now)], $order->pullEvents());
+        self::assertEquals([new OrderPlaced($order->id(), 100, 'USD', $this->now)], $order->pullEvents());
         self::assertSame([], $order->pullEvents());
     }
 
     public function testPlacedOrderCannotChange(): void
     {
         $order = $this->draft();
-        $order->addItem('Caneta', 1, new Money(100));
+        $order->addItem('Pen', 1, new Money(100));
         $order->place($this->now);
 
-        $this->assertViolation(fn () => $order->addItem('Lápis', 1, new Money(100)), 'Um pedido já realizado não pode ser alterado.');
-        $this->assertViolation(fn () => $order->place($this->now), 'O pedido já foi realizado.');
+        $this->assertViolation(fn () => $order->addItem('Pencil', 1, new Money(100)), 'A placed order cannot be changed.');
+        $this->assertViolation(fn () => $order->place($this->now), 'The order has already been placed.');
     }
 
     public function testMoneyRules(): void
     {
-        $this->assertViolation(fn () => new Money(-1), 'O valor não pode ser negativo.');
-        $this->assertViolation(fn () => new Money(100, 'REAL'), 'A moeda deve ter 3 letras, como BRL.');
-        $this->assertViolation(fn () => (new Money(100))->add(new Money(100, 'USD')), 'Não é possível somar moedas diferentes.');
+        $this->assertViolation(fn () => new Money(-1), 'Amount cannot be negative.');
+        $this->assertViolation(fn () => new Money(100, 'DOLLAR'), 'Currency must have 3 letters, like USD.');
+        $this->assertViolation(fn () => (new Money(100))->add(new Money(100, 'EUR')), 'Cannot add different currencies.');
 
-        self::assertEquals(new Money(350, 'BRL'), Money::fromAmount(3.5));
+        self::assertEquals(new Money(350, 'USD'), Money::fromAmount(3.5));
         self::assertEquals(new Money(13, 'USD'), Money::fromAmount(0.125, 'usd'));
         self::assertSame(3.5, (new Money(350))->amount());
-        self::assertTrue((new Money(350))->equals(Money::fromAmount(3.5, 'BRL')));
+        self::assertTrue((new Money(350))->equals(Money::fromAmount(3.5, 'USD')));
     }
 
     public function testIdentifierParsing(): void
@@ -119,7 +119,7 @@ final class OrderTest extends TestCase
         $id = Identifier::generate();
 
         self::assertSame($id, Identifier::parse(strtoupper($id)));
-        $this->assertViolation(fn () => Identifier::parse('abc'), 'Identificador inválido.');
+        $this->assertViolation(fn () => Identifier::parse('abc'), 'Invalid identifier.');
     }
 
     private function draft(): Order
@@ -136,6 +136,6 @@ final class OrderTest extends TestCase
 
             return;
         }
-        self::fail("Esperava a regra: {$message}");
+        self::fail("Expected the rule: {$message}");
     }
 }

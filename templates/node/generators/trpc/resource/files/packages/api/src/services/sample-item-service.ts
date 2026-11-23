@@ -52,14 +52,14 @@ export class SampleItemService {
 
   async remove(id: string): Promise<void> {
     if (!(await this.sampleItems.remove(id))) {
-      throw new NotFoundError('Registro não encontrado.');
+      throw new NotFoundError('Record not found.');
     }
   }
 
   private async load(id: string): Promise<SampleItem> {
     const record = await this.sampleItems.findById(id);
     if (!record) {
-      throw new NotFoundError('Registro não encontrado.');
+      throw new NotFoundError('Record not found.');
     }
     return fromRecord(record);
   }

@@ -28,7 +28,7 @@ public class ArchitectureTests
         string.Join(", ", result.FailingTypeNames ?? []);
 
     [Fact]
-    public void Toda_fatia_mapeia_o_proprio_endpoint()
+    public void Every_slice_maps_its_own_endpoint()
     {
         Assert.NotEmpty(Slices());
         Assert.All(Slices(), slice =>
@@ -36,7 +36,7 @@ public class ArchitectureTests
     }
 
     [Fact]
-    public void Fatias_nao_dependem_umas_das_outras()
+    public void Slices_do_not_depend_on_each_other()
     {
         var slices = Slices();
         foreach (var slice in slices)
@@ -48,18 +48,18 @@ public class ArchitectureTests
                 .ShouldNot().HaveDependencyOnAny(others)
                 .GetResult();
 
-            Assert.True(result.IsSuccessful, $"{slice.Name} depende de outra fatia: {Describe(result)}");
+            Assert.True(result.IsSuccessful, $"{slice.Name} depends on another slice: {Describe(result)}");
         }
     }
 
     [Fact]
-    public void Dominio_nao_depende_de_fatias_nem_de_frameworks()
+    public void Domain_depends_on_no_slice_or_framework()
     {
         var result = Types.InAssembly(Api)
             .That().ResideInNamespace("SampleApp.Api.Domain")
             .ShouldNot().HaveDependencyOnAny(FeaturesNamespace, "SampleApp.Api.Data", "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore")
             .GetResult();
 
-        Assert.True(result.IsSuccessful, $"O domínio depende de fora dele: {Describe(result)}");
+        Assert.True(result.IsSuccessful, $"The domain depends on something outside it: {Describe(result)}");
     }
 }

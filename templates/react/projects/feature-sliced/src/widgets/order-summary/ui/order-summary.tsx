@@ -16,23 +16,23 @@ export function OrderSummary({ order }: { order: Order }) {
   const summary = summaryOf(order);
 
   return (
-    <section className="card" aria-label="Resumo do pedido">
+    <section className="card" aria-label="Order summary">
       <header className="card-header">
         <h2>{summary.customerName}</h2>
         <OrderStatusBadge status={order.status} />
       </header>
       <p className="muted">
-        Criado em {summary.createdAt} · {summary.units}
+        Created at {summary.createdAt} · {summary.units}
       </p>
       {summary.lines.length === 0 ? (
-        <p className="muted">O pedido ainda não tem itens.</p>
+        <p className="muted">The order has no items yet.</p>
       ) : (
         <table className="table">
           <thead>
             <tr>
-              <th>Produto</th>
-              <th className="numeric">Quantidade</th>
-              <th className="numeric">Preço unitário</th>
+              <th>Product</th>
+              <th className="numeric">Quantity</th>
+              <th className="numeric">Unit price</th>
               <th className="numeric">Subtotal</th>
             </tr>
           </thead>

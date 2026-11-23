@@ -10,7 +10,7 @@ async fn order_lifecycle() {
     assert_eq!(status, StatusCode::CREATED);
     let id = created["id"].as_str().expect("id").to_owned();
 
-    let item = r#"{"productName":"Caneta","quantity":2,"unitPrice":3.5}"#;
+    let item = r#"{"productName":"Pen","quantity":2,"unitPrice":3.5}"#;
     let (status, _) = send(&app, "POST", &format!("/orders/{id}/items"), item).await;
     assert_eq!(status, StatusCode::NO_CONTENT);
     let (status, _) = send(&app, "POST", &format!("/orders/{id}/place"), "").await;
@@ -21,8 +21,8 @@ async fn order_lifecycle() {
     assert_eq!(order["status"], "Placed");
     assert_eq!(order["customerName"], "Ana");
     assert_eq!(order["total"], 7.0);
-    assert_eq!(order["currency"], "BRL");
-    assert_eq!(order["items"][0]["productName"], "Caneta");
+    assert_eq!(order["currency"], "USD");
+    assert_eq!(order["items"][0]["productName"], "Pen");
     assert_eq!(order["items"][0]["unitPrice"], 3.5);
     assert!(order["createdAt"].is_string());
 
@@ -37,19 +37,19 @@ async fn errors_become_problems() {
     let (status, problem) = send(&app, "POST", "/orders", r#"{"customerName":""}"#).await;
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     assert_eq!(problem["status"], 422);
-    assert_eq!(problem["detail"], "O nome do cliente é obrigatório.");
+    assert_eq!(problem["detail"], "Customer name is required.");
 
     let missing = "/orders/00000000-0000-4000-8000-000000000000";
     let (status, problem) = send(&app, "GET", missing, "").await;
     assert_eq!(status, StatusCode::NOT_FOUND);
-    assert_eq!(problem["title"], "Não encontrado");
+    assert_eq!(problem["title"], "Not found");
 
     let (status, _) = send(&app, "POST", "/orders", "{").await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 
     let (status, problem) = send(&app, "GET", "/orders/abc", "").await;
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
-    assert_eq!(problem["detail"], "Identificador inválido.");
+    assert_eq!(problem["detail"], "Invalid identifier.");
 }
 
 #[tokio::test]
@@ -61,7 +61,7 @@ async fn placing_an_empty_order_is_rejected() {
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     assert_eq!(
         problem["detail"],
-        "Um pedido sem itens não pode ser realizado."
+        "An order without items cannot be placed."
     );
 }
 

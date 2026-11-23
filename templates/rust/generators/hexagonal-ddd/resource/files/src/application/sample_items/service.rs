@@ -6,7 +6,7 @@ use crate::application::error::ApplicationError;
 use crate::domain::sample_items::SampleItem;
 use crate::domain::shared::Id;
 
-const NOT_FOUND: &str = "SampleItem não encontrado.";
+const NOT_FOUND: &str = "SampleItem not found.";
 
 pub struct SampleItemService {
     repository: Arc<dyn SampleItemRepository>,

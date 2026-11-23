@@ -19,7 +19,7 @@ impl OrderStatus {
             "Draft" => Ok(Self::Draft),
             "Placed" => Ok(Self::Placed),
             _ => Err(RuleViolation::new(format!(
-                "Situação de pedido desconhecida: {value}."
+                "Unknown order status: {value}."
             ))),
         }
     }

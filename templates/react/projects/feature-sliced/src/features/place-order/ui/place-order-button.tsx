@@ -7,7 +7,7 @@ export function PlaceOrderButton({ orderId }: { orderId: string }) {
   return (
     <div className="actions">
       <Button onClick={order.place} disabled={order.isPending}>
-        {order.isPending ? 'Realizando...' : 'Realizar pedido'}
+        {order.isPending ? 'Placing...' : 'Place order'}
       </Button>
       {order.error && <Alert tone="error">{order.error}</Alert>}
     </div>

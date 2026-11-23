@@ -12,7 +12,7 @@ internal sealed class PlaceOrderHandler(IAggregateRepository repository, TimePro
     public async Task<bool> HandleAsync(PlaceOrder command, CancellationToken cancellationToken)
     {
         var order = await repository.LoadAsync<Order>(command.OrderId, cancellationToken)
-            ?? throw new NotFoundException($"Pedido {command.OrderId} não encontrado.");
+            ?? throw new NotFoundException($"Order {command.OrderId} not found.");
 
         order.Place(clock.GetUtcNow());
         await repository.SaveAsync(order, cancellationToken);

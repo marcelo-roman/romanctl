@@ -16,9 +16,9 @@ public sealed class OrderItem
     internal OrderItem(string productName, int quantity, Money unitPrice)
     {
         if (string.IsNullOrWhiteSpace(productName))
-            throw new DomainException("O nome do produto é obrigatório.");
+            throw new DomainException("Product name is required.");
         if (quantity <= 0)
-            throw new DomainException("A quantidade deve ser maior que zero.");
+            throw new DomainException("Quantity must be greater than zero.");
 
         Id = Guid.NewGuid();
         ProductName = productName.Trim();

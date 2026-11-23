@@ -1,6 +1,6 @@
-# Persistência
+# Persistence
 
-Em memória: os dados de cada serviço somem quando ele para. O outbox do `orders` fica na mesma estrutura dos pedidos,
-gravado sob a mesma trava, e a inbox do `billing` guarda os ids de eventos já processados ao lado das faturas.
+In memory: each service's data is gone when it stops. The `orders` outbox lives in the same structure as the orders,
+written under the same lock, and the `billing` inbox keeps the ids of events already processed next to the invoices.
 
-Para usar PostgreSQL, gere o projeto com `--with postgres`.
+To use PostgreSQL, generate the project with `--with postgres`.

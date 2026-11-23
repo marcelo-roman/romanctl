@@ -39,7 +39,7 @@ export class OrderService {
   async get(id: string): Promise<Order> {
     const order = await this.orders.findById(id);
     if (!order) {
-      throw new NotFoundError(`Pedido ${id} não encontrado.`);
+      throw new NotFoundError(`Order ${id} not found.`);
     }
     return order;
   }

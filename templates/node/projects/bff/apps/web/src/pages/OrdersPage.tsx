@@ -19,10 +19,10 @@ export function OrdersPage() {
 
   return (
     <section>
-      <h1>Pedidos</h1>
+      <h1>Orders</h1>
       <NewOrderForm pending={action.pending} onCreate={create} />
       <ErrorMessage message={action.error ?? screen.error} />
-      {screen.loading && !screen.data && <p>Carregando...</p>}
+      {screen.loading && !screen.data && <p>Loading...</p>}
       {screen.data && <OrdersTable orders={screen.data.orders} />}
     </section>
   );

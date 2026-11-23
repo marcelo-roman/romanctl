@@ -8,13 +8,13 @@ final class SampleItemsApiTest extends ApiTestCase
 {
     public function testSampleItemCrud(): void
     {
-        $response = $this->send('POST', '/sample-items', ['name' => 'Primeiro']);
+        $response = $this->send('POST', '/sample-items', ['name' => 'First']);
         self::assertSame(201, $response->getStatusCode());
         $id = $this->json($response)['id'];
         self::assertSame("/sample-items/{$id}", $response->headers->get('Location'));
 
-        self::assertSame(204, $this->send('PUT', "/sample-items/{$id}", ['name' => 'Segundo'])->getStatusCode());
-        self::assertSame('Segundo', $this->json($this->send('GET', "/sample-items/{$id}"))['name']);
+        self::assertSame(204, $this->send('PUT', "/sample-items/{$id}", ['name' => 'Second'])->getStatusCode());
+        self::assertSame('Second', $this->json($this->send('GET', "/sample-items/{$id}"))['name']);
         self::assertSame([$id], array_column($this->json($this->send('GET', '/sample-items')), 'id'));
 
         self::assertSame(204, $this->send('DELETE', "/sample-items/{$id}")->getStatusCode());

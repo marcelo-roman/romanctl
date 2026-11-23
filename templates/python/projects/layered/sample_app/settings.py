@@ -27,8 +27,8 @@ ASGI_APPLICATION = "sample_app.asgi.application"
 DATABASES = {"default": default_database(BASE_DIR)}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LANGUAGE_CODE = "pt-br"
-TIME_ZONE = "America/Sao_Paulo"
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 APPEND_SLASH = False

@@ -12,8 +12,8 @@ from sample_app.domain.shared.identity import new_id
 def test_order_round_trip(database: Database) -> None:
     repository = PostgresOrderRepository(database)
     order = Order.create("Ana", datetime.now(UTC).replace(microsecond=0))
-    order.add_item("Caneta", 2, Money(350, "BRL"))
-    order.add_item("Caderno", 1, Money(1200, "BRL"))
+    order.add_item("Pen", 2, Money(350, "USD"))
+    order.add_item("Notebook", 1, Money(1200, "USD"))
     repository.save(order)
 
     loaded = repository.find(order.id)
@@ -21,8 +21,8 @@ def test_order_round_trip(database: Database) -> None:
     assert loaded is not None
     assert loaded.customer_name == "Ana"
     assert loaded.created_at == order.created_at
-    assert loaded.total == Money(1900, "BRL")
-    assert [item.product_name for item in loaded.items] == ["Caneta", "Caderno"]
+    assert loaded.total == Money(1900, "USD")
+    assert [item.product_name for item in loaded.items] == ["Pen", "Notebook"]
     assert repository.find(new_id()) is None
 
 
@@ -30,7 +30,7 @@ def test_saving_again_updates_status_and_items(database: Database) -> None:
     repository = PostgresOrderRepository(database)
     order = Order.create("Bia", datetime.now(UTC))
     repository.save(order)
-    order.add_item("Lápis", 3, Money(100, "BRL"))
+    order.add_item("Pencil", 3, Money(100, "USD"))
     order.place(datetime.now(UTC))
     repository.save(order)
 
@@ -38,7 +38,7 @@ def test_saving_again_updates_status_and_items(database: Database) -> None:
 
     assert loaded is not None
     assert loaded.status == OrderStatus.PLACED
-    assert loaded.total == Money(300, "BRL")
+    assert loaded.total == Money(300, "USD")
     assert order.id in [recent.id for recent in repository.list_recent(200)]
 
 

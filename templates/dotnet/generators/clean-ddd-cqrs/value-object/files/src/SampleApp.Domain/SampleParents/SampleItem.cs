@@ -9,7 +9,7 @@ public sealed record SampleItem
     public SampleItem(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new DomainException("SampleItem não pode ser vazio.");
+            throw new DomainException("SampleItem cannot be empty.");
 
         Value = value.Trim();
     }

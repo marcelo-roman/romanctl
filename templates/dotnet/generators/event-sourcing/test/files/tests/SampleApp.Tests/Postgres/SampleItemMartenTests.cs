@@ -18,16 +18,16 @@ public class SampleItemMartenTests
     }
 
     [PostgresFact]
-    public async Task Grava_os_eventos_e_atualiza_a_projecao()
+    public async Task Saves_the_events_and_updates_the_projection()
     {
         var configuration = new ConfigurationBuilder().AddEnvironmentVariables().Build();
         await using var provider = new ServiceCollection().AddLogging().AddApplication().AddInfrastructure(configuration).BuildServiceProvider();
 
-        var id = await Send(provider, dispatcher => dispatcher.SendAsync(new CreateSampleItem("Primeiro")));
-        await Send(provider, dispatcher => dispatcher.SendAsync(new RenameSampleItem(id, "Segundo")));
+        var id = await Send(provider, dispatcher => dispatcher.SendAsync(new CreateSampleItem("First")));
+        await Send(provider, dispatcher => dispatcher.SendAsync(new RenameSampleItem(id, "Second")));
 
         var summary = await Send(provider, dispatcher => dispatcher.QueryAsync(new GetSampleItemById(id)));
-        Assert.Equal("Segundo", summary.Name);
+        Assert.Equal("Second", summary.Name);
         Assert.Equal(1, summary.Renames);
         var events = await Send(provider, dispatcher => dispatcher.QueryAsync(new GetSampleItemEvents(id)));
         Assert.Equal(["SampleItemCreated", "SampleItemRenamed"], events.Select(e => e.Type));

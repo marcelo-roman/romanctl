@@ -16,7 +16,7 @@ const (
 	maxListLimit    = 200
 )
 
-var ErrNotFound = fmt.Errorf("Fatura %w.", shared.ErrNotFound)
+var ErrNotFound = fmt.Errorf("Invoice %w.", shared.ErrNotFound)
 
 type Store interface {
 	Issue(ctx context.Context, eventID string, i *invoice.Invoice) error

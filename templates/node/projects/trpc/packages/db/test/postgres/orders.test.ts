@@ -23,11 +23,11 @@ describe.skipIf(!databaseUrl)(suiteTitle('orders in PostgreSQL'), () => {
       customerName: 'Ana',
       status: 'Draft',
       createdAt,
-      items: [{ id: randomUUID(), productName: 'Caneta', quantity: 2, unitPriceCents: 350, currency: 'BRL' }],
+      items: [{ id: randomUUID(), productName: 'Pen', quantity: 2, unitPriceCents: 350, currency: 'USD' }],
     };
     await repository.save(order);
 
-    order.items.push({ id: randomUUID(), productName: 'Caderno', quantity: 1, unitPriceCents: 1200, currency: 'BRL' });
+    order.items.push({ id: randomUUID(), productName: 'Notebook', quantity: 1, unitPriceCents: 1200, currency: 'USD' });
     order.status = 'Placed';
     await repository.save(order);
 

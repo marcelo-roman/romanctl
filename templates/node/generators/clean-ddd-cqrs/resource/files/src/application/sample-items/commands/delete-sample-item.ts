@@ -17,7 +17,7 @@ export class DeleteSampleItemHandler implements ICommandHandler<DeleteSampleItem
   async execute(command: DeleteSampleItem): Promise<void> {
     const sampleItem = await this.repository.findById(SampleItemId.parse(command.id));
     if (!sampleItem) {
-      throw new NotFoundError(`SampleItem ${command.id} não encontrado.`);
+      throw new NotFoundError(`SampleItem ${command.id} not found.`);
     }
     await this.repository.remove(sampleItem);
   }

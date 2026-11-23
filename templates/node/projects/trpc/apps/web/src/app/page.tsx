@@ -4,7 +4,7 @@ import { OrderList } from '../components/orders/order-list';
 export default function HomePage() {
   return (
     <>
-      <h1>Pedidos</h1>
+      <h1>Orders</h1>
       <CreateOrderForm />
       <OrderList />
     </>

@@ -8,7 +8,7 @@ use SampleApp\Domain\Shared\BusinessRuleViolation;
 
 final readonly class Money
 {
-    public const string DEFAULT_CURRENCY = 'BRL';
+    public const string DEFAULT_CURRENCY = 'USD';
 
     public int $cents;
     public string $currency;
@@ -16,11 +16,11 @@ final readonly class Money
     public function __construct(int $cents, string $currency = self::DEFAULT_CURRENCY)
     {
         if ($cents < 0) {
-            throw new BusinessRuleViolation('O valor não pode ser negativo.');
+            throw new BusinessRuleViolation('Amount cannot be negative.');
         }
         $normalized = strtoupper(trim($currency));
         if (preg_match('/^[A-Z]{3}$/', $normalized) !== 1) {
-            throw new BusinessRuleViolation('A moeda deve ter 3 letras, como BRL.');
+            throw new BusinessRuleViolation('Currency must have 3 letters, like USD.');
         }
         $this->cents = $cents;
         $this->currency = $normalized;
@@ -49,7 +49,7 @@ final readonly class Money
     public function add(self $other): self
     {
         if ($other->currency !== $this->currency) {
-            throw new BusinessRuleViolation('Não é possível somar moedas diferentes.');
+            throw new BusinessRuleViolation('Cannot add different currencies.');
         }
 
         return new self($this->cents + $other->cents, $this->currency);

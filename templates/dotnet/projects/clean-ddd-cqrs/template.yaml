@@ -1,7 +1,7 @@
 id: clean-ddd-cqrs
 stack: dotnet
 arch: [clean, ddd, cqrs]
-description: API .NET com Clean Architecture, DDD e CQRS, com despachante próprio
+description: .NET API with Clean Architecture, DDD and CQRS, with its own dispatcher
 services: [postgres]
 requires: [dotnet]
 setup:

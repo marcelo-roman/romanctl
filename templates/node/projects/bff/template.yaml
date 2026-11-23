@@ -1,7 +1,7 @@
 id: bff
 stack: node
 arch: [bff]
-description: Monorepo Node com Backend for Frontend - API de pedidos e BFF em Fastify, web em React com Vite
+description: Node monorepo with a Backend for Frontend - orders API and BFF in Fastify, web in React with Vite
 services: [postgres]
 requires: [node]
 setup:

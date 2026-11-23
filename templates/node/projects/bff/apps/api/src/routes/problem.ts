@@ -10,21 +10,21 @@ export interface Problem {
 }
 
 const titles: Record<number, string> = {
-  400: 'Requisição inválida',
-  404: 'Não encontrado',
-  415: 'Tipo de conteúdo não suportado',
-  422: 'Regra de negócio violada',
-  500: 'Erro interno',
+  400: 'Bad request',
+  404: 'Not found',
+  415: 'Unsupported media type',
+  422: 'Business rule violated',
+  500: 'Internal error',
 };
 
 const requestErrors: Record<string, string> = {
-  FST_ERR_CTP_INVALID_JSON_BODY: 'O corpo não é um JSON válido.',
-  FST_ERR_CTP_EMPTY_JSON_BODY: 'O corpo está vazio.',
-  FST_ERR_CTP_INVALID_MEDIA_TYPE: 'Envie o corpo como application/json.',
+  FST_ERR_CTP_INVALID_JSON_BODY: 'The body is not valid JSON.',
+  FST_ERR_CTP_EMPTY_JSON_BODY: 'The body is empty.',
+  FST_ERR_CTP_INVALID_MEDIA_TYPE: 'Send the body as application/json.',
 };
 
 function problem(status: number, detail: string): Problem {
-  return { status, title: titles[status] ?? 'Erro', detail };
+  return { status, title: titles[status] ?? 'Error', detail };
 }
 
 function problemOf(error: FastifyError): Problem {
@@ -40,7 +40,7 @@ function problemOf(error: FastifyError): Problem {
   if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
     return problem(error.statusCode, requestErrors[error.code] ?? error.message);
   }
-  return { status: 500, title: titles[500] ?? 'Erro' };
+  return { status: 500, title: titles[500] ?? 'Error' };
 }
 
 export function sendProblem(error: FastifyError, request: FastifyRequest, reply: FastifyReply): FastifyReply {
@@ -55,5 +55,5 @@ export function sendNotFound(request: FastifyRequest, reply: FastifyReply): Fast
   return reply
     .status(404)
     .type('application/problem+json')
-    .send(problem(404, `A rota ${request.method} ${request.url.split('?')[0]} não existe.`));
+    .send(problem(404, `The route ${request.method} ${request.url.split('?')[0]} does not exist.`));
 }

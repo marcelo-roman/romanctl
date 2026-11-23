@@ -40,7 +40,7 @@ public final class SampleItem {
 
     public void rename(String name) {
         if (name == null || name.isBlank()) {
-            throw new BusinessRuleException("O nome é obrigatório.");
+            throw new BusinessRuleException("Name is required.");
         }
         this.name = name.strip();
     }

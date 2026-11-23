@@ -8,10 +8,10 @@ describe('App', () => {
   it('routes between the list and the order', async () => {
     mockFetch((call) =>
       call.url === '/screens/orders'
-        ? { body: { orders: [{ id: 'o1', customerName: 'Ana', status: 'Rascunho', itemCount: 0, total: 'R$ 0,00' }] } }
+        ? { body: { orders: [{ id: 'o1', customerName: 'Ana', status: 'Draft', itemCount: 0, total: '$0.00' }] } }
         : {
             body: {
-              order: { id: 'o1', customerName: 'Ana', status: 'Rascunho', total: 'R$ 0,00', canAddItems: false, canPlace: false, items: [] },
+              order: { id: 'o1', customerName: 'Ana', status: 'Draft', total: '$0.00', canAddItems: false, canPlace: false, items: [] },
               suggestions: [],
             },
           },
@@ -20,13 +20,13 @@ describe('App', () => {
 
     await userEvent.click(await screen.findByRole('link', { name: 'Ana' }));
 
-    expect(await screen.findByText('Pedido de Ana')).toBeTruthy();
+    expect(await screen.findByText('Order for Ana')).toBeTruthy();
     expect(window.location.pathname).toBe('/orders/o1');
   });
 
   it('answers unknown pages', () => {
-    window.history.replaceState(null, '', '/nada');
+    window.history.replaceState(null, '', '/nothing');
     render(<App />);
-    expect(screen.getByText('Página não encontrada')).toBeTruthy();
+    expect(screen.getByText('Page not found')).toBeTruthy();
   });
 });

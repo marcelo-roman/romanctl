@@ -17,11 +17,11 @@ describe.skipIf(!databaseUrl)(suiteTitle('tasks in PostgreSQL'), () => {
   afterAll(() => db?.close());
 
   it('saves, updates, lists and removes a task', async () => {
-    const task: Task = { id: randomUUID(), title: 'Comprar pão', done: false, dueDate: '2099-12-31', createdAt: new Date(Date.now() + 60_000) };
+    const task: Task = { id: randomUUID(), title: 'Buy bread', done: false, dueDate: '2099-12-31', createdAt: new Date(Date.now() + 60_000) };
     await repository.add(task);
     expect(await repository.findById(task.id)).toEqual(task);
 
-    const done: Task = { ...task, title: 'Comprar pão integral', done: true, dueDate: null };
+    const done: Task = { ...task, title: 'Buy whole-wheat bread', done: true, dueDate: null };
     await repository.update(done);
     expect(await repository.findById(task.id)).toEqual(done);
 

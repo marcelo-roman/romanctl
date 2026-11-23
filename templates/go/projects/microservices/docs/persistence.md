@@ -1,15 +1,15 @@
-# Persistência
+# Persistence
 
-PostgreSQL com pgx, lido de `DATABASE_URL`. O `romanctl up sample-app` cria o banco `sample_app` e grava a variável no
-`.env`. Os dois serviços usam o mesmo banco, cada um no seu esquema, e nenhum lê o esquema do outro:
+PostgreSQL with pgx, read from `DATABASE_URL`. `romanctl up sample-app` creates the `sample_app` database and writes the
+variable to `.env`. Both services use the same database, each in its own schema, and neither reads the other's schema:
 
-| Esquema | Tabelas |
+| Schema | Tables |
 |---|---|
-| `orders` | `orders`, `order_items` e `outbox` |
-| `billing` | `invoices` (uma por pedido) e `inbox` (os ids de eventos já processados) |
+| `orders` | `orders`, `order_items` and `outbox` |
+| `billing` | `invoices` (one per order) and `inbox` (the ids of events already processed) |
 
-Cada serviço cria o próprio esquema na inicialização, sob `pg_advisory_xact_lock`, para os dois poderem subir ao
-mesmo tempo. `CREATE TABLE IF NOT EXISTS` não evolui o esquema: adote migrações antes de ter dados que importam.
+Each service creates its own schema at startup, under `pg_advisory_xact_lock`, so both can start at the same time.
+`CREATE TABLE IF NOT EXISTS` does not evolve the schema: adopt migrations before you have data that matters.
 
-Os testes em `internal/services/*/adapters/postgres` e `internal/platform/postgres` rodam contra o banco de
-`DATABASE_URL` e são pulados sem ela.
+The tests in `internal/services/*/adapters/postgres` and `internal/platform/postgres` run against the `DATABASE_URL`
+database and are skipped without it.

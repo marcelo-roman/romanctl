@@ -16,22 +16,22 @@ public class ArchitectureTests
         References(assembly).Where(name => name.StartsWith("SampleApp."));
 
     [Fact]
-    public void Domain_nao_depende_de_nenhuma_camada() =>
+    public void Domain_depends_on_no_other_layer() =>
         Assert.Empty(ProjectReferences(Domain));
 
     [Fact]
-    public void Application_depende_apenas_de_Domain() =>
+    public void Application_depends_only_on_Domain() =>
         Assert.Equal(["SampleApp.Domain"], ProjectReferences(Application));
 
     [Fact]
-    public void Infrastructure_nao_e_referenciada_por_Domain_nem_Application() =>
+    public void Infrastructure_is_not_referenced_by_Domain_or_Application() =>
         Assert.DoesNotContain("SampleApp.Infrastructure", ProjectReferences(Domain).Concat(ProjectReferences(Application)));
 
     [Fact]
-    public void Domain_nao_usa_frameworks() =>
+    public void Domain_uses_no_frameworks() =>
         Assert.DoesNotContain(References(Domain), name => name.StartsWith("Microsoft.Extensions") || name.StartsWith("Marten"));
 
     [Fact]
-    public void Application_nao_conhece_o_event_store_concreto() =>
+    public void Application_does_not_know_the_concrete_event_store() =>
         Assert.DoesNotContain(References(Application), name => name.StartsWith("Marten") || name.StartsWith("JasperFx") || name.StartsWith("Npgsql"));
 }

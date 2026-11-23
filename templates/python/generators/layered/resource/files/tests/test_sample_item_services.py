@@ -8,12 +8,12 @@ pytestmark = pytest.mark.django_db
 
 
 def test_create_and_rename_trim_the_name() -> None:
-    sample_item = create_sample_item(name="  Primeiro  ")
-    assert sample_item.name == "Primeiro"
+    sample_item = create_sample_item(name="  First  ")
+    assert sample_item.name == "First"
 
-    rename_sample_item(sample_item, name=" Segundo ")
+    rename_sample_item(sample_item, name=" Second ")
 
-    assert get_sample_item(sample_item.id).name == "Segundo"
+    assert get_sample_item(sample_item.id).name == "Second"
 
 
 @pytest.mark.parametrize("name", ["", "   ", "x" * 201])
@@ -23,15 +23,15 @@ def test_invalid_names_are_rejected(name: str) -> None:
 
 
 def test_list_returns_newest_first() -> None:
-    first = create_sample_item(name="Primeiro")
-    second = create_sample_item(name="Segundo")
+    first = create_sample_item(name="First")
+    second = create_sample_item(name="Second")
 
     assert [sample_item.id for sample_item in list_sample_items(limit=50)] == [second.id, first.id]
     assert [sample_item.id for sample_item in list_sample_items(limit=1)] == [second.id]
 
 
 def test_delete_removes_it() -> None:
-    sample_item = create_sample_item(name="Descartável")
+    sample_item = create_sample_item(name="Disposable")
 
     delete_sample_item(sample_item)
 

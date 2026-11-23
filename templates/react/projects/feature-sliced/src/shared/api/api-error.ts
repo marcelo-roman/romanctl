@@ -21,15 +21,15 @@ export class ApiError extends Error {
 export const unreachableStatus = 0;
 
 const titlesByStatus: Record<number, string> = {
-  [unreachableStatus]: 'Não foi possível falar com a API. Confira se ela está no ar.',
-  400: 'A requisição tem dados inválidos.',
-  404: 'Não encontrado.',
-  422: 'A operação não é permitida.',
-  500: 'A API encontrou um erro inesperado.',
+  [unreachableStatus]: 'Could not reach the API. Check that it is running.',
+  400: 'The request has invalid data.',
+  404: 'Not found.',
+  422: 'The operation is not allowed.',
+  500: 'The API hit an unexpected error.',
 };
 
 export function defaultTitle(status: number): string {
-  return titlesByStatus[status] ?? `A API respondeu com o status ${status}.`;
+  return titlesByStatus[status] ?? `The API answered with status ${status}.`;
 }
 
 export function isApiError(error: unknown): error is ApiError {

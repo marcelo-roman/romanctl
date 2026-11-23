@@ -12,5 +12,5 @@ def list_tasks(*, limit: int, done: bool | None = None) -> list[Task]:
 def get_task(task_id: int) -> Task:
     task = Task.objects.filter(pk=task_id).first()
     if task is None:
-        raise NotFoundError(f"Tarefa {task_id} não encontrada.")
+        raise NotFoundError(f"Task {task_id} not found.")
     return task

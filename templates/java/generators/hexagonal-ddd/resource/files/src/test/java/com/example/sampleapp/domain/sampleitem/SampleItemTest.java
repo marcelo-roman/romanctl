@@ -12,15 +12,15 @@ class SampleItemTest {
     @Test
     void createRequiresName() {
         assertThatThrownBy(() -> SampleItem.create(" ", Instant.now())).isInstanceOf(BusinessRuleException.class);
-        assertThat(SampleItem.create("  Primeiro ", Instant.now()).name()).isEqualTo("Primeiro");
+        assertThat(SampleItem.create("  First ", Instant.now()).name()).isEqualTo("First");
     }
 
     @Test
     void renameRequiresName() {
-        SampleItem sampleItem = SampleItem.create("Primeiro", Instant.now());
+        SampleItem sampleItem = SampleItem.create("First", Instant.now());
 
         assertThatThrownBy(() -> sampleItem.rename("")).isInstanceOf(BusinessRuleException.class);
-        sampleItem.rename("Segundo");
-        assertThat(sampleItem.name()).isEqualTo("Segundo");
+        sampleItem.rename("Second");
+        assertThat(sampleItem.name()).isEqualTo("Second");
     }
 }

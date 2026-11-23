@@ -10,5 +10,5 @@ export function sendError(error: FastifyError, request: FastifyRequest, reply: F
 }
 
 export function sendNotFound(request: FastifyRequest, reply: FastifyReply): FastifyReply {
-  return reply.status(404).send({ message: `A rota ${request.method} ${request.url.split('?')[0]} não existe.` });
+  return reply.status(404).send({ message: `The route ${request.method} ${request.url.split('?')[0]} does not exist.` });
 }

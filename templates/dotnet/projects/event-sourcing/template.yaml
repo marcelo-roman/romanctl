@@ -1,7 +1,7 @@
 id: event-sourcing
 stack: dotnet
 arch: [clean, cqrs, ddd, event-sourcing]
-description: API .NET com event sourcing, Clean Architecture, DDD e CQRS, com Marten e projeções
+description: .NET API with event sourcing, Clean Architecture, DDD and CQRS, with Marten and projections
 services: [postgres]
 requires: [dotnet]
 setup:

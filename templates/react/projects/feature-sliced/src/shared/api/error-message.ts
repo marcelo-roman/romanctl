@@ -1,6 +1,6 @@
 import { isApiError } from './api-error';
 
-const unexpected = 'Algo deu errado. Tente de novo.';
+const unexpected = 'Something went wrong. Try again.';
 
 export function errorMessage(error: unknown): string {
   if (!isApiError(error)) {

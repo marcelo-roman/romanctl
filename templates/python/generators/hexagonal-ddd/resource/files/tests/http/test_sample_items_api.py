@@ -16,13 +16,13 @@ def client() -> TestClient:
 
 
 def test_sample_item_crud(client: TestClient) -> None:
-    response = client.post("/sample-items", json={"name": "Primeiro"})
+    response = client.post("/sample-items", json={"name": "First"})
     assert response.status_code == 201
     sample_item_id = response.json()["id"]
     assert response.headers["location"] == f"/sample-items/{sample_item_id}"
 
-    assert client.put(f"/sample-items/{sample_item_id}", json={"name": "Segundo"}).status_code == 204
-    assert client.get(f"/sample-items/{sample_item_id}").json()["name"] == "Segundo"
+    assert client.put(f"/sample-items/{sample_item_id}", json={"name": "Second"}).status_code == 204
+    assert client.get(f"/sample-items/{sample_item_id}").json()["name"] == "Second"
     assert [item["id"] for item in client.get("/sample-items").json()] == [sample_item_id]
 
     assert client.delete(f"/sample-items/{sample_item_id}").status_code == 204

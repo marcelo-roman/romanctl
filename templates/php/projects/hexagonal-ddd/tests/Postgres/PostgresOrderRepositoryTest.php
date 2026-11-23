@@ -18,8 +18,8 @@ final class PostgresOrderRepositoryTest extends DatabaseTestCase
     {
         $repository = new PostgresOrderRepository($this->database);
         $order = Order::create('Ana', new DateTimeImmutable('now', new DateTimeZone('UTC')));
-        $order->addItem('Caneta', 2, new Money(350));
-        $order->addItem('Caderno', 1, new Money(1200));
+        $order->addItem('Pen', 2, new Money(350));
+        $order->addItem('Notebook', 1, new Money(1200));
         $repository->save($order);
 
         $loaded = $repository->find($order->id());
@@ -28,7 +28,7 @@ final class PostgresOrderRepositoryTest extends DatabaseTestCase
         self::assertSame('Ana', $loaded->customerName());
         self::assertEquals($order->createdAt(), $loaded->createdAt());
         self::assertEquals(new Money(1900), $loaded->total());
-        self::assertSame(['Caneta', 'Caderno'], array_map(static fn ($item) => $item->productName, $loaded->items()));
+        self::assertSame(['Pen', 'Notebook'], array_map(static fn ($item) => $item->productName, $loaded->items()));
         self::assertNull($repository->find(Identifier::generate()));
     }
 
@@ -37,7 +37,7 @@ final class PostgresOrderRepositoryTest extends DatabaseTestCase
         $repository = new PostgresOrderRepository($this->database);
         $order = Order::create('Bia', new DateTimeImmutable('now', new DateTimeZone('UTC')));
         $repository->save($order);
-        $order->addItem('Lápis', 3, new Money(100));
+        $order->addItem('Pencil', 3, new Money(100));
         $order->place(new DateTimeImmutable());
         $repository->save($order);
 

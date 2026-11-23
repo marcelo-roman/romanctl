@@ -6,7 +6,7 @@ export function AppLayout() {
     <div className="shell">
       <header className="topbar">
         <span className="brand">Sample App</span>
-        <nav aria-label="Principal">
+        <nav aria-label="Main">
           {navItems.map((item) => (
             <NavLink key={item.to} to={item.to} end>
               {item.label}

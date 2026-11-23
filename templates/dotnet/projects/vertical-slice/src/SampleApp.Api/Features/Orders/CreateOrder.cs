@@ -17,7 +17,7 @@ public static class CreateOrder
     {
         var errors = new Dictionary<string, string[]>();
         if (request.CustomerName is null)
-            errors["customerName"] = ["Informe o nome do cliente."];
+            errors["customerName"] = ["Customer name is required."];
         return errors;
     }
 

@@ -24,10 +24,10 @@ export interface ListTasksInput {
 function requiredTitle(title: string): string {
   const trimmed = title.trim();
   if (trimmed === '') {
-    throw new ValidationError('O título é obrigatório.');
+    throw new ValidationError('Title is required.');
   }
   if (trimmed.length > TITLE_MAX_LENGTH) {
-    throw new ValidationError(`O título deve ter no máximo ${TITLE_MAX_LENGTH} caracteres.`);
+    throw new ValidationError(`Title must be at most ${TITLE_MAX_LENGTH} characters.`);
   }
   return trimmed;
 }
@@ -43,7 +43,7 @@ export class TaskService {
     const now = this.clock();
     const dueDate = input.dueDate ?? null;
     if (dueDate !== null && dueDate < isoDate(now)) {
-      throw new RuleViolationError('A data de entrega não pode estar no passado.');
+      throw new RuleViolationError('The due date cannot be in the past.');
     }
     const task: Task = { id: randomUUID(), title, done: false, dueDate, createdAt: now };
     await this.tasks.add(task);
@@ -57,7 +57,7 @@ export class TaskService {
   async get(id: string): Promise<Task> {
     const task = await this.tasks.findById(id);
     if (!task) {
-      throw new NotFoundError(`Tarefa ${id} não encontrada.`);
+      throw new NotFoundError(`Task ${id} not found.`);
     }
     return task;
   }
@@ -65,7 +65,7 @@ export class TaskService {
   async update(id: string, input: UpdateTaskInput): Promise<Task> {
     const task = await this.get(id);
     if (input.done === true && task.done) {
-      throw new ConflictError('A tarefa já está concluída.');
+      throw new ConflictError('The task is already done.');
     }
     const updated: Task = {
       ...task,
@@ -80,7 +80,7 @@ export class TaskService {
   async delete(id: string): Promise<void> {
     const removed = await this.tasks.remove(id);
     if (!removed) {
-      throw new NotFoundError(`Tarefa ${id} não encontrada.`);
+      throw new NotFoundError(`Task ${id} not found.`);
     }
   }
 }

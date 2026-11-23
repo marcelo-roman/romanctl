@@ -76,6 +76,6 @@ impl OrderService {
         self.repository
             .find(id)
             .await?
-            .ok_or_else(|| ApplicationError::not_found("Pedido não encontrado."))
+            .ok_or_else(|| ApplicationError::not_found("Order not found."))
     }
 }

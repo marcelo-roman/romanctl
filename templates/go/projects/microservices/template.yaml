@@ -1,7 +1,7 @@
 id: microservices
 stack: go
 arch: [event-driven, microservices]
-description: Microsserviços Go de pedidos e faturamento que se falam por eventos, com outbox e inbox
+description: Go order and billing microservices that talk through events, with outbox and inbox
 services: [postgres, rabbitmq]
 requires: [go]
 setup:

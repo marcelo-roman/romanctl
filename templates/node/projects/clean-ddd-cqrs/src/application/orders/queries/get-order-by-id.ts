@@ -18,7 +18,7 @@ export class GetOrderByIdHandler implements IQueryHandler<GetOrderById, OrderVie
   async execute(query: GetOrderById): Promise<OrderView> {
     const order = await this.store.findById(OrderId.parse(query.orderId).value);
     if (!order) {
-      throw new NotFoundError(`Pedido ${query.orderId} não encontrado.`);
+      throw new NotFoundError(`Order ${query.orderId} not found.`);
     }
     return order;
   }

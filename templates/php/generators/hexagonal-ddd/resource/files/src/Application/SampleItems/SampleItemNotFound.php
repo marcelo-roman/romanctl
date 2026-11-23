@@ -10,6 +10,6 @@ final class SampleItemNotFound extends NotFound
 {
     public function __construct()
     {
-        parent::__construct('SampleItem não encontrado.');
+        parent::__construct('SampleItem not found.');
     }
 }

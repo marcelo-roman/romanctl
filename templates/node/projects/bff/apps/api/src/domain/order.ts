@@ -18,10 +18,10 @@ export class Order {
   static create(customerName: string, now: Date): Order {
     const name = customerName.trim();
     if (name === '') {
-      throw new DomainError('O nome do cliente é obrigatório.');
+      throw new DomainError('The customer name is required.');
     }
     if (name.length > CUSTOMER_NAME_MAX_LENGTH) {
-      throw new DomainError(`O nome do cliente deve ter no máximo ${CUSTOMER_NAME_MAX_LENGTH} caracteres.`);
+      throw new DomainError(`The customer name must have at most ${CUSTOMER_NAME_MAX_LENGTH} characters.`);
     }
     return new Order(randomUUID(), name, OrderStatus.Draft, now, []);
   }
@@ -56,10 +56,10 @@ export class Order {
 
   addItem(productName: string, quantity: number, unitPrice: Money): OrderItem {
     if (!this.canAddItems) {
-      throw new DomainError('Um pedido já realizado não pode ser alterado.');
+      throw new DomainError('An order that was already placed cannot be changed.');
     }
     if (this.lines.length > 0 && this.currency !== unitPrice.currency) {
-      throw new DomainError('Todos os itens do pedido devem usar a mesma moeda.');
+      throw new DomainError('All items of the order must use the same currency.');
     }
     const item = OrderItem.create(productName, quantity, unitPrice);
     this.lines.push(item);
@@ -68,10 +68,10 @@ export class Order {
 
   place(): void {
     if (this.state !== OrderStatus.Draft) {
-      throw new DomainError('O pedido já foi realizado.');
+      throw new DomainError('The order was already placed.');
     }
     if (this.lines.length === 0) {
-      throw new DomainError('Um pedido sem itens não pode ser realizado.');
+      throw new DomainError('An order without items cannot be placed.');
     }
     this.state = OrderStatus.Placed;
   }

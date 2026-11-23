@@ -14,16 +14,16 @@ public class SampleItemEndpointTests
     }
 
     [Fact]
-    public async Task Cria_renomeia_consulta_lista_e_remove()
+    public async Task Creates_renames_gets_lists_and_deletes()
     {
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
 
-        var id = await CreateAsync(client, "Exemplo");
-        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync($"/sample-items/{id}", new { name = "Outro" })).StatusCode);
+        var id = await CreateAsync(client, "Example");
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync($"/sample-items/{id}", new { name = "Other" })).StatusCode);
 
         var found = await client.GetFromJsonAsync<GetSampleItem.Response>($"/sample-items/{id}");
-        Assert.Equal("Outro", found!.Name);
+        Assert.Equal("Other", found!.Name);
         var listed = await client.GetFromJsonAsync<List<ListSampleItems.Response>>("/sample-items?limit=10");
         Assert.Equal(id, Assert.Single(listed!).Id);
 
@@ -32,16 +32,16 @@ public class SampleItemEndpointTests
     }
 
     [Fact]
-    public async Task Responde_400_422_e_404()
+    public async Task Answers_400_422_and_404()
     {
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
-        var id = await CreateAsync(client, "Exemplo");
+        var id = await CreateAsync(client, "Example");
 
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/sample-items", new { })).StatusCode);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await client.PostAsJsonAsync("/sample-items", new { name = " " })).StatusCode);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await client.PutAsJsonAsync($"/sample-items/{id}", new { name = "" })).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.PutAsJsonAsync($"/sample-items/{Guid.NewGuid()}", new { name = "Outro" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.PutAsJsonAsync($"/sample-items/{Guid.NewGuid()}", new { name = "Other" })).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync($"/sample-items/{Guid.NewGuid()}")).StatusCode);
     }
 }

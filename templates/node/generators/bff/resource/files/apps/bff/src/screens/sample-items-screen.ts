@@ -2,7 +2,7 @@ import type { ApiSampleItem, SampleItemsApi } from '../api/sample-items-api.js';
 
 const LIST_LIMIT = 50;
 
-const dateFormat = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'UTC' });
+const dateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'short', timeZone: 'UTC' });
 
 export interface SampleItemRow {
   id: string;

@@ -1,7 +1,7 @@
 [project]
 name = "sample-app"
 version = "0.1.0"
-description = "API Python com arquitetura hexagonal e DDD"
+description = "Python API with hexagonal architecture and DDD"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

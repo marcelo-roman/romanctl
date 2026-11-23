@@ -23,13 +23,13 @@ type Invoice struct {
 func Issue(orderID string, amountCents int64, currency string, now time.Time) (*Invoice, error) {
 	order, err := shared.ParseID(orderID)
 	if err != nil {
-		return nil, shared.Rule("A fatura precisa de um pedido válido.")
+		return nil, shared.Rule("An invoice needs a valid order.")
 	}
 	if amountCents < 0 {
-		return nil, shared.Rule("O valor da fatura não pode ser negativo.")
+		return nil, shared.Rule("Invoice amount cannot be negative.")
 	}
 	if len(strings.TrimSpace(currency)) != 3 {
-		return nil, shared.Rule("A moeda deve ter 3 letras, como BRL.")
+		return nil, shared.Rule("Currency must have 3 letters, like BRL.")
 	}
 	return &Invoice{id: shared.NewID(), orderID: order, amount: amountCents, currency: strings.ToUpper(strings.TrimSpace(currency)),
 		status: Issued, issuedAt: now}, nil

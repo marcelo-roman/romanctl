@@ -11,4 +11,4 @@ def parse_id(value: str) -> str:
     try:
         return str(uuid.UUID(value))
     except ValueError:
-        raise BusinessRuleError("Identificador inválido.") from None
+        raise BusinessRuleError("Invalid identifier.") from None

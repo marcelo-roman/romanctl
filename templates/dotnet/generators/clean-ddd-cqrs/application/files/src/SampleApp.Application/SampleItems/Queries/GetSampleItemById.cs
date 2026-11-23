@@ -9,5 +9,5 @@ internal sealed class GetSampleItemByIdHandler(ISampleItemReadStore store) : IQu
 {
     public async Task<SampleItemDto> HandleAsync(GetSampleItemById query, CancellationToken cancellationToken) =>
         await store.FindAsync(query.Id, cancellationToken)
-        ?? throw new NotFoundException($"SampleItem {query.Id} não encontrado.");
+        ?? throw new NotFoundException($"SampleItem {query.Id} not found.");
 }

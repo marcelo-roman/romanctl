@@ -1,4 +1,4 @@
-description: Testes do agregado em Given/When/Then, da projeção e dos endpoints
+description: Given/When/Then tests for the aggregate, the projection and the endpoints
 aliases: [tests, teste]
 requires:
   - path: src/SampleApp.Domain/SampleItems/SampleItem.cs

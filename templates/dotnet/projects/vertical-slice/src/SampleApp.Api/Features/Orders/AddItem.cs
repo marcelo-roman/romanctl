@@ -16,11 +16,11 @@ public static class AddItem
     {
         var errors = new Dictionary<string, string[]>();
         if (request.ProductName is null)
-            errors["productName"] = ["Informe o nome do produto."];
+            errors["productName"] = ["Product name is required."];
         if (request.Quantity is null)
-            errors["quantity"] = ["Informe a quantidade."];
+            errors["quantity"] = ["Quantity is required."];
         if (request.UnitPrice is null)
-            errors["unitPrice"] = ["Informe o preço unitário."];
+            errors["unitPrice"] = ["Unit price is required."];
         return errors;
     }
 
@@ -33,7 +33,7 @@ public static class AddItem
 
         var order = await db.Orders.FirstOrDefaultAsync(order => order.Id == id, cancellationToken);
         if (order is null)
-            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Não encontrado", detail: $"Pedido {id} não encontrado.");
+            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, title: "Not found", detail: $"Order {id} not found.");
 
         var unitPrice = new Money(request.UnitPrice!.Value, request.Currency ?? Order.DefaultCurrency);
         order.AddItem(request.ProductName!, request.Quantity!.Value, unitPrice);

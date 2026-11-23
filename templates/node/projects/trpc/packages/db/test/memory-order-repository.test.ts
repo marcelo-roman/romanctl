@@ -15,7 +15,7 @@ describe('MemoryOrderRepository', () => {
 
     const loaded = await repository.findById('a');
     expect(loaded?.customerName).toBe('Ana');
-    loaded?.items.push({ id: 'x', productName: 'Caneta', quantity: 1, unitPriceCents: 100, currency: 'BRL' });
+    loaded?.items.push({ id: 'x', productName: 'Pen', quantity: 1, unitPriceCents: 100, currency: 'USD' });
     expect((await repository.findById('a'))?.items).toEqual([]);
   });
 

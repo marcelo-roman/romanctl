@@ -3,7 +3,7 @@ import { emptySampleItem, toSampleItemInput, validateSampleItem } from './sample
 
 describe('sample item form', () => {
   it('requires a name', () => {
-    expect(validateSampleItem(emptySampleItem)).toBe('Informe o nome.');
+    expect(validateSampleItem(emptySampleItem)).toBe('Enter the name.');
     expect(validateSampleItem({ name: 'Ana' })).toBeUndefined();
   });
 

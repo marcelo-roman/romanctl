@@ -12,9 +12,9 @@ internal sealed class SampleItemHandler(ISampleParentRepository repository, IUni
     public async Task<bool> HandleAsync(SampleItem command, CancellationToken cancellationToken)
     {
         var sampleParent = await repository.GetByIdAsync(new SampleParentId(command.Id), cancellationToken)
-            ?? throw new NotFoundException($"SampleParent {command.Id} não encontrado.");
+            ?? throw new NotFoundException($"SampleParent {command.Id} not found.");
 
-        // Chame aqui o comportamento do agregado, por exemplo: sampleParent.Archive();
+        // Call the aggregate behavior here, for example: sampleParent.Archive();
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return true;

@@ -26,7 +26,7 @@ final class Order
     public static function create(string $customerName, DateTimeImmutable $now): self
     {
         if (trim($customerName) === '') {
-            throw new BusinessRuleViolation('O nome do cliente é obrigatório.');
+            throw new BusinessRuleViolation('Customer name is required.');
         }
 
         return new self(Identifier::generate(), trim($customerName), OrderStatus::Draft, $now);
@@ -89,10 +89,10 @@ final class Order
     public function addItem(string $productName, int $quantity, Money $unitPrice): void
     {
         if ($this->status !== OrderStatus::Draft) {
-            throw new BusinessRuleViolation('Um pedido já realizado não pode ser alterado.');
+            throw new BusinessRuleViolation('A placed order cannot be changed.');
         }
         if ($this->items !== [] && $unitPrice->currency !== $this->currency()) {
-            throw new BusinessRuleViolation('Todos os itens do pedido devem usar a mesma moeda.');
+            throw new BusinessRuleViolation('All order items must use the same currency.');
         }
         $this->items[] = OrderItem::create($productName, $quantity, $unitPrice);
     }
@@ -100,10 +100,10 @@ final class Order
     public function place(DateTimeImmutable $now): void
     {
         if ($this->status !== OrderStatus::Draft) {
-            throw new BusinessRuleViolation('O pedido já foi realizado.');
+            throw new BusinessRuleViolation('The order has already been placed.');
         }
         if ($this->items === []) {
-            throw new BusinessRuleViolation('Um pedido sem itens não pode ser realizado.');
+            throw new BusinessRuleViolation('An order without items cannot be placed.');
         }
         $this->status = OrderStatus::Placed;
         $total = $this->total();

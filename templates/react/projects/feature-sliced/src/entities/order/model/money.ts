@@ -3,7 +3,7 @@ export interface Money {
   currency: string;
 }
 
-export const defaultCurrency = 'BRL';
+export const defaultCurrency = 'USD';
 
 const formatters = new Map<string, Intl.NumberFormat>();
 
@@ -16,7 +16,7 @@ function formatterFor(currency: string): Intl.NumberFormat {
   if (cached) {
     return cached;
   }
-  const created = new Intl.NumberFormat('pt-BR', { style: 'currency', currency });
+  const created = new Intl.NumberFormat('en-US', { style: 'currency', currency });
   formatters.set(currency, created);
   return created;
 }

@@ -12,13 +12,13 @@ def test_create_requires_name() -> None:
     with pytest.raises(BusinessRuleError):
         SampleItem.create(" ", NOW)
 
-    assert SampleItem.create("  Primeiro ", NOW).name == "Primeiro"
+    assert SampleItem.create("  First ", NOW).name == "First"
 
 
 def test_rename_requires_name() -> None:
-    sample_item = SampleItem.create("Primeiro", NOW)
+    sample_item = SampleItem.create("First", NOW)
     with pytest.raises(BusinessRuleError):
         sample_item.rename("")
-    sample_item.rename("Segundo")
+    sample_item.rename("Second")
 
-    assert sample_item.name == "Segundo"
+    assert sample_item.name == "Second"

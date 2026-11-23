@@ -19,13 +19,13 @@ describe.skipIf(!databaseUrl)(suiteTitle('SampleItems in PostgreSQL'), () => {
   afterAll(() => db?.onModuleDestroy());
 
   it('saves, renames, reads and removes', async () => {
-    const sampleItem = SampleItem.create('Primeiro', new Date(Date.now() + 60_000));
+    const sampleItem = SampleItem.create('First', new Date(Date.now() + 60_000));
     await repository.save(sampleItem);
-    sampleItem.rename('Segundo');
+    sampleItem.rename('Second');
     await repository.save(sampleItem);
 
-    expect((await repository.findById(sampleItem.id))?.name).toBe('Segundo');
-    expect(await readStore.findById(sampleItem.id.value)).toMatchObject({ id: sampleItem.id.value, name: 'Segundo' });
+    expect((await repository.findById(sampleItem.id))?.name).toBe('Second');
+    expect(await readStore.findById(sampleItem.id.value)).toMatchObject({ id: sampleItem.id.value, name: 'Second' });
     expect((await readStore.list(1)).map((view) => view.id)).toEqual([sampleItem.id.value]);
 
     await repository.remove(sampleItem);

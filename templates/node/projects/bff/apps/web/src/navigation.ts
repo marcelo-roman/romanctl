@@ -4,6 +4,6 @@ export interface NavigationItem {
 }
 
 export const navigation: NavigationItem[] = [
-  { path: '/orders', label: 'Pedidos' },
+  { path: '/orders', label: 'Orders' },
   // romanctl:navigation
 ];

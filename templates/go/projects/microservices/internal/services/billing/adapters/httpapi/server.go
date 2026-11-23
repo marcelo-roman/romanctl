@@ -74,11 +74,11 @@ func writeError(w http.ResponseWriter, err error) {
 	var ruleErr *shared.RuleError
 	switch {
 	case errors.Is(err, shared.ErrNotFound):
-		httpx.WriteProblem(w, http.StatusNotFound, "Não encontrado", err.Error())
+		httpx.WriteProblem(w, http.StatusNotFound, "Not found", err.Error())
 	case errors.As(err, &ruleErr):
-		httpx.WriteProblem(w, http.StatusUnprocessableEntity, "Regra de negócio violada", err.Error())
+		httpx.WriteProblem(w, http.StatusUnprocessableEntity, "Business rule violated", err.Error())
 	default:
 		slog.Error("request failed", "error", err)
-		httpx.WriteProblem(w, http.StatusInternalServerError, "Erro interno", "")
+		httpx.WriteProblem(w, http.StatusInternalServerError, "Internal error", "")
 	}
 }

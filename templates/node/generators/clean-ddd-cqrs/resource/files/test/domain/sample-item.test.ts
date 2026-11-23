@@ -7,13 +7,13 @@ const now = new Date('2026-01-01T12:00:00Z');
 describe('SampleItem', () => {
   it('requires a name and trims it', () => {
     expect(() => SampleItem.create(' ', now)).toThrow(DomainError);
-    expect(SampleItem.create('  Primeiro ', now).name).toBe('Primeiro');
+    expect(SampleItem.create('  First ', now).name).toBe('First');
   });
 
   it('keeps the name when a rename is refused', () => {
-    const sampleItem = SampleItem.create('Primeiro', now);
+    const sampleItem = SampleItem.create('First', now);
     expect(() => sampleItem.rename('')).toThrow(DomainError);
-    sampleItem.rename('Segundo');
-    expect(sampleItem.name).toBe('Segundo');
+    sampleItem.rename('Second');
+    expect(sampleItem.name).toBe('Second');
   });
 });

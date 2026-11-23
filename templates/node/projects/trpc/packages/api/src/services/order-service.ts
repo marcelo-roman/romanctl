@@ -53,7 +53,7 @@ export class OrderService {
   private async load(orderId: string): Promise<Order> {
     const record = await this.orders.findById(orderId);
     if (!record) {
-      throw new NotFoundError('Pedido não encontrado.');
+      throw new NotFoundError('Order not found.');
     }
     return fromOrderRecord(record);
   }

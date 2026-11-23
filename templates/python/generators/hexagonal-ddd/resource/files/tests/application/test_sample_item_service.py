@@ -31,10 +31,10 @@ def service() -> SampleItemService:
 
 
 def test_create_rename_and_delete(service: SampleItemService) -> None:
-    sample_item_id = service.create("Primeiro")
-    service.rename(sample_item_id, "Segundo")
+    sample_item_id = service.create("First")
+    service.rename(sample_item_id, "Second")
 
-    assert service.get(sample_item_id).name == "Segundo"
+    assert service.get(sample_item_id).name == "Second"
     assert [view.id for view in service.list_recent()] == [sample_item_id]
 
     service.delete(sample_item_id)
@@ -44,6 +44,6 @@ def test_create_rename_and_delete(service: SampleItemService) -> None:
 
 def test_unknown_sample_item_is_not_found(service: SampleItemService) -> None:
     with pytest.raises(SampleItemNotFoundError):
-        service.rename(new_id(), "Nome")
+        service.rename(new_id(), "Name")
     with pytest.raises(SampleItemNotFoundError):
         service.delete(new_id())

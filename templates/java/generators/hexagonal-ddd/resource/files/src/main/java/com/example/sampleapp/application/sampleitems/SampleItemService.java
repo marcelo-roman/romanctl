@@ -48,6 +48,6 @@ public class SampleItemService {
     }
 
     private static NotFoundException notFound() {
-        return new NotFoundException("SampleItem não encontrado.");
+        return new NotFoundException("SampleItem not found.");
     }
 }

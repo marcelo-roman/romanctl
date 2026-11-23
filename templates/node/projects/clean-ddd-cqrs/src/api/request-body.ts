@@ -5,7 +5,7 @@ export class RequestBody {
 
   static from(body: unknown): RequestBody {
     if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-      throw new BadRequestException('O corpo da requisição deve ser um objeto JSON.');
+      throw new BadRequestException('The request body must be a JSON object.');
     }
     return new RequestBody(body as Record<string, unknown>);
   }
@@ -20,7 +20,7 @@ export class RequestBody {
       return undefined;
     }
     if (typeof value !== 'string') {
-      throw new BadRequestException(`O campo ${name} deve ser um texto.`);
+      throw new BadRequestException(`The field ${name} must be a string.`);
     }
     return value;
   }
@@ -31,7 +31,7 @@ export class RequestBody {
       return 0;
     }
     if (typeof value !== 'number' || !Number.isFinite(value)) {
-      throw new BadRequestException(`O campo ${name} deve ser um número.`);
+      throw new BadRequestException(`The field ${name} must be a number.`);
     }
     return value;
   }
@@ -39,7 +39,7 @@ export class RequestBody {
   integer(name: string): number {
     const value = this.number(name);
     if (!Number.isInteger(value)) {
-      throw new BadRequestException(`O campo ${name} deve ser um número inteiro.`);
+      throw new BadRequestException(`The field ${name} must be an integer.`);
     }
     return value;
   }

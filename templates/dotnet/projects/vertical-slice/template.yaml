@@ -1,7 +1,7 @@
 id: vertical-slice
 stack: dotnet
 arch: [vertical-slice]
-description: API .NET com Vertical Slice Architecture e Minimal APIs, uma pasta por funcionalidade
+description: .NET API with Vertical Slice Architecture and Minimal APIs, one folder per feature
 services: [postgres]
 requires: [dotnet]
 setup:

@@ -1,4 +1,4 @@
-description: Objeto de valor imutável, com validação (use --in)
+description: Immutable value object, with validation (use --in)
 needsIn: true
 aliases: [vo, valueobject, valor]
 requires:

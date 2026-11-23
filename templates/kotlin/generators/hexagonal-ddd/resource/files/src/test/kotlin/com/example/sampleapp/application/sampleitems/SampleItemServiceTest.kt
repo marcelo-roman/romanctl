@@ -30,11 +30,11 @@ class SampleItemServiceTest {
 
     @Test
     fun `create, rename, list and delete`() {
-        val id = service.create("Primeiro").toString()
+        val id = service.create("First").toString()
 
-        service.rename(id, "Segundo")
+        service.rename(id, "Second")
 
-        assertEquals("Segundo", service.get(id).name)
+        assertEquals("Second", service.get(id).name)
         assertEquals(clock.instant(), service.get(id).createdAt)
         assertEquals(1, service.list(null).size)
         service.delete(id)

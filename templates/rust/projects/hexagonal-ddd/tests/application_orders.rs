@@ -57,7 +57,7 @@ fn service() -> (OrderService, Arc<FakeRepository>, Arc<FakeEvents>) {
 
 fn pen(quantity: i32) -> AddItem {
     AddItem {
-        product_name: "Caneta".to_owned(),
+        product_name: "Pen".to_owned(),
         quantity,
         unit_price: 2.5,
         currency: None,
@@ -74,7 +74,7 @@ async fn placing_publishes_event() {
     let view = service.get(id).await.unwrap();
     assert_eq!(view.status, "Placed");
     assert_eq!(view.total, 7.5);
-    assert_eq!(view.currency, "BRL");
+    assert_eq!(view.currency, "USD");
     assert_eq!(view.created_at, fixed_now());
     assert_eq!(events.published.lock().unwrap().len(), 1);
 }

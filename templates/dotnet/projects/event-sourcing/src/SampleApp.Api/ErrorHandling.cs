@@ -11,10 +11,10 @@ internal sealed class ErrorHandling : IExceptionHandler
     {
         var (status, title) = exception switch
         {
-            BadHttpRequestException => (StatusCodes.Status400BadRequest, "Requisição inválida"),
-            NotFoundException => (StatusCodes.Status404NotFound, "Não encontrado"),
-            ConcurrencyException => (StatusCodes.Status409Conflict, "Conflito de versão"),
-            DomainException => (StatusCodes.Status422UnprocessableEntity, "Regra de negócio violada"),
+            BadHttpRequestException => (StatusCodes.Status400BadRequest, "Invalid request"),
+            NotFoundException => (StatusCodes.Status404NotFound, "Not found"),
+            ConcurrencyException => (StatusCodes.Status409Conflict, "Version conflict"),
+            DomainException => (StatusCodes.Status422UnprocessableEntity, "Business rule violated"),
             _ => (0, ""),
         };
         if (status == 0)

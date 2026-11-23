@@ -30,7 +30,7 @@ class OrderHttpTest {
         val id = created.createdId()
         assertEquals("/orders/$id", created.headers[HttpHeaders.Location])
 
-        val added = client.send(HttpMethod.Post, "/orders/$id/items", """{"productName":"Caneta","quantity":2,"unitPrice":3.5}""")
+        val added = client.send(HttpMethod.Post, "/orders/$id/items", """{"productName":"Pen","quantity":2,"unitPrice":3.5}""")
         assertEquals(HttpStatusCode.NoContent, added.status)
         assertEquals(HttpStatusCode.NoContent, client.send(HttpMethod.Post, "/orders/$id/place").status)
 
@@ -58,8 +58,8 @@ class OrderHttpTest {
         assertEquals(ContentType("application", "problem+json"), response.contentType()?.withoutParameters())
         val problem = response.json().jsonObject
         assertEquals(422, problem.getValue("status").jsonPrimitive.int)
-        assertEquals("Regra de negócio violada", problem.getValue("title").jsonPrimitive.content)
-        assertEquals("Um pedido sem itens não pode ser realizado.", problem.getValue("detail").jsonPrimitive.content)
+        assertEquals("Business rule violated", problem.getValue("title").jsonPrimitive.content)
+        assertEquals("An order without items cannot be placed.", problem.getValue("detail").jsonPrimitive.content)
     }
 
     @Test
@@ -72,7 +72,7 @@ class OrderHttpTest {
         val response = client.send(HttpMethod.Get, "/orders/00000000-0000-4000-8000-000000000000")
 
         assertEquals(HttpStatusCode.NotFound, response.status)
-        assertEquals("Pedido não encontrado.", response.json().jsonObject.getValue("detail").jsonPrimitive.content)
+        assertEquals("Order not found.", response.json().jsonObject.getValue("detail").jsonPrimitive.content)
     }
 
     @Test
@@ -80,7 +80,7 @@ class OrderHttpTest {
         val response = client.send(HttpMethod.Get, "/orders/abc")
 
         assertEquals(HttpStatusCode.UnprocessableEntity, response.status)
-        assertEquals("Identificador inválido.", response.json().jsonObject.getValue("detail").jsonPrimitive.content)
+        assertEquals("Invalid identifier.", response.json().jsonObject.getValue("detail").jsonPrimitive.content)
     }
 
     @Test

@@ -35,5 +35,5 @@ public abstract class EventSourcedAggregate
     protected abstract void When(IDomainEvent domainEvent);
 
     protected InvalidOperationException UnknownEvent(IDomainEvent domainEvent) =>
-        new($"{GetType().Name} não sabe aplicar o evento {domainEvent.GetType().Name}.");
+        new($"{GetType().Name} does not know how to apply event {domainEvent.GetType().Name}.");
 }

@@ -28,13 +28,13 @@ class SampleItemHttpTest {
 
     @Test
     void crud() {
-        ResponseEntity<String> created = api.send(HttpMethod.POST, "/sample-items", "{\"name\":\"Primeiro\"}");
+        ResponseEntity<String> created = api.send(HttpMethod.POST, "/sample-items", "{\"name\":\"First\"}");
         assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         UUID id = ApiClient.createdId(created);
 
-        assertThat(api.send(HttpMethod.PUT, "/sample-items/" + id, "{\"name\":\"Segundo\"}").getStatusCode())
+        assertThat(api.send(HttpMethod.PUT, "/sample-items/" + id, "{\"name\":\"Second\"}").getStatusCode())
                 .isEqualTo(HttpStatus.NO_CONTENT);
-        assertThat(api.get("/sample-items/" + id, SampleItemView.class).name()).isEqualTo("Segundo");
+        assertThat(api.get("/sample-items/" + id, SampleItemView.class).name()).isEqualTo("Second");
         assertThat(api.get("/sample-items?limit=10", SampleItemView[].class)).extracting(SampleItemView::id).contains(id);
 
         assertThat(api.send(HttpMethod.DELETE, "/sample-items/" + id, null).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);

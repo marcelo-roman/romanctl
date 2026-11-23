@@ -1,7 +1,7 @@
 id: layered
 stack: node
 arch: [layered]
-description: API Node enxuta em camadas (rotas, serviços e repositórios), com Fastify e TypeScript
+description: Lean layered Node API (routes, services and repositories), with Fastify and TypeScript
 services: [postgres]
 requires: [node]
 setup:

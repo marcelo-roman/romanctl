@@ -20,7 +20,7 @@ export class RenameSampleItemHandler implements ICommandHandler<RenameSampleItem
   async execute(command: RenameSampleItem): Promise<void> {
     const sampleItem = await this.repository.findById(SampleItemId.parse(command.id));
     if (!sampleItem) {
-      throw new NotFoundError(`SampleItem ${command.id} não encontrado.`);
+      throw new NotFoundError(`SampleItem ${command.id} not found.`);
     }
     sampleItem.rename(command.name);
     await this.repository.save(sampleItem);

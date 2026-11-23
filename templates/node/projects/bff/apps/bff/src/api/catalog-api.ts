@@ -9,6 +9,6 @@ export class CatalogApi {
   }
 
   get(id: string): Promise<ApiCatalogProduct> {
-    return this.http.get(`/catalog/products/${encodeURIComponent(id)}`, { notFound: 'Produto não encontrado no catálogo.' });
+    return this.http.get(`/catalog/products/${encodeURIComponent(id)}`, { notFound: 'Product not found in the catalog.' });
   }
 }

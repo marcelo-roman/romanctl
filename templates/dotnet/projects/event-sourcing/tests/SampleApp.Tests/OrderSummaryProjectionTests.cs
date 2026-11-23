@@ -16,12 +16,12 @@ public class OrderSummaryProjectionTests
     }
 
     [Fact]
-    public void Monta_o_resumo_a_partir_dos_eventos()
+    public void Builds_the_summary_from_events()
     {
         var summary = Project(
             new OrderCreated("Ana", Now),
-            new ItemAdded("Caneta", 2, 1.50m, "BRL"),
-            new ItemAdded("Caderno", 1, 10m, "BRL"),
+            new ItemAdded("Pen", 2, 1.50m, "BRL"),
+            new ItemAdded("Notebook", 1, 10m, "BRL"),
             new OrderPlaced(13m, "BRL", Now.AddMinutes(5)));
 
         Assert.NotNull(summary);
@@ -32,11 +32,11 @@ public class OrderSummaryProjectionTests
         Assert.Equal("BRL", summary.Currency);
         Assert.Equal(Now, summary.CreatedAt);
         Assert.Equal(Now.AddMinutes(5), summary.PlacedAt);
-        Assert.Equal([new OrderSummaryItem("Caneta", 2, 1.50m, 3m), new OrderSummaryItem("Caderno", 1, 10m, 10m)], summary.Items);
+        Assert.Equal([new OrderSummaryItem("Pen", 2, 1.50m, 3m), new OrderSummaryItem("Notebook", 1, 10m, 10m)], summary.Items);
     }
 
     [Fact]
-    public void Pedido_novo_fica_em_rascunho_com_moeda_padrao()
+    public void New_order_stays_as_draft_with_default_currency()
     {
         var summary = Project(new OrderCreated("Ana", Now));
 
@@ -47,11 +47,11 @@ public class OrderSummaryProjectionTests
     }
 
     [Fact]
-    public void Ignora_eventos_sem_a_criacao() =>
-        Assert.Null(Project(new ItemAdded("Caneta", 1, 1m, "BRL")));
+    public void Ignores_events_without_creation() =>
+        Assert.Null(Project(new ItemAdded("Pen", 1, 1m, "BRL")));
 
     [Fact]
-    public void Declara_os_eventos_que_trata() =>
+    public void Declares_the_events_it_handles() =>
         Assert.Equal(
             [typeof(OrderCreated), typeof(ItemAdded), typeof(OrderPlaced)],
             new OrderSummaryProjection().EventTypes);

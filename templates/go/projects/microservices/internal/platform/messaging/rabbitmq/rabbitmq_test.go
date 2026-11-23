@@ -84,7 +84,7 @@ func (r *recorder) handle(_ context.Context, e messaging.Envelope) error {
 	r.arrived <- struct{}{}
 	if r.failures > 0 {
 		r.failures--
-		return errors.New("falha passageira")
+		return errors.New("transient failure")
 	}
 	return nil
 }

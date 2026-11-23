@@ -10,9 +10,9 @@ public sealed record Money
     public Money(decimal amount, string currency)
     {
         if (amount < 0)
-            throw new DomainException("O valor não pode ser negativo.");
+            throw new DomainException("Amount cannot be negative.");
         if (string.IsNullOrWhiteSpace(currency) || currency.Length != 3)
-            throw new DomainException("A moeda deve ter 3 letras, como BRL.");
+            throw new DomainException("Currency must have 3 letters, like BRL.");
 
         Amount = amount;
         Currency = currency.ToUpperInvariant();
@@ -25,7 +25,7 @@ public sealed record Money
     public Money Add(Money other)
     {
         if (other.Currency != Currency)
-            throw new DomainException("Não é possível somar moedas diferentes.");
+            throw new DomainException("Cannot add different currencies.");
         return new Money(Amount + other.Amount, Currency);
     }
 }

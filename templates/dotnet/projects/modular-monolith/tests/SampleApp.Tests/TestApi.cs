@@ -16,7 +16,7 @@ public static class TestApi
         return created.Id;
     }
 
-    public static Task<Guid> CreateProductAsync(HttpClient client, string name = "Caneta", decimal price = 1.50m, string? currency = null) =>
+    public static Task<Guid> CreateProductAsync(HttpClient client, string name = "Pen", decimal price = 1.50m, string? currency = null) =>
         CreateAsync(client, "/catalog/products", new { name, price, currency });
 
     public static Task<Guid> CreateOrderAsync(HttpClient client, string customerName = "Ana") =>

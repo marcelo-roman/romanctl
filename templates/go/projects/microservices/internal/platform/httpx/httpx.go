@@ -23,7 +23,7 @@ func Health(mux *http.ServeMux) {
 
 func Decode(w http.ResponseWriter, r *http.Request, into any) bool {
 	if err := json.NewDecoder(r.Body).Decode(into); err != nil {
-		WriteProblem(w, http.StatusBadRequest, "Requisição inválida", err.Error())
+		WriteProblem(w, http.StatusBadRequest, "Invalid request", err.Error())
 		return false
 	}
 	return true

@@ -14,9 +14,9 @@ describe('TaskService', () => {
   });
 
   it('creates a task with a trimmed title', async () => {
-    const task = await service.create({ title: '  Comprar pão  ', dueDate: '2026-03-10' });
+    const task = await service.create({ title: '  Buy bread  ', dueDate: '2026-03-10' });
 
-    expect(task).toMatchObject({ title: 'Comprar pão', done: false, dueDate: '2026-03-10', createdAt: now });
+    expect(task).toMatchObject({ title: 'Buy bread', done: false, dueDate: '2026-03-10', createdAt: now });
     expect(await service.get(task.id)).toEqual(task);
   });
 
@@ -26,20 +26,20 @@ describe('TaskService', () => {
   });
 
   it('refuses a due date in the past on create', async () => {
-    await expect(service.create({ title: 'Pagar conta', dueDate: '2026-03-09' })).rejects.toThrow(RuleViolationError);
+    await expect(service.create({ title: 'Pay the bill', dueDate: '2026-03-09' })).rejects.toThrow(RuleViolationError);
   });
 
   it('updates title, done and due date', async () => {
-    const task = await service.create({ title: 'Ler', dueDate: '2026-04-01' });
+    const task = await service.create({ title: 'Read', dueDate: '2026-04-01' });
 
-    const updated = await service.update(task.id, { title: ' Ler livro ', done: true, dueDate: null });
+    const updated = await service.update(task.id, { title: ' Read a book ', done: true, dueDate: null });
 
-    expect(updated).toMatchObject({ id: task.id, title: 'Ler livro', done: true, dueDate: null });
+    expect(updated).toMatchObject({ id: task.id, title: 'Read a book', done: true, dueDate: null });
     expect(await service.get(task.id)).toEqual(updated);
   });
 
   it('refuses to complete a task twice', async () => {
-    const task = await service.create({ title: 'Lavar louça' });
+    const task = await service.create({ title: 'Wash the dishes' });
     await service.update(task.id, { done: true });
 
     await expect(service.update(task.id, { done: true })).rejects.toThrow(ConflictError);
@@ -47,12 +47,12 @@ describe('TaskService', () => {
   });
 
   it('filters by done and limits the list', async () => {
-    const first = await service.create({ title: 'Um' });
-    await service.create({ title: 'Dois' });
+    const first = await service.create({ title: 'One' });
+    await service.create({ title: 'Two' });
     await service.update(first.id, { done: true });
 
-    expect((await service.list({ done: true })).map((task) => task.title)).toEqual(['Um']);
-    expect((await service.list({ done: false })).map((task) => task.title)).toEqual(['Dois']);
+    expect((await service.list({ done: true })).map((task) => task.title)).toEqual(['One']);
+    expect((await service.list({ done: false })).map((task) => task.title)).toEqual(['Two']);
     expect(await service.list({ limit: 1 })).toHaveLength(1);
   });
 
@@ -63,7 +63,7 @@ describe('TaskService', () => {
   });
 
   it('deletes a task', async () => {
-    const task = await service.create({ title: 'Varrer' });
+    const task = await service.create({ title: 'Sweep' });
 
     await service.delete(task.id);
 

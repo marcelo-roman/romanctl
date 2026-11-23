@@ -6,7 +6,7 @@ export interface ApiSampleItem {
   createdAt: string;
 }
 
-const notFound = 'Registro não encontrado.';
+const notFound = 'Item not found.';
 
 export class SampleItemsApi {
   constructor(private readonly http: ApiHttp) {}

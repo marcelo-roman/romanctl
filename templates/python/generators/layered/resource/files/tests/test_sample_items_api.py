@@ -7,15 +7,15 @@ PROBLEM_JSON = "application/problem+json"
 
 
 def test_sample_item_crud(api_client: APIClient) -> None:
-    response = api_client.post("/sample-items", {"name": " Primeiro "}, format="json")
+    response = api_client.post("/sample-items", {"name": " First "}, format="json")
     assert response.status_code == 201
     sample_item = response.json()
     assert response["Location"] == f"/sample-items/{sample_item['id']}"
-    assert sample_item["name"] == "Primeiro"
+    assert sample_item["name"] == "First"
 
-    renamed = api_client.patch(f"/sample-items/{sample_item['id']}", {"name": "Segundo"}, format="json")
+    renamed = api_client.patch(f"/sample-items/{sample_item['id']}", {"name": "Second"}, format="json")
     assert renamed.status_code == 200
-    assert api_client.get(f"/sample-items/{sample_item['id']}").json()["name"] == "Segundo"
+    assert api_client.get(f"/sample-items/{sample_item['id']}").json()["name"] == "Second"
     assert [item["id"] for item in api_client.get("/sample-items?limit=10").json()] == [sample_item["id"]]
 
     assert api_client.delete(f"/sample-items/{sample_item['id']}").status_code == 204

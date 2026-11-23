@@ -16,7 +16,7 @@ export function OrderDetails({ orderId }: OrderDetailsProps) {
   const order = useQuery(trpc.orders.byId.queryOptions({ orderId }));
 
   if (order.isPending) {
-    return <p>Carregando pedido...</p>;
+    return <p>Loading order...</p>;
   }
   if (order.isError) {
     return <p role="alert">{errorMessage(order.error)}</p>;
@@ -24,19 +24,19 @@ export function OrderDetails({ orderId }: OrderDetailsProps) {
   const { customerName, status, items, total, currency } = order.data;
   return (
     <section>
-      <h1>Pedido de {customerName}</h1>
+      <h1>Order for {customerName}</h1>
       <p>
-        Situação: <strong>{statusLabel(status)}</strong>
+        Status: <strong>{statusLabel(status)}</strong>
       </p>
       {items.length === 0 ? (
-        <p>Nenhum item ainda.</p>
+        <p>No items yet.</p>
       ) : (
         <table>
           <thead>
             <tr>
-              <th>Produto</th>
-              <th>Quantidade</th>
-              <th>Preço unitário</th>
+              <th>Product</th>
+              <th>Quantity</th>
+              <th>Unit price</th>
               <th>Subtotal</th>
             </tr>
           </thead>

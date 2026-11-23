@@ -84,12 +84,12 @@ describe('order use cases', () => {
 
   it('creates, fills and places an order, publishing OrderPlaced', async () => {
     const id = await commands.execute(new CreateOrder('Ana'));
-    await commands.execute(new AddOrderItem(id, 'Caneta', 3, 2.5));
+    await commands.execute(new AddOrderItem(id, 'Pen', 3, 2.5));
     await commands.execute(new PlaceOrder(id));
 
     const view = await queries.execute(new GetOrderById(id));
-    expect(view).toMatchObject({ status: 'Placed', total: 7.5, currency: 'BRL', createdAt: '2026-01-01T00:00:00.000Z' });
-    expect(published).toEqual([new OrderPlaced(id, 7.5, 'BRL', new Date('2026-01-01T00:00:00Z'))]);
+    expect(view).toMatchObject({ status: 'Placed', total: 7.5, currency: 'USD', createdAt: '2026-01-01T00:00:00.000Z' });
+    expect(published).toEqual([new OrderPlaced(id, 7.5, 'USD', new Date('2026-01-01T00:00:00Z'))]);
   });
 
   it('reports unknown orders as not found', async () => {
@@ -102,7 +102,7 @@ describe('order use cases', () => {
     await expect(commands.execute(new CreateOrder(''))).rejects.toThrow(DomainError);
     const id = await commands.execute(new CreateOrder('Ana'));
     await expect(commands.execute(new PlaceOrder(id))).rejects.toThrow(DomainError);
-    await expect(commands.execute(new AddOrderItem(id, 'Caneta', 1, -1))).rejects.toThrow(DomainError);
+    await expect(commands.execute(new AddOrderItem(id, 'Pen', 1, -1))).rejects.toThrow(DomainError);
     expect(published).toEqual([]);
   });
 

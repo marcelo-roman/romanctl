@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var ErrRejected = errors.New("mensagem rejeitada")
+var ErrRejected = errors.New("message rejected")
 
 type Envelope struct {
 	ID         string          `json:"id"`
@@ -33,7 +33,7 @@ func NewEnvelope(id, eventType string, occurredAt time.Time, payload any) (Envel
 
 func (e Envelope) Validate() error {
 	if e.ID == "" || e.Type == "" {
-		return Reject(errors.New("o evento precisa de id e tipo"))
+		return Reject(errors.New("the event needs an id and a type"))
 	}
 	return nil
 }

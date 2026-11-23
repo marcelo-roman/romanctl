@@ -35,15 +35,15 @@ impl From<ApplicationError> for Problem {
     fn from(error: ApplicationError) -> Self {
         match error {
             ApplicationError::NotFound(message) => {
-                Self::new(StatusCode::NOT_FOUND, "Não encontrado", message)
+                Self::new(StatusCode::NOT_FOUND, "Not found", message)
             }
             ApplicationError::Rule(violation) => Self::from(violation),
             ApplicationError::Unavailable(message) => {
                 tracing::error!(error = %message, "request failed");
                 Self::new(
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    "Erro interno",
-                    "Não foi possível concluir a operação.",
+                    "Internal error",
+                    "The operation could not be completed.",
                 )
             }
         }
@@ -54,7 +54,7 @@ impl From<RuleViolation> for Problem {
     fn from(violation: RuleViolation) -> Self {
         Self::new(
             StatusCode::UNPROCESSABLE_ENTITY,
-            "Regra de negócio violada",
+            "Business rule violated",
             violation.to_string(),
         )
     }
@@ -64,7 +64,7 @@ impl From<JsonRejection> for Problem {
     fn from(rejection: JsonRejection) -> Self {
         Self::new(
             StatusCode::BAD_REQUEST,
-            "Requisição inválida",
+            "Invalid request",
             rejection.body_text(),
         )
     }
@@ -74,7 +74,7 @@ impl From<QueryRejection> for Problem {
     fn from(rejection: QueryRejection) -> Self {
         Self::new(
             StatusCode::BAD_REQUEST,
-            "Requisição inválida",
+            "Invalid request",
             rejection.body_text(),
         )
     }

@@ -6,22 +6,22 @@ import { renderWithApi, testApi } from './api';
 afterEach(cleanup);
 
 function create(name: string) {
-  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: name } });
-  fireEvent.click(screen.getByRole('button', { name: 'Criar' }));
+  fireEvent.change(screen.getByLabelText('Name'), { target: { value: name } });
+  fireEvent.click(screen.getByRole('button', { name: 'Create' }));
 }
 
 describe('SampleItemList', () => {
-  it('creates and removes, showing validation messages in Portuguese', async () => {
+  it('creates and removes, showing validation messages in English', async () => {
     renderWithApi(<SampleItemList />, testApi());
-    expect(await screen.findByText('Nenhum registro ainda.')).toBeTruthy();
+    expect(await screen.findByText('No records yet.')).toBeTruthy();
 
     create('   ');
-    expect(await screen.findByText('Informe o nome.')).toBeTruthy();
+    expect(await screen.findByText('Enter the name.')).toBeTruthy();
 
-    create('Primeiro');
-    expect(await screen.findByText('Primeiro')).toBeTruthy();
+    create('First');
+    expect(await screen.findByText('First')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remover Primeiro' }));
-    await waitFor(() => expect(screen.queryByText('Primeiro')).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Remove First' }));
+    await waitFor(() => expect(screen.queryByText('First')).toBeNull());
   });
 });

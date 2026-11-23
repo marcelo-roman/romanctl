@@ -12,7 +12,7 @@ internal sealed class RenameSampleItemHandler(IAggregateRepository repository) :
     public async Task<bool> HandleAsync(RenameSampleItem command, CancellationToken cancellationToken)
     {
         var sampleItem = await repository.LoadAsync<SampleItem>(command.Id, cancellationToken)
-            ?? throw new NotFoundException($"SampleItem {command.Id} não encontrado.");
+            ?? throw new NotFoundException($"SampleItem {command.Id} not found.");
 
         sampleItem.Rename(command.Name);
         await repository.SaveAsync(sampleItem, cancellationToken);

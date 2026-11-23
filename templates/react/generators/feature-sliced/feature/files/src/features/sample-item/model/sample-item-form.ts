@@ -8,7 +8,7 @@ export const emptySampleItem: SampleItemValues = { name: '' };
 
 export function validateSampleItem(values: SampleItemValues): string | undefined {
   if (values.name.trim() === '') {
-    return 'Informe o nome.';
+    return 'Enter the name.';
   }
   return undefined;
 }

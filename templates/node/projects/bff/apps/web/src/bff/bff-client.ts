@@ -2,8 +2,8 @@ export class BffError extends Error {
   override readonly name = 'BffError';
 }
 
-const UNEXPECTED = 'Algo deu errado. Tente de novo.';
-const OFFLINE = 'Não foi possível falar com o servidor. Confira sua conexão.';
+const UNEXPECTED = 'Something went wrong. Try again.';
+const OFFLINE = 'Could not reach the server. Check your connection.';
 
 interface RequestOptions {
   method?: string;

@@ -17,13 +17,13 @@ internal sealed class RecordSalesOnOrderPlaced(IProductRepository products, ILog
         {
             if (!sold.TryGetValue(line.ProductId, out var product))
             {
-                logger.LogWarning("Pedido {OrderId}: produto {ProductId} não está mais no catálogo.", integrationEvent.OrderId, line.ProductId);
+                logger.LogWarning("Order {OrderId}: product {ProductId} is no longer in the catalog.", integrationEvent.OrderId, line.ProductId);
                 continue;
             }
             product.RecordSale(line.Quantity);
         }
 
         await products.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Pedido {OrderId}: vendas registradas no catálogo.", integrationEvent.OrderId);
+        logger.LogInformation("Order {OrderId}: sales recorded in the catalog.", integrationEvent.OrderId);
     }
 }

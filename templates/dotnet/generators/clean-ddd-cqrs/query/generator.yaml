@@ -1,4 +1,4 @@
-description: Consulta CQRS em um agregado existente (use --in)
+description: CQRS query on an existing aggregate (use --in)
 needsIn: true
 aliases: [consulta]
 requires:

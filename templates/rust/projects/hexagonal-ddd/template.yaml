@@ -1,7 +1,7 @@
 id: hexagonal-ddd
 stack: rust
 arch: [ddd, hexagonal]
-description: API Rust com arquitetura hexagonal e DDD, com axum e tokio
+description: Rust API with hexagonal architecture and DDD, using axum and tokio
 services: [postgres]
 requires: [rust]
 setup:

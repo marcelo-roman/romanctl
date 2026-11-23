@@ -22,7 +22,7 @@ export class PlaceOrderHandler implements ICommandHandler<PlaceOrder, void> {
   async execute(command: PlaceOrder): Promise<void> {
     const order = await this.orders.findById(OrderId.parse(command.orderId));
     if (!order) {
-      throw new NotFoundError(`Pedido ${command.orderId} não encontrado.`);
+      throw new NotFoundError(`Order ${command.orderId} not found.`);
     }
     order.place(this.clock.now());
     await this.orders.save(order);

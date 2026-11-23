@@ -1,7 +1,7 @@
 id: hexagonal-ddd
 stack: go
 arch: [ddd, hexagonal]
-description: API Go com arquitetura hexagonal e DDD, com HTTP da biblioteca padrão
+description: Go API with hexagonal architecture and DDD, with HTTP from the standard library
 services: [postgres]
 requires: [go]
 setup:

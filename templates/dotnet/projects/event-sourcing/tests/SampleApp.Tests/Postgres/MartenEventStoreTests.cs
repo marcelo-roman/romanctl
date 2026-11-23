@@ -28,17 +28,17 @@ public class MartenEventStoreTests
     }
 
     [PostgresFact]
-    public async Task Grava_le_o_fluxo_e_atualiza_a_projecao()
+    public async Task Saves_reads_the_stream_and_updates_the_projection()
     {
         await using var provider = Build();
 
         var id = await InScope(provider, services => services.GetRequiredService<IDispatcher>().SendAsync(new CreateOrder("Ana")));
-        await InScope(provider, services => services.GetRequiredService<IDispatcher>().SendAsync(new AddOrderItem(id, "Caneta", 2, 1.50m)));
+        await InScope(provider, services => services.GetRequiredService<IDispatcher>().SendAsync(new AddOrderItem(id, "Pen", 2, 1.50m)));
         await InScope(provider, services => services.GetRequiredService<IDispatcher>().SendAsync(new PlaceOrder(id)));
 
         var stream = await InScope(provider, services => services.GetRequiredService<IEventStore>().ReadStreamAsync(id, CancellationToken.None));
         Assert.Equal([1L, 2L, 3L], stream.Select(stored => stored.Version));
-        Assert.Equal(new ItemAdded("Caneta", 2, 1.50m, "BRL"), stream[1].Data);
+        Assert.Equal(new ItemAdded("Pen", 2, 1.50m, "BRL"), stream[1].Data);
 
         var summary = await InScope(provider, services => services.GetRequiredService<IReadModelStore<OrderSummary>>().FindAsync(id, CancellationToken.None));
         Assert.NotNull(summary);
@@ -53,14 +53,14 @@ public class MartenEventStoreTests
     }
 
     [PostgresFact]
-    public async Task Versao_desatualizada_gera_conflito()
+    public async Task Stale_version_causes_conflict()
     {
         await using var provider = Build();
         var id = await InScope(provider, services => services.GetRequiredService<IDispatcher>().SendAsync(new CreateOrder("Ana")));
 
         var stale = await InScope(provider, services => services.GetRequiredService<IAggregateRepository>().LoadAsync<Order>(id, CancellationToken.None));
-        await InScope(provider, services => services.GetRequiredService<IDispatcher>().SendAsync(new AddOrderItem(id, "Caneta", 1, 1m)));
-        stale!.AddItem("Lápis", 1, new Money(1m, "BRL"));
+        await InScope(provider, services => services.GetRequiredService<IDispatcher>().SendAsync(new AddOrderItem(id, "Pen", 1, 1m)));
+        stale!.AddItem("Pencil", 1, new Money(1m, "BRL"));
 
         await Assert.ThrowsAsync<ConcurrencyException>(() =>
             InScope(provider, async services =>
@@ -71,7 +71,7 @@ public class MartenEventStoreTests
     }
 
     [PostgresFact]
-    public async Task Nao_inicia_um_fluxo_que_ja_existe()
+    public async Task Does_not_start_a_stream_that_already_exists()
     {
         await using var provider = Build();
         var id = await InScope(provider, services => services.GetRequiredService<IDispatcher>().SendAsync(new CreateOrder("Ana")));

@@ -19,8 +19,8 @@ describe.skipIf(!databaseUrl)(suiteTitle('orders and catalog in PostgreSQL'), ()
   it('saves an order with its items and reads it back', async () => {
     const orders = new PostgresOrderRepository(db);
     const order = Order.create('Ana', new Date(Date.now() + 60_000));
-    order.addItem('Caneta', 2, Money.fromCents(350));
-    order.addItem('Caderno', 1, Money.fromCents(1200));
+    order.addItem('Pen', 2, Money.fromCents(350));
+    order.addItem('Notebook', 1, Money.fromCents(1200));
     await orders.save(order);
 
     order.place();
@@ -30,8 +30,8 @@ describe.skipIf(!databaseUrl)(suiteTitle('orders and catalog in PostgreSQL'), ()
     expect(stored?.status).toBe('Placed');
     expect(stored?.customerName).toBe('Ana');
     expect(stored?.items.map((item) => [item.productName, item.quantity, item.unitPrice.cents])).toEqual([
-      ['Caneta', 2, 350],
-      ['Caderno', 1, 1200],
+      ['Pen', 2, 350],
+      ['Notebook', 1, 1200],
     ]);
     expect(stored?.total.cents).toBe(1900);
     expect((await orders.latest(1)).map((o) => o.id)).toEqual([order.id]);
@@ -40,7 +40,7 @@ describe.skipIf(!databaseUrl)(suiteTitle('orders and catalog in PostgreSQL'), ()
 
   it('saves and lists catalog products', async () => {
     const catalog = new PostgresCatalogRepository(db);
-    const product = CatalogProduct.create('Régua', Money.fromCents(450), new Date());
+    const product = CatalogProduct.create('Ruler', Money.fromCents(450), new Date());
     await catalog.add(product);
 
     expect(await catalog.findById(product.id)).toEqual(product);

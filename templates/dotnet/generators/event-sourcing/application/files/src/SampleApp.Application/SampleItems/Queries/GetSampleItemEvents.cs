@@ -13,7 +13,7 @@ internal sealed class GetSampleItemEventsHandler(IEventStore store)
     {
         var stream = await store.ReadStreamAsync(query.Id, cancellationToken);
         if (stream.Count == 0)
-            throw new NotFoundException($"SampleItem {query.Id} não encontrado.");
+            throw new NotFoundException($"SampleItem {query.Id} not found.");
 
         return stream.Select(EventDto.From).ToList();
     }

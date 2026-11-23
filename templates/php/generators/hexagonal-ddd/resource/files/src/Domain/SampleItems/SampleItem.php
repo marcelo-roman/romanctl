@@ -50,7 +50,7 @@ final class SampleItem
     private static function validName(string $name): string
     {
         if (trim($name) === '') {
-            throw new BusinessRuleViolation('O nome é obrigatório.');
+            throw new BusinessRuleViolation('Name is required.');
         }
 
         return trim($name);

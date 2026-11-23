@@ -15,13 +15,13 @@ describe('SampleItems API', () => {
   afterEach(() => app.close());
 
   it('creates, renames, reads and deletes', async () => {
-    const created = await http.post('/sample-items').send({ name: 'Primeiro' }).expect(201);
+    const created = await http.post('/sample-items').send({ name: 'First' }).expect(201);
     const id: string = created.body.id;
     expect(created.headers.location).toBe(`/sample-items/${id}`);
 
-    await http.put(`/sample-items/${id}`).send({ name: 'Segundo' }).expect(204);
+    await http.put(`/sample-items/${id}`).send({ name: 'Second' }).expect(204);
     const got = await http.get(`/sample-items/${id}`).expect(200);
-    expect(got.body).toMatchObject({ id, name: 'Segundo' });
+    expect(got.body).toMatchObject({ id, name: 'Second' });
 
     const list = await http.get('/sample-items?limit=10').expect(200);
     expect(list.body.map((item: { id: string }) => item.id)).toEqual([id]);

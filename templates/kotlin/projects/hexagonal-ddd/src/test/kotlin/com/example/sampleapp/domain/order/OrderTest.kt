@@ -30,14 +30,14 @@ class OrderTest {
     fun `customer name is required`() {
         val error = assertFailsWith<BusinessRuleException> { Order.create(" ", now) }
 
-        assertEquals("O nome do cliente é obrigatório.", error.message)
+        assertEquals("Customer name is required.", error.message)
     }
 
     @Test
     fun `total sums the subtotals`() {
         val order = Order.create("Ana", now)
-        order.addItem("Caneta", 2, brl("3.50"))
-        order.addItem("Caderno", 1, brl("12.25"))
+        order.addItem("Pen", 2, brl("3.50"))
+        order.addItem("Notebook", 1, brl("12.25"))
 
         assertEquals(brl("19.25"), order.total)
         assertEquals(2, order.items.size)
@@ -48,24 +48,24 @@ class OrderTest {
         val order = Order.create("Ana", now)
 
         assertFailsWith<BusinessRuleException> { order.addItem(" ", 1, brl("1")) }
-        val error = assertFailsWith<BusinessRuleException> { order.addItem("Caneta", 0, brl("1")) }
-        assertEquals("A quantidade deve ser maior que zero.", error.message)
+        val error = assertFailsWith<BusinessRuleException> { order.addItem("Pen", 0, brl("1")) }
+        assertEquals("Quantity must be greater than zero.", error.message)
     }
 
     @Test
     fun `items must share the currency`() {
         val order = Order.create("Ana", now)
-        order.addItem("Caneta", 1, brl("1"))
+        order.addItem("Pen", 1, brl("1"))
 
-        val error = assertFailsWith<BusinessRuleException> { order.addItem("Livro", 1, Money.of(BigDecimal.ONE, "USD")) }
+        val error = assertFailsWith<BusinessRuleException> { order.addItem("Book", 1, Money.of(BigDecimal.ONE, "USD")) }
 
-        assertEquals("Todos os itens do pedido devem usar a mesma moeda.", error.message)
+        assertEquals("All order items must use the same currency.", error.message)
     }
 
     @Test
     fun `place raises order placed`() {
         val order = Order.create("Ana", now)
-        order.addItem("Caneta", 2, brl("3.50"))
+        order.addItem("Pen", 2, brl("3.50"))
 
         order.place(now)
 
@@ -81,17 +81,17 @@ class OrderTest {
     fun `empty order cannot be placed`() {
         val error = assertFailsWith<BusinessRuleException> { Order.create("Ana", now).place(now) }
 
-        assertEquals("Um pedido sem itens não pode ser realizado.", error.message)
+        assertEquals("An order without items cannot be placed.", error.message)
     }
 
     @Test
     fun `placed order cannot change`() {
         val order = Order.create("Ana", now)
-        order.addItem("Caneta", 1, brl("1"))
+        order.addItem("Pen", 1, brl("1"))
         order.place(now)
 
         assertFailsWith<BusinessRuleException> { order.place(now) }
-        assertFailsWith<BusinessRuleException> { order.addItem("Livro", 1, brl("1")) }
+        assertFailsWith<BusinessRuleException> { order.addItem("Book", 1, brl("1")) }
     }
 
     @Test
@@ -108,6 +108,6 @@ class OrderTest {
     fun `identifier rejects malformed values`() {
         val error = assertFailsWith<BusinessRuleException> { Identifier.parse("1-2-3-4-5") }
 
-        assertEquals("Identificador inválido.", error.message)
+        assertEquals("Invalid identifier.", error.message)
     }
 }

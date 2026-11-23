@@ -1,7 +1,7 @@
 import type { AddCatalogProductInput } from './catalog-service.js';
 
 export const starterCatalog: AddCatalogProductInput[] = [
-  { name: 'Caderno', price: 12 },
-  { name: 'Caneta', price: 3.5 },
-  { name: 'Mochila', price: 89.9 },
+  { name: 'Notebook', price: 12 },
+  { name: 'Pen', price: 3.5 },
+  { name: 'Backpack', price: 89.9 },
 ];

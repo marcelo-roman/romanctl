@@ -19,7 +19,7 @@ class SampleItem private constructor(val id: UUID, name: String, val createdAt: 
 
         private fun validName(name: String): String {
             if (name.isBlank()) {
-                throw BusinessRuleException("O nome é obrigatório.")
+                throw BusinessRuleException("Name is required.")
             }
             return name.trim()
         }

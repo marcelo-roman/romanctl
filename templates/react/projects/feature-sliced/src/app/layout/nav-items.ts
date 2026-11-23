@@ -6,6 +6,6 @@ export interface NavItem {
 }
 
 export const navItems: NavItem[] = [
-  { to: paths.orders, label: 'Pedidos' },
+  { to: paths.orders, label: 'Orders' },
   // romanctl:nav
 ];
